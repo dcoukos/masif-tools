@@ -5,6 +5,11 @@ __pycache__/
 
 # Sandbox
 *.ipynb
+temp/
+
+# Structures
+structures/
+datasets/
 
 # C extensions
 *.so
