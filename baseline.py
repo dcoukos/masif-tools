@@ -42,9 +42,9 @@ train_loader = DataLoader(train_dataset, batch_size=batch_size)
 test_loader = DataLoader(test_dataset, batch_size=len(test_dataset))
 
 # Notes on training:
-    # The size of the input matrix = [n_nodes, n_x(explicit features)]
-    # rotate structures at each epoch
-    # converter = rotations
+# The size of the input matrix = [n_nodes, n_x(explicit features)]
+# rotate structures at each epoch
+# converter = rotations
 
 for epoch in range(epochs):
     # rotate the structures between epochs

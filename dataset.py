@@ -20,7 +20,7 @@ def convert_data(path_to_raw='./structures/'):
     '''
     # test with 50 structures!
 
-    structures = [read_ply(path) for path in glob(path_to_raw+'*')[:50]]
+    structures = [read_ply(path) for path in glob(path_to_raw+'*')]
     torch.save(structures, 'datasets/raw/structures.pt')
 
 
@@ -88,7 +88,8 @@ def read_ply(path, learn_iface=True):
     pos = ([torch.tensor(data['vertex'][axis]) for axis in ['x', 'y', 'z']])
     pos = torch.stack(pos, dim=-1)
 
-    norm = ([torch.tensor(data['vertex'][axis]) for axis in ['nx', 'ny', 'nz']])
+    norm = ([torch.tensor(data['vertex'][axis])
+            for axis in ['nx', 'ny', 'nz']])
     norm = torch.stack(norm, dim=-1)
 
     y = None
@@ -113,9 +114,8 @@ def read_ply(path, learn_iface=True):
 
     return data
 
-"""
-Some sort of cross-over?
 
+"""
 class MiniStructures(InMemoryDataset):
     def __init__(self, root, transform=None, pre_transform=None, n=500):
         '''
@@ -134,7 +134,8 @@ class MiniStructures(InMemoryDataset):
 
     @property
     def processed_file_names(self):
-        # I don't undesrtand the error this causes. Isn't it supposed to check _if_ there are files there and if not make them?,,,
+        # I don't undesrtand the error this causes. Isn't it supposed to check
+        _if_ there are files there and if not make them?,,,
         return []
 
     def download(self):
