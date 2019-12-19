@@ -13,6 +13,7 @@ baseline.py implements a baseline model. Experiment using pytorch-geometric
     and FeaStNet.
 '''
 # Current goal: write metrics to tensorboard
+# figure out how to observe metrics.
 writer = SummaryWriter()
 # Not able to add graph to writer.
 
