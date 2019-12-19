@@ -1,4 +1,5 @@
 from glob import glob
+from tqdm import tqdm
 import torch
 from plyfile import PlyData
 from torch_geometric.data import Data, InMemoryDataset
@@ -20,7 +21,8 @@ def convert_data(path_to_raw='./structures/'):
     '''
     # test with 50 structures!
 
-    structures = [read_ply(path) for path in glob(path_to_raw+'*')]
+    structures = [read_ply(path) for path in tqdm(glob(path_to_raw+'*'), desc='Reading structures')]
+    print('Saving structures to file as pytorch object...')
     torch.save(structures, 'datasets/raw/structures.pt')
 
 
