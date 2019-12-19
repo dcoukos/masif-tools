@@ -4,28 +4,29 @@ import matplotlib.pyplot as plt
 from torch_geometric.data import DataLoader
 from models import Basic_Net
 from torch_geometric.transforms import FaceToEdge
-from dataset import Structures
+from dataset import Structures, MiniStructures
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_curve, roc_auc_score
+from utils import perf_measure
 '''
 baseline.py implements a baseline model. Experiment using pytorch-geometric
     and FeaStNet.
 '''
-# Below not ready
+# Current goal: write metrics to tensorboard
 writer = SummaryWriter()
 # Not able to add graph to writer.
 
 samples = 50  # Doesn't currently do anything.
-epochs = 3
-batch_size = 5
+epochs = 20
+batch_size = 20
 validation_split = .2
 shuffle_dataset = True
 random_seed = 42
 dropout = False
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-dataset = Structures(root='./datasets/', pre_transform=FaceToEdge())
-
+dataset = MiniStructures(pre_transform=FaceToEdge())
+samples = len(dataset)
 if shuffle_dataset:
     dataset = dataset.shuffle()
 n_features = dataset.get(0).x.shape[1]
@@ -33,45 +34,63 @@ n_features = dataset.get(0).x.shape[1]
 model = Basic_Net(n_features, dropout=dropout).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=1e-4)
 
-cutoff = int(np.floor(len(dataset)*(1-validation_split)))
+cutoff = int(np.floor(samples*(1-validation_split)))
 train_dataset = dataset[:cutoff]
 test_dataset = dataset[cutoff:]
 
 
-train_loader = DataLoader(train_dataset, batch_size=batch_size)
-test_loader = DataLoader(test_dataset, batch_size=len(test_dataset))
+train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size)
+test_loader = DataLoader(test_dataset, shuffle=False, batch_size=len(test_dataset))
 
 # Notes on training:
 # The size of the input matrix = [n_nodes, n_x(explicit features)]
 # rotate structures at each epoch
 # converter = rotations
 
-for epoch in range(epochs):
+# to avoid continuous reloading
+test_data = next(iter(test_loader))
+n_batches = int(np.floor(samples/batch_size))
+
+for epoch in range(1, epochs+1):
     # rotate the structures between epochs
     model.train()
     # dataset_ = [converter(structure) for structure in dataset]
-    for data in train_loader:
+    last_batch_labels = torch.Tensor()
+    for batch_n, data in enumerate(train_loader):
         optimizer.zero_grad()
-        loss, _ = model(data)
+        loss, out = model(data)
         loss.backward()
         optimizer.step()
-    print("---- Round {}: loss={:.4f} ".format(epoch+1, loss))
+        if batch_n == n_batches:
+            last_batch_labels = data.y.clone().detach()
 
-model.eval()
+    print("---- Round {}: loss={:.4f} ".format(epoch, loss))
+    pred = torch.tensor(out.detach().numpy().round())
 
-# TODO: Implement testing metric.
-# with torch.no_grad():
-data = next(iter(test_loader))
-_, out = model(data)
-# pred = torch.tensor(out.detach().numpy().round())
-pred = out.detach()
+    (train_TP, train_FP, train_TN, train_FN) = perf_measure(pred, last_batch_labels)
 
-correct = float(torch.tensor(pred.numpy().round()).eq(data.y).sum().item())
-incorrect = len(pred) - correct
+    model.eval()
+    _, out = model(test_data)
+    pred = torch.tensor(out.detach().numpy().round())
 
-acc = correct / data.batch.size()[0]
-roc_auc = roc_auc_score(data.y, pred)
-fpr, tpr, thresholds = roc_curve(data.y, pred)
+    (test_TP, test_FP, test_TN, test_FN) = perf_measure(pred, test_data.y)
+
+    writer.add_scalars('True positive rate', {'train': train_TP,
+                                              'test': test_TP}, epoch)
+    writer.add_scalars('False positive rate', {'train': train_FP,
+                                               'test': test_FP}, epoch)
+    writer.add_scalars('True negative rate', {'train': train_TN,
+                                              'test': test_TN}, epoch)
+    writer.add_scalars('False positive rate', {'train': train_FN,
+                                               'test': test_FN}, epoch)
+
+'''
+    correct = float(torch.tensor(pred.numpy().round()).eq(data.y).sum().item())
+    incorrect = len(pred) - correct
+
+    acc = correct / data.batch.size()[0]
+    roc_auc = roc_auc_score(data.y, pred)
+    fpr, tpr, thresholds = roc_curve(data.y, pred)
 
 
 plt.plot([0, 1], [0, 1], 'k--')
@@ -82,3 +101,7 @@ plt.title('ROC Curve')
 plt.show()
 print('Accuracy: {:.4f}'.format(acc))
 print('ROC AUC: {:.3f}'.format(roc_auc))
+'''
+
+
+writer.close()
