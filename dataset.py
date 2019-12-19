@@ -23,6 +23,7 @@ def convert_data(path_to_raw='./structures/'):
     structures = [read_ply(path) for path in tqdm(glob(path_to_raw+'*'), desc='Reading structures')]
     print('Saving structures to file as pytorch object...')
     torch.save(structures, 'datasets/raw/structures.pt')
+    print('Done.')
 
 
 def convert_mini_data(path_to_raw='./structures/'):
@@ -32,8 +33,10 @@ def convert_mini_data(path_to_raw='./structures/'):
     # Does this require a different dataset directory? Can try, just back up
     # structures.pt file.
 
-    structures = [read_ply(path) for path in glob(path_to_raw+'*')[200]]
+    structures = [read_ply(path) for path in tqdm(glob(path_to_raw+'*')[:200],desc='Reading structures')]
+    print('Saving structures to file as pytorch object ...')
     torch.save(structures, 'datasets/raw/mini_structures.pt')
+    print('Done.')
 
 
 def collate(data_list):
