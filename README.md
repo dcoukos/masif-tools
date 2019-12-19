@@ -19,7 +19,7 @@
     [] Create in-memory dataset, and mini-dataset. --> Current
     [] Set-up tensorboard reporting
     [] Implement ROC AUC eval metric.
-    [] Implement Weight Bias initliazations.
+    [] Implement Weight Bias initializations.
     [] Implement modifications to deal with unbalanced data
     [] Train on full & mini dataset in cluster.
 

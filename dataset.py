@@ -17,13 +17,23 @@ TODO:
 
 def convert_data(path_to_raw='./structures/'):
     '''Generate raw unprocessed torch file to generate pyg datasets.
-
     '''
     # test with 50 structures!
 
     structures = [read_ply(path) for path in tqdm(glob(path_to_raw+'*'), desc='Reading structures')]
     print('Saving structures to file as pytorch object...')
     torch.save(structures, 'datasets/raw/structures.pt')
+
+
+def convert_mini_data(path_to_raw='./structures/'):
+    '''Generate raw unprocessed torch file to generate pyg datasets with fewer
+        candidates.
+    '''
+    # Does this require a different dataset directory? Can try, just back up
+    # structures.pt file.
+
+    structures = [read_ply(path) for path in glob(path_to_raw+'*')[200]]
+    torch.save(structures, 'datasets/raw/mini_structures.pt')
 
 
 def collate(data_list):
