@@ -18,11 +18,10 @@ TODO:
 def convert_data(path_to_raw='./structures/'):
     '''Generate raw unprocessed torch file to generate pyg datasets.
     '''
-    # test with 50 structures!
-
-    structures = [read_ply(path) for path in tqdm(glob(path_to_raw+'*'), desc='Reading structures')]
+    structures = [read_ply(path) for path in tqdm(glob(path_to_raw + '*'),
+                  desc='Reading structures')]
     print('Saving structures to file as pytorch object...')
-    torch.save(structures, 'datasets/raw/structures.pt')
+    torch.save(structures, 'datasets/full/raw/structures.pt')
     print('Done.')
 
 
@@ -33,9 +32,10 @@ def convert_mini_data(path_to_raw='./structures/'):
     # Does this require a different dataset directory? Can try, just back up
     # structures.pt file.
 
-    structures = [read_ply(path) for path in tqdm(glob(path_to_raw+'*')[:200],desc='Reading structures')]
+    structures = [read_ply(path) for path in tqdm(glob(path_to_raw + '*')[:200],
+                  desc='Reading structures')]
     print('Saving structures to file as pytorch object ...')
-    torch.save(structures, 'datasets/raw/mini_structures.pt')
+    torch.save(structures, 'datasets/mini/raw/mini_structures.pt')
     print('Done.')
 
 
@@ -52,8 +52,7 @@ def collate(data_list):
     for item, key in product(data_list, keys):
         data[key].append(item[key])
         if torch.is_tensor(item[key]):
-            s = slices[key][-1] + item[key].size(
-                item.__cat_dim__(key, item[key]))
+            s = slices[key][-1] + item[key].size(item.__cat_dim__(key, item[key]))
         else:
             s = slices[key][-1] + 1
         slices[key].append(s)
@@ -130,28 +129,19 @@ def read_ply(path, learn_iface=True):
     return data
 
 
-"""
 class MiniStructures(InMemoryDataset):
-    def __init__(self, root, transform=None, pre_transform=None, n=500):
-        '''
-            Interesting transforms to consider:
-                - FaceToEdge --> necessary
-                - Change coordinate system to local system to use for training
-        '''
-        self.n_structures = n
+    def __init__(self, root='./datasets/mini/', transform=None, pre_transform=None):
         super(MiniStructures, self).__init__(root, transform, pre_transform)
         self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property  # What does the property decorator do?
     def raw_file_names(self):
         # Returns empty list as raw copy is local.
-        return ['1A0G_A.ply', '1A0G_B.ply']
+        return ['mini_structures.pt']
 
     @property
     def processed_file_names(self):
-        # I don't undesrtand the error this causes. Isn't it supposed to check
-        _if_ there are files there and if not make them?,,,
-        return []
+        return ['mini_structures.pt']
 
     def download(self):
         pass
@@ -159,7 +149,7 @@ class MiniStructures(InMemoryDataset):
     def process(self):
         # Read data into huge `Data` list.
 
-        data_list = [read_ply(filepath) for filepath in self.raw_file_names]
+        data_list = torch.load(self.raw_paths[0])
 
         if self.pre_filter is not None:
             data_list = [data for data in data_list if self.pre_filter(data)]
@@ -169,13 +159,10 @@ class MiniStructures(InMemoryDataset):
 
         data, slices = self.collate(data_list)
         torch.save((data, slices), self.processed_paths[0])
-        # Data is saved as one big data structure through collation. Slices are
-        # used to reconstruct the original objects.
-"""
 
 
 class Structures(InMemoryDataset):
-    def __init__(self, root, transform=None, pre_transform=None):
+    def __init__(self, root='./datasets/full/', transform=None, pre_transform=None):
         super(Structures, self).__init__(root, transform, pre_transform)
         self.data, self.slices = torch.load(self.processed_paths[0])
 
