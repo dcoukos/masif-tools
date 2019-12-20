@@ -12,21 +12,18 @@ from utils import perf_measure, stats
 baseline.py implements a baseline model. Experiment using pytorch-geometric
     and FeaStNet.
 '''
-# Current goal: write metrics to tensorboard
-# figure out how to observe metrics.
 
-# TODO: send all tensors to device!
 writer = SummaryWriter()
-# Not able to add graph to writer.
 
 samples = 50  # Doesn't currently do anything.
 epochs = 10
-batch_size = 200
+batch_size = 20
 validation_split = .2
 shuffle_dataset = True
 random_seed = 42
 dropout = True
 learning_rate = .1
+weight_decay=1e-4
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 dataset = MiniStructures(pre_transform=FaceToEdge())
@@ -36,7 +33,7 @@ if shuffle_dataset:
 n_features = dataset.get(0).x.shape[1]
 
 model = Basic_Net(n_features, dropout=dropout).to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-4)
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
 cutoff = int(np.floor(samples*(1-validation_split)))
 train_dataset = dataset[:cutoff]
@@ -85,63 +82,45 @@ for epoch in range(1, epochs+1):
     print("Performance measures: {} {} {} {}".format(train_TP, train_FP, train_TN, train_FN))
     # print(stats(last_batch_labels, pred))
 
-    model.eval()
-    x, edge_index = test_data.x.to(device), test_data.edge_index.to(device)
-    labels = test_data.y.to(device)
-    _, out = model(x, edge_index, labels)
-    pred = out.detach().round().to(device)
+    with torch.no_grad():
+        x, edge_index = test_data.x.to(device), test_data.edge_index.to(device)
+        labels = test_data.y.to(device)
+        _, out = model(x, edge_index, labels)
+        pred = out.detach().round().to(device)
 
-    (test_TP, test_FP, test_TN, test_FN) = perf_measure(pred, test_labels)
+        (test_TP, test_FP, test_TN, test_FN) = perf_measure(pred, test_labels)
 
-    #  --------------  REPORTING ------------------------------------
+        #  --------------  REPORTING ------------------------------------
 
-    writer.add_scalars('True positive rate', {'train': train_TP,
-                                              'test': test_TP}, epoch)
-    writer.add_scalars('False positive rate', {'train': train_FP,
-                                               'test': test_FP}, epoch)
-    writer.add_scalars('True negative rate', {'train': train_TN,
-                                              'test': test_TN}, epoch)
-    writer.add_scalars('False negative rate', {'train': train_FN,
-                                               'test': test_FN}, epoch)
-    # writer.add_scalars('Loss', {'train': })
+        writer.add_scalars('True positive rate', {'train': train_TP,
+                                                  'test': test_TP}, epoch)
+        writer.add_scalars('False positive rate', {'train': train_FP,
+                                                   'test': test_FP}, epoch)
+        writer.add_scalars('True negative rate', {'train': train_TN,
+                                                  'test': test_TN}, epoch)
+        writer.add_scalars('False negative rate', {'train': train_FN,
+                                                   'test': test_FN}, epoch)
+        # writer.add_scalars('Loss', {'train': })
 
-    writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)
-    writer.add_histogram('Layer 1 bias', model.conv1.bias, epoch+1)
-    writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
+        writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)
+        writer.add_histogram('Layer 1 bias', model.conv1.bias, epoch+1)
+        writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
 
-    writer.add_histogram('Layer 2 weights', model.conv2.weight, epoch+1)
-    writer.add_histogram('Layer 2 bias', model.conv2.bias, epoch+1)
-    writer.add_histogram('Layer 2 weight gradients', model.conv2.weight.grad, epoch+1)
+        writer.add_histogram('Layer 2 weights', model.conv2.weight, epoch+1)
+        writer.add_histogram('Layer 2 bias', model.conv2.bias, epoch+1)
+        writer.add_histogram('Layer 2 weight gradients', model.conv2.weight.grad, epoch+1)
 
-    writer.add_histogram('Layer 3 weights', model.conv3.weight, epoch+1)
-    writer.add_histogram('Layer 3 bias', model.conv3.bias, epoch+1)
-    writer.add_histogram('Layer 3 weight gradients', model.conv3.weight.grad, epoch+1)
+        writer.add_histogram('Layer 3 weights', model.conv3.weight, epoch+1)
+        writer.add_histogram('Layer 3 bias', model.conv3.bias, epoch+1)
+        writer.add_histogram('Layer 3 weight gradients', model.conv3.weight.grad, epoch+1)
 
-    writer.add_histogram('Layer 4 weights', model.lin1.weight, epoch+1)
-    writer.add_histogram('Layer 4 bias', model.lin1.bias, epoch+1)
-    writer.add_histogram('Layer 4 weight gradients', model.lin1.weight.grad, epoch+1)
+        writer.add_histogram('Layer 4 weights', model.lin1.weight, epoch+1)
+        writer.add_histogram('Layer 4 bias', model.lin1.bias, epoch+1)
+        writer.add_histogram('Layer 4 weight gradients', model.lin1.weight.grad, epoch+1)
 
-    writer.add_histogram('Layer 5 weights', model.lin2.weight, epoch+1)
-    writer.add_histogram('Layer 5 bias', model.lin2.bias, epoch+1)
-    writer.add_histogram('Layer 5 weight gradients', model.lin2.weight.grad, epoch+1)
+        writer.add_histogram('Layer 5 weights', model.lin2.weight, epoch+1)
+        writer.add_histogram('Layer 5 bias', model.lin2.bias, epoch+1)
+        writer.add_histogram('Layer 5 weight gradients', model.lin2.weight.grad, epoch+1)
 
-'''
-    correct = float(torch.tensor(pred.numpy().round()).eq(data.y).sum().item())
-    incorrect = len(pred) - correct
-
-    acc = correct / data.batch.size()[0]
-    roc_auc = roc_auc_score(data.y, pred)
-    fpr, tpr, thresholds = roc_curve(data.y, pred)
-
-
-plt.plot([0, 1], [0, 1], 'k--')
-plt.plot(fpr, tpr)
-plt.xlabel('False Positive Rate')
-plt.ylabel('True Positive Rate')
-plt.title('ROC Curve')
-plt.show()
-print('Accuracy: {:.4f}'.format(acc))
-print('ROC AUC: {:.3f}'.format(roc_auc))
-'''
 
 writer.close()
