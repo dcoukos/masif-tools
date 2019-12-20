@@ -82,45 +82,45 @@ for epoch in range(1, epochs+1):
     print("Performance measures: {} {} {} {}".format(train_TP, train_FP, train_TN, train_FN))
     # print(stats(last_batch_labels, pred))
 
-    with torch.no_grad():
-        x, edge_index = test_data.x.to(device), test_data.edge_index.to(device)
-        labels = test_data.y.to(device)
-        _, out = model(x, edge_index, labels)
-        pred = out.detach().round().to(device)
+    model.eval()
+    x, edge_index = test_data.x.to(device), test_data.edge_index.to(device)
+    labels = test_data.y.to(device)
+    _, out = model(x, edge_index, labels)
+    pred = out.detach().round().to(device)
 
-        (test_TP, test_FP, test_TN, test_FN) = perf_measure(pred, test_labels)
+    (test_TP, test_FP, test_TN, test_FN) = perf_measure(pred, test_labels)
 
-        #  --------------  REPORTING ------------------------------------
+    #  --------------  REPORTING ------------------------------------
 
-        writer.add_scalars('True positive rate', {'train': train_TP,
-                                                  'test': test_TP}, epoch)
-        writer.add_scalars('False positive rate', {'train': train_FP,
-                                                   'test': test_FP}, epoch)
-        writer.add_scalars('True negative rate', {'train': train_TN,
-                                                  'test': test_TN}, epoch)
-        writer.add_scalars('False negative rate', {'train': train_FN,
-                                                   'test': test_FN}, epoch)
-        # writer.add_scalars('Loss', {'train': })
+    writer.add_scalars('True positive rate', {'train': train_TP,
+                                              'test': test_TP}, epoch)
+    writer.add_scalars('False positive rate', {'train': train_FP,
+                                               'test': test_FP}, epoch)
+    writer.add_scalars('True negative rate', {'train': train_TN,
+                                              'test': test_TN}, epoch)
+    writer.add_scalars('False negative rate', {'train': train_FN,
+                                               'test': test_FN}, epoch)
+    # writer.add_scalars('Loss', {'train': })
 
-        writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)
-        writer.add_histogram('Layer 1 bias', model.conv1.bias, epoch+1)
-        writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
+    writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)
+    writer.add_histogram('Layer 1 bias', model.conv1.bias, epoch+1)
+    writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
 
-        writer.add_histogram('Layer 2 weights', model.conv2.weight, epoch+1)
-        writer.add_histogram('Layer 2 bias', model.conv2.bias, epoch+1)
-        writer.add_histogram('Layer 2 weight gradients', model.conv2.weight.grad, epoch+1)
+    writer.add_histogram('Layer 2 weights', model.conv2.weight, epoch+1)
+    writer.add_histogram('Layer 2 bias', model.conv2.bias, epoch+1)
+    writer.add_histogram('Layer 2 weight gradients', model.conv2.weight.grad, epoch+1)
 
-        writer.add_histogram('Layer 3 weights', model.conv3.weight, epoch+1)
-        writer.add_histogram('Layer 3 bias', model.conv3.bias, epoch+1)
-        writer.add_histogram('Layer 3 weight gradients', model.conv3.weight.grad, epoch+1)
+    writer.add_histogram('Layer 3 weights', model.conv3.weight, epoch+1)
+    writer.add_histogram('Layer 3 bias', model.conv3.bias, epoch+1)
+    writer.add_histogram('Layer 3 weight gradients', model.conv3.weight.grad, epoch+1)
 
-        writer.add_histogram('Layer 4 weights', model.lin1.weight, epoch+1)
-        writer.add_histogram('Layer 4 bias', model.lin1.bias, epoch+1)
-        writer.add_histogram('Layer 4 weight gradients', model.lin1.weight.grad, epoch+1)
+    writer.add_histogram('Layer 4 weights', model.lin1.weight, epoch+1)
+    writer.add_histogram('Layer 4 bias', model.lin1.bias, epoch+1)
+    writer.add_histogram('Layer 4 weight gradients', model.lin1.weight.grad, epoch+1)
 
-        writer.add_histogram('Layer 5 weights', model.lin2.weight, epoch+1)
-        writer.add_histogram('Layer 5 bias', model.lin2.bias, epoch+1)
-        writer.add_histogram('Layer 5 weight gradients', model.lin2.weight.grad, epoch+1)
+    writer.add_histogram('Layer 5 weights', model.lin2.weight, epoch+1)
+    writer.add_histogram('Layer 5 bias', model.lin2.bias, epoch+1)
+    writer.add_histogram('Layer 5 weight gradients', model.lin2.weight.grad, epoch+1)
 
 
 writer.close()
