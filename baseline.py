@@ -20,7 +20,7 @@ writer = SummaryWriter()
 # Not able to add graph to writer.
 
 samples = 50  # Doesn't currently do anything.
-epochs = 300
+epochs = 10
 batch_size = 200
 validation_split = .2
 shuffle_dataset = True

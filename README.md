@@ -17,6 +17,7 @@
     Step 2:
     [-] Reimplement network with Deep Graph Library
     [/] Create in-memory dataset, and mini-dataset. --> Current
+    [] Create stored dataset
     [x] Set-up tensorboard reporting
     [/] Implement ROC AUC eval metric.
     [] Implement Weight Bias initializations.
@@ -34,7 +35,7 @@
     - Implement tensorboard hyperparameter tuning
 
     Then:
-    - Implement and compare implementations of the following networks:
+    - Study following networks and determine if they might be interesting:
         - Graph Attention network
         - Line Graph neural network
         - Tree-LSTM (graph batching)
