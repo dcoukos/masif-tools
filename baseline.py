@@ -16,7 +16,7 @@ baseline.py implements a baseline model. Experiment using pytorch-geometric
 writer = SummaryWriter()
 
 samples = 50  # Doesn't currently do anything.
-epochs = 10
+epochs = 200
 batch_size = 20
 validation_split = .2
 shuffle_dataset = True
