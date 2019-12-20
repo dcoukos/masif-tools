@@ -66,7 +66,7 @@ for epoch in range(1, epochs+1):
     # rotate the structures between epochs
     model.train()
     # dataset_ = [converter(structure) for structure in dataset]
-    last_batch_labels = torch.Tensor()
+    first_batch_labels = torch.Tensor()
     pred = torch.Tensor()
     for batch_n, data in enumerate(train_loader):
         optimizer.zero_grad()
@@ -76,12 +76,12 @@ for epoch in range(1, epochs+1):
         loss.backward()
         optimizer.step()
         if batch_n == 0:
-            last_batch_labels = data.y.clone().detach().to(device)
-            pred = out.detach().round().to(device)
+            first_batch_labels = data.y.clone().detach().to(device)
+            pred = out.clone().detach().round().to(device)
 
     print("---- Round {}: loss={:.4f} ".format(epoch, loss))
 
-    (train_TP, train_FP, train_TN, train_FN) = perf_measure(pred, last_batch_labels)
+    (train_TP, train_FP, train_TN, train_FN) = perf_measure(pred, first_batch_labels)
     print("Performance measures: {} {} {} {}".format(train_TP, train_FP, train_TN, train_FN))
     # print(stats(last_batch_labels, pred))
 
