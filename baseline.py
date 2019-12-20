@@ -5,7 +5,7 @@ from torch_geometric.data import DataLoader
 from models import Basic_Net
 from torch_geometric.transforms import FaceToEdge
 from dataset import Structures, MiniStructures
-from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter, FileWriter
 from sklearn.metrics import roc_curve, roc_auc_score
 from utils import perf_measure, stats
 '''
@@ -55,6 +55,13 @@ test_data = next(iter(test_loader))
 test_labels = test_data.y.to(device)
 n_batches = int(np.floor((samples*(1-validation_split))/batch_size))
 
+# Adding graph to Tensorboard
+datapoint = dataset.get(0)
+x, edge_index = datapoint.x.to(device), datapoint.edge_index.to(device)
+labels = datapoint.y.to(device)
+
+writer.add_graph(model, input_to_model=(x, edge_index, labels, torch.Tensor()))
+
 for epoch in range(1, epochs+1):
     # rotate the structures between epochs
     model.train()
@@ -62,7 +69,9 @@ for epoch in range(1, epochs+1):
     last_batch_labels = torch.Tensor().to(device)
     for batch_n, data in enumerate(train_loader):
         optimizer.zero_grad()
-        loss, out = model(data)
+        x, edge_index = data.x.to(device), data.edge_index.to(device)
+        labels = data.y.to(device)
+        loss, out = model(x, edge_index, labels)
         loss.backward()
         optimizer.step()
         if batch_n+1 == n_batches:
@@ -76,10 +85,14 @@ for epoch in range(1, epochs+1):
     # print(stats(last_batch_labels, pred))
 
     model.eval()
-    _, out = model(test_data)
+    x, edge_index = test_data.x.to(device), test_data.edge_index.to(device)
+    labels = test_data.y.to(device)
+    _, out = model(x, edge_index, labels)
     pred = out.detach().round().to(device)
 
     (test_TP, test_FP, test_TN, test_FN) = perf_measure(pred, test_labels)
+
+    #  --------------  REPORTING ------------------------------------
 
     writer.add_scalars('True positive rate', {'train': train_TP,
                                               'test': test_TP}, epoch)
@@ -90,6 +103,26 @@ for epoch in range(1, epochs+1):
     writer.add_scalars('False negative rate', {'train': train_FN,
                                                'test': test_FN}, epoch)
     # writer.add_scalars('Loss', {'train': })
+
+    writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)
+    writer.add_histogram('Layer 1 bias', model.conv1.bias, epoch+1)
+    writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
+
+    writer.add_histogram('Layer 2 weights', model.conv2.weight, epoch+1)
+    writer.add_histogram('Layer 2 bias', model.conv2.bias, epoch+1)
+    writer.add_histogram('Layer 2 weight gradients', model.conv2.weight.grad, epoch+1)
+
+    writer.add_histogram('Layer 3 weights', model.conv3.weight, epoch+1)
+    writer.add_histogram('Layer 3 bias', model.conv3.bias, epoch+1)
+    writer.add_histogram('Layer 3 weight gradients', model.conv3.weight.grad, epoch+1)
+
+    writer.add_histogram('Layer 4 weights', model.lin1.weight, epoch+1)
+    writer.add_histogram('Layer 4 bias', model.lin1.bias, epoch+1)
+    writer.add_histogram('Layer 4 weight gradients', model.lin1.weight.grad, epoch+1)
+
+    writer.add_histogram('Layer 5 weights', model.lin2.weight, epoch+1)
+    writer.add_histogram('Layer 5 bias', model.lin2.bias, epoch+1)
+    writer.add_histogram('Layer 5 weight gradients', model.lin2.weight.grad, epoch+1)
 
 '''
     correct = float(torch.tensor(pred.numpy().round()).eq(data.y).sum().item())

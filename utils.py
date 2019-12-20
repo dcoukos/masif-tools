@@ -25,4 +25,4 @@ def generate_weights(labels):
     '''
         Takes a label tensor, and generates scoring weights for binary_cross_entropy
     '''
-    return labels.clone().detach()*0.8 + 0.1
+    return (labels.clone().detach()*0.8 + 0.2)
