@@ -20,7 +20,7 @@ writer = SummaryWriter()
 # Not able to add graph to writer.
 
 samples = 50  # Doesn't currently do anything.
-epochs = 20
+epochs = 300
 batch_size = 20
 validation_split = .2
 shuffle_dataset = True
@@ -52,6 +52,7 @@ test_loader = DataLoader(test_dataset, shuffle=False, batch_size=len(test_datase
 
 # to avoid continuous reloading
 test_data = next(iter(test_loader))
+test_labels = test_data.y.to(device)
 n_batches = int(np.floor(samples/batch_size))
 
 for epoch in range(1, epochs+1):
@@ -68,15 +69,15 @@ for epoch in range(1, epochs+1):
             last_batch_labels = data.y.clone().detach().to(device)
 
     print("---- Round {}: loss={:.4f} ".format(epoch, loss))
-    pred = torch.tensor(out.detach().numpy().round()).to(device)
+    pred = out.round().to(device) #check that new tensors do no inherit grad!
 
     (train_TP, train_FP, train_TN, train_FN) = perf_measure(pred, last_batch_labels)
 
     model.eval()
     _, out = model(test_data)
-    pred = torch.tensor(out.detach().numpy().round()).to(device)
+    pred = out.round().to(device)
 
-    (test_TP, test_FP, test_TN, test_FN) = perf_measure(pred, test_data.y)
+    (test_TP, test_FP, test_TN, test_FN) = perf_measure(pred, test_labels)
 
     writer.add_scalars('True positive rate', {'train': train_TP,
                                               'test': test_TP}, epoch)

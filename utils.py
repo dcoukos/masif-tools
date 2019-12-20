@@ -4,9 +4,9 @@ import torch
 def perf_measure(pred, labels):
     '''Calculates and returns performance metrics from two tensors when doing binary
         classification'''
-
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     A = pred == labels
-    B = pred == torch.ones(size=pred.shape)
+    B = pred == torch.ones(size=pred.shape).to(device)
 
     TP = (A * B).sum().item()
     FP = (~A * B).sum().item()
