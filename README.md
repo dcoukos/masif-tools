@@ -16,11 +16,11 @@
 
     Step 2:
     [-] Reimplement network with Deep Graph Library
-    [] Create in-memory dataset, and mini-dataset. --> Current
-    [] Set-up tensorboard reporting
-    [] Implement ROC AUC eval metric.
+    [/] Create in-memory dataset, and mini-dataset. --> Current
+    [x] Set-up tensorboard reporting
+    [/] Implement ROC AUC eval metric.
     [] Implement Weight Bias initializations.
-    [] Implement modifications to deal with unbalanced data
+    [x] Implement modifications to deal with unbalanced data
     [] Train on full & mini dataset in cluster.
 
     Next:
