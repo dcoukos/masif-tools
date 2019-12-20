@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch.nn import Linear
 from torch_geometric.nn import GCNConv
+from utils import generate_weights
 
 '''
 This file implements the models.
@@ -22,6 +23,7 @@ class Basic_Net(torch.nn.Module):
 
     def forward(self, data):
         x, edge_index = data.x.to(self.device), data.edge_index.to(self.device)
+        labels = data.y.to(self.device)
 
         x = self.conv1(x, edge_index)
         x = F.relu(x)
@@ -36,7 +38,7 @@ class Basic_Net(torch.nn.Module):
         x = self.lin2(x)
         x = torch.sigmoid(x)
 
-        loss = F.binary_cross_entropy(x, target=data.y.to(self.device))
+        loss = F.binary_cross_entropy(x, target=labels, weight=generate_weights(labels))
         return loss, x
 
 

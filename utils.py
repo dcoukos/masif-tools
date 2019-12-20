@@ -19,3 +19,10 @@ def perf_measure(pred, labels):
 
 def stats(pred, labels):
     return classification_report(labels.cpu().detach().numpy(), pred.cpu().detach().numpy())
+
+
+def generate_weights(labels):
+    '''
+        Takes a label tensor, and generates scoring weights for binary_cross_entropy
+    '''
+    return labels.clone().detach()*0.8 + 0.1

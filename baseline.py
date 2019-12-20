@@ -69,7 +69,7 @@ for epoch in range(1, epochs+1):
             last_batch_labels = data.y.clone().detach().to(device)
 
     print("---- Round {}: loss={:.4f} ".format(epoch, loss))
-    pred = out.round().to(device)  # check that new tensors do no inherit grad!
+    pred = out.detach().round().to(device)
 
     (train_TP, train_FP, train_TN, train_FN) = perf_measure(pred, last_batch_labels)
     print("Performance measures: {} {} {} {}".format(train_TP, train_FP, train_TN, train_FN))
@@ -77,7 +77,7 @@ for epoch in range(1, epochs+1):
 
     model.eval()
     _, out = model(test_data)
-    pred = out.round().to(device)
+    pred = out.detach().round().to(device)
 
     (test_TP, test_FP, test_TN, test_FN) = perf_measure(pred, test_labels)
 
