@@ -1,4 +1,5 @@
 import torch
+from sklearn.metrics import classification_report
 
 
 def perf_measure(pred, labels):
@@ -14,3 +15,7 @@ def perf_measure(pred, labels):
     FN = (~A * ~B).sum().item()
 
     return (TP, FP, TN, FN)
+
+
+def stats(pred, labels):
+    return classification_report(labels.cpu(), pred.cpu())

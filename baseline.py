@@ -7,7 +7,7 @@ from torch_geometric.transforms import FaceToEdge
 from dataset import Structures, MiniStructures
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_curve, roc_auc_score
-from utils import perf_measure
+from utils import perf_measure, stats
 '''
 baseline.py implements a baseline model. Experiment using pytorch-geometric
     and FeaStNet.
@@ -72,7 +72,9 @@ for epoch in range(1, epochs+1):
     pred = out.round().to(device)  # check that new tensors do no inherit grad!
 
     (train_TP, train_FP, train_TN, train_FN) = perf_measure(pred, last_batch_labels)
+
     print("Performance measures: {} {} {} {}".format(train_TP, train_FP, train_TN, train_FN))
+    print(stats(last_batch_labels, pred))
 
     model.eval()
     _, out = model(test_data)
