@@ -69,9 +69,10 @@ for epoch in range(1, epochs+1):
             last_batch_labels = data.y.clone().detach().to(device)
 
     print("---- Round {}: loss={:.4f} ".format(epoch, loss))
-    pred = out.round().to(device) #check that new tensors do no inherit grad!
+    pred = out.round().to(device)  # check that new tensors do no inherit grad!
 
     (train_TP, train_FP, train_TN, train_FN) = perf_measure(pred, last_batch_labels)
+    print("Performance measures: {} {} {} {}".format(train_TP, train_FP, train_TN, train_FN))
 
     model.eval()
     _, out = model(test_data)
@@ -85,7 +86,7 @@ for epoch in range(1, epochs+1):
                                                'test': test_FP}, epoch)
     writer.add_scalars('True negative rate', {'train': train_TN,
                                               'test': test_TN}, epoch)
-    writer.add_scalars('False positive rate', {'train': train_FN,
+    writer.add_scalars('False negative rate', {'train': train_FN,
                                                'test': test_FN}, epoch)
     # writer.add_scalars('Loss', {'train': })
 
@@ -107,6 +108,5 @@ plt.show()
 print('Accuracy: {:.4f}'.format(acc))
 print('ROC AUC: {:.3f}'.format(roc_auc))
 '''
-
 
 writer.close()
