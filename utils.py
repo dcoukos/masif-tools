@@ -18,4 +18,4 @@ def perf_measure(pred, labels):
 
 
 def stats(pred, labels):
-    return classification_report(labels.cpu(), pred.cpu())
+    return classification_report(labels.cpu().detach().numpy(), pred.cpu().detach().numpy())

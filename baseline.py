@@ -53,7 +53,7 @@ test_loader = DataLoader(test_dataset, shuffle=False, batch_size=len(test_datase
 # to avoid continuous reloading
 test_data = next(iter(test_loader))
 test_labels = test_data.y.to(device)
-n_batches = int(np.floor(samples/batch_size))
+n_batches = int(np.floor((samples*(1-validation_split))/batch_size))
 
 for epoch in range(1, epochs+1):
     # rotate the structures between epochs
@@ -65,16 +65,15 @@ for epoch in range(1, epochs+1):
         loss, out = model(data)
         loss.backward()
         optimizer.step()
-        if batch_n == n_batches:
+        if batch_n+1 == n_batches:
             last_batch_labels = data.y.clone().detach().to(device)
 
     print("---- Round {}: loss={:.4f} ".format(epoch, loss))
     pred = out.round().to(device)  # check that new tensors do no inherit grad!
 
     (train_TP, train_FP, train_TN, train_FN) = perf_measure(pred, last_batch_labels)
-
     print("Performance measures: {} {} {} {}".format(train_TP, train_FP, train_TN, train_FN))
-    print(stats(last_batch_labels, pred))
+    # print(stats(last_batch_labels, pred))
 
     model.eval()
     _, out = model(test_data)
