@@ -26,6 +26,7 @@ validation_split = .2
 shuffle_dataset = True
 random_seed = 42
 dropout = False
+learning_rate = .1
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 dataset = MiniStructures(pre_transform=FaceToEdge())
@@ -35,7 +36,7 @@ if shuffle_dataset:
 n_features = dataset.get(0).x.shape[1]
 
 model = Basic_Net(n_features, dropout=dropout).to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=1e-4)
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-4)
 
 cutoff = int(np.floor(samples*(1-validation_split)))
 train_dataset = dataset[:cutoff]
