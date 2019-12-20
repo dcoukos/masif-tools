@@ -21,11 +21,11 @@ writer = SummaryWriter()
 
 samples = 50  # Doesn't currently do anything.
 epochs = 300
-batch_size = 20
+batch_size = 200
 validation_split = .2
 shuffle_dataset = True
 random_seed = 42
-dropout = False
+dropout = True
 learning_rate = .1
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -54,7 +54,6 @@ test_loader = DataLoader(test_dataset, shuffle=False, batch_size=len(test_datase
 # to avoid continuous reloading
 test_data = next(iter(test_loader))
 test_labels = test_data.y.to(device)
-n_batches = int(np.floor((samples*(1-validation_split))/batch_size))
 
 # Adding graph to Tensorboard
 datapoint = dataset.get(0)
@@ -67,7 +66,8 @@ for epoch in range(1, epochs+1):
     # rotate the structures between epochs
     model.train()
     # dataset_ = [converter(structure) for structure in dataset]
-    last_batch_labels = torch.Tensor().to(device)
+    last_batch_labels = torch.Tensor()
+    pred = torch.Tensor()
     for batch_n, data in enumerate(train_loader):
         optimizer.zero_grad()
         x, edge_index = data.x.to(device), data.edge_index.to(device)
@@ -75,11 +75,11 @@ for epoch in range(1, epochs+1):
         loss, out = model(x, edge_index, labels)
         loss.backward()
         optimizer.step()
-        if batch_n+1 == n_batches:
+        if batch_n == 0:
             last_batch_labels = data.y.clone().detach().to(device)
+            pred = out.detach().round().to(device)
 
     print("---- Round {}: loss={:.4f} ".format(epoch, loss))
-    pred = out.detach().round().to(device)
 
     (train_TP, train_FP, train_TN, train_FN) = perf_measure(pred, last_batch_labels)
     print("Performance measures: {} {} {} {}".format(train_TP, train_FP, train_TN, train_FN))
