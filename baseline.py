@@ -14,6 +14,8 @@ baseline.py implements a baseline model. Experiment using pytorch-geometric
 '''
 # Current goal: write metrics to tensorboard
 # figure out how to observe metrics.
+
+# TODO: send all tensors to device!
 writer = SummaryWriter()
 # Not able to add graph to writer.
 
@@ -56,23 +58,23 @@ for epoch in range(1, epochs+1):
     # rotate the structures between epochs
     model.train()
     # dataset_ = [converter(structure) for structure in dataset]
-    last_batch_labels = torch.Tensor()
+    last_batch_labels = torch.Tensor().to(device)
     for batch_n, data in enumerate(train_loader):
         optimizer.zero_grad()
         loss, out = model(data)
         loss.backward()
         optimizer.step()
         if batch_n == n_batches:
-            last_batch_labels = data.y.clone().detach()
+            last_batch_labels = data.y.clone().detach().to(device)
 
     print("---- Round {}: loss={:.4f} ".format(epoch, loss))
-    pred = torch.tensor(out.detach().numpy().round())
+    pred = torch.tensor(out.detach().numpy().round()).to(device)
 
     (train_TP, train_FP, train_TN, train_FN) = perf_measure(pred, last_batch_labels)
 
     model.eval()
     _, out = model(test_data)
-    pred = torch.tensor(out.detach().numpy().round())
+    pred = torch.tensor(out.detach().numpy().round()).to(device)
 
     (test_TP, test_FP, test_TN, test_FN) = perf_measure(pred, test_data.y)
 
@@ -84,6 +86,7 @@ for epoch in range(1, epochs+1):
                                               'test': test_TN}, epoch)
     writer.add_scalars('False positive rate', {'train': train_FN,
                                                'test': test_FN}, epoch)
+    # writer.add_scalars('Loss', {'train': })
 
 '''
     correct = float(torch.tensor(pred.numpy().round()).eq(data.y).sum().item())
