@@ -1,8 +1,9 @@
+from os import path as osp
 from glob import glob
 from tqdm import tqdm
 import torch
 from plyfile import PlyData
-from torch_geometric.data import Data, InMemoryDataset
+from torch_geometric.data import Data, InMemoryDataset, Dataset
 from itertools import product
 
 
@@ -191,3 +192,43 @@ class Structures(InMemoryDataset):
 
         data, slices = self.collate(data_list)
         torch.save((data, slices), self.processed_paths[0])
+
+
+class StoredStructures(Dataset):
+    def __init__(self, root='./datasets/full/', transform=None, pre_transform=None):
+        super(StoredStructures, self).__init__(root, transform, pre_transform)
+        self.data, self.slices = torch.load(self.processed_paths[0])
+
+    @property
+    def raw_file_names(self):
+        # Returns empty list as raw copy is local.
+        return ['structures.pt']
+
+    @property
+    def processed_file_names(self):
+        # How to know which one is returned as dataset?
+        return ['structures_1.pt']
+
+    def __len__(self):
+        return len(self.processed_file_names)
+
+    def download(self):
+        pass
+
+    def process(self):
+        # Read data into huge `Data` list.
+        for i, raw_path in enumerate(self.raw_paths):
+            data = torch.load(raw_path)
+
+            if self.pre_filter is not None:
+                data_list = [data for data in data_list if self.pre_filter(data)]
+
+            if self.pre_transform is not None:
+                data_list = [self.pre_transform(data) for data in data_list]
+            # Not possible to store as a single object anymore? No speedup?
+
+            torch.save(data, osp.join(self.processed_dir, 'structures_{}'.format(i)))
+
+    def get(self, idx):
+        data = torch.load(osp.join(self.processed_dir, 'data_{}.pt'.format(idx)))
+        return data

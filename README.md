@@ -23,6 +23,8 @@
     [] Implement Weight Bias initializations.
     [x] Implement modifications to deal with unbalanced data
     [] Train on full & mini dataset in cluster.
+    [] Analyzing why the model won't train:
+      - including more data?
 
     Next:
     - Implement FeaStNet network.
