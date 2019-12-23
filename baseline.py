@@ -19,7 +19,7 @@ samples = 50  # Doesn't currently do anything.
 epochs = 300
 batch_size = 20
 validation_split = .2
-shuffle_dataset = True
+shuffle_dataset = False
 random_seed = 42
 dropout = False  # too much dropout?
 learning_rate = .001
@@ -44,7 +44,7 @@ train_dataset = dataset[:cutoff]
 test_dataset = dataset[cutoff:]
 
 
-train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size)
+train_loader = DataLoader(train_dataset, shuffle=shuffle_dataset, batch_size=batch_size)
 test_loader = DataLoader(test_dataset, shuffle=False, batch_size=len(test_dataset))
 
 
