@@ -47,10 +47,6 @@ test_dataset = dataset[cutoff:]
 train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size)
 test_loader = DataLoader(test_dataset, shuffle=False, batch_size=len(test_dataset))
 
-next(iter(train_loader)).y[:200]
-
-
-
 
 # Notes on training:
 # The size of the input matrix = [n_nodes, n_x(explicit features)]
