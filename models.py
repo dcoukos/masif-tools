@@ -7,6 +7,11 @@ from utils import generate_weights
 '''
 This file implements the models.
 
+
+With model weights of 0.2, and 0.8, the model does not appear to train. Weight gradients quickly
+peak around 0, and predictions are stabilized at 0.
+With model weights of 0.1 and 0.9, the model does not appear to train. Weight gradients are more
+widely distributed, but predictions are quickly stabilized to 1.
 '''
 
 

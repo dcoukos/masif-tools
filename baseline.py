@@ -16,21 +16,25 @@ baseline.py implements a baseline model. Experiment using pytorch-geometric
 writer = SummaryWriter()
 
 samples = 50  # Doesn't currently do anything.
-epochs = 200
+epochs = 300
 batch_size = 20
 validation_split = .2
 shuffle_dataset = True
 random_seed = 42
-dropout = True
-learning_rate = .1
+dropout = True  # too much dropout?
+learning_rate = .01
 weight_decay = 1e-4
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-dataset = MiniStructures(pre_transform=FaceToEdge())
+dataset = MiniStructures(root='./datasets/mini_pos/', pre_transform=FaceToEdge())
+# Add momentum? After a couple epochs, gradients locked in at 0.
 samples = len(dataset)
 if shuffle_dataset:
     dataset = dataset.shuffle()
 n_features = dataset.get(0).x.shape[1]
+
+dataset.get(0)
+
 
 model = Basic_Net(n_features, dropout=dropout).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
@@ -81,7 +85,7 @@ for epoch in range(1, epochs+1):
             first_batch_labels = data.y.clone().detach().to(device)
             pred = out.clone().detach().round().to(device)
 
-    print("---- Round {}: loss={:.4f} ".format(epoch, loss))
+    print("---- Round {}: loss={:.4f} ".format(epoch, loss))  # n_counts changes ... why?
 
     (train_TP, train_FP, train_TN, train_FN) = perf_measure(pred, first_batch_labels)
     print("Performance measures: {} {} {} {}".format(train_TP, train_FP, train_TN, train_FN))

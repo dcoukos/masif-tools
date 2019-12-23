@@ -1,6 +1,6 @@
 import torch
 from sklearn.metrics import classification_report
-
+from dataset import MiniStructures
 
 def perf_measure(pred, labels):
     '''Calculates and returns performance metrics from two tensors when doing binary
@@ -25,4 +25,11 @@ def generate_weights(labels):
     '''
         Takes a label tensor, and generates scoring weights for binary_cross_entropy
     '''
-    return (labels.clone().detach()*0.8 + 0.2)
+    example = MiniStructures()
+    n_nodes = float(len(example.data.y))
+    n_pos_nodes = example.data.y.sum().item()
+    n_neg_nodes = n_nodes - n_pos_nodes
+    ratio_neg = n_neg_nodes/n_nodes
+    ratio_pos = n_pos_nodes/n_nodes
+
+    return (labels.clone().detach()*ratio_neg + ratio_pos)

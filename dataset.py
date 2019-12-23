@@ -26,17 +26,18 @@ def convert_data(path_to_raw='./structures/'):
     print('Done.')
 
 
-def convert_mini_data(path_to_raw='./structures/'):
+def convert_mini_data(path_to_raw='./structures/', path_to_output='./datasets/mini/raw/',
+                      use_shape_data=True):
     '''Generate raw unprocessed torch file to generate pyg datasets with fewer
         candidates.
     '''
     # Does this require a different dataset directory? Can try, just back up
     # structures.pt file.
 
-    structures = [read_ply(path) for path in tqdm(glob(path_to_raw + '*')[:200],
+    structures = [read_ply(path, use_shape_data) for path in tqdm(glob(path_to_raw + '*')[:200],
                   desc='Reading structures')]
     print('Saving structures to file as pytorch object ...')
-    torch.save(structures, 'datasets/mini/raw/mini_structures.pt')
+    torch.save(structures, path_to_output+'mini_structures.pt')
     print('Done.')
 
 
@@ -77,47 +78,50 @@ def collate(data_list):
 
 
 def generate_raw_data():
+    # function for development, no longer used.
     data_list = [read_ply(path, True) for path in
-                 glob.glob('./temp/*')]
+                 glob.glob('./structures/*')]
     data, slices = collate(data_list)
     torch.save((data, slices), './structures/raw/data.pt')
 
 
 def generate_raw_mini_data(n_structures=300):
+    # function for development, no longer used.
     data_list = [read_ply(path, True) for path in
-                 glob.glob('./temp/*')[:n_structures]]
+                 glob.glob('./structures/*')[:n_structures]]
     data, slices = collate(data_list)
     torch.save((data, slices), './mini_structures/raw/data.pt')
 
 
-def read_ply(path, learn_iface=True):
+def read_ply(path, use_shape_data=False, learn_iface=True):
     '''
         read_ply from pytorch_geometric does not capture the properties in ply
         file. This function adds to pyg's read_ply function by capturing extra
         properties: charge, hbond, hphob, and iface.
 
+
     '''
+    if learn_iface is False:
+        raise NotImplementedError
+
     with open(path, 'rb') as f:
         data = PlyData.read(f)
 
     pos = ([torch.tensor(data['vertex'][axis]) for axis in ['x', 'y', 'z']])
     pos = torch.stack(pos, dim=-1)
 
-    norm = ([torch.tensor(data['vertex'][axis])
-            for axis in ['nx', 'ny', 'nz']])
+    norm = ([torch.tensor(data['vertex'][axis]) for axis in ['nx', 'ny', 'nz']])
     norm = torch.stack(norm, dim=-1)
 
+    x = ([torch.tensor(data['vertex'][axis]) for axis in ['charge', 'hbond', 'hphob']])
+    x = torch.stack(x, dim=-1)
     y = None
-    if learn_iface:
-        x = ([torch.tensor(data['vertex'][axis]) for axis in
-             ['charge', 'hbond', 'hphob']])
-        x = torch.stack(x, dim=-1)  # TODO: what does this do again?
-        y = [torch.tensor(data['vertex']['iface'])]
-        y = torch.stack(y, dim=-1)
-    else:
-        x = ([torch.tensor(data['vertex'][axis]) for axis in
-             ['charge', 'hbond', 'hphob', 'iface']])
-        x = torch.stack(x, dim=-1)
+    if use_shape_data:
+        x = torch.stack((x, pos, norm), dim=1)
+        x = x.reshape(-1, 9)
+
+    y = [torch.tensor(data['vertex']['iface'])]
+    y = torch.stack(y, dim=-1)
 
     face = None
     if 'face' in data:
@@ -137,7 +141,6 @@ class MiniStructures(InMemoryDataset):
 
     @property  # What does the property decorator do?
     def raw_file_names(self):
-        # Returns empty list as raw copy is local.
         return ['mini_structures.pt']
 
     @property
@@ -148,8 +151,6 @@ class MiniStructures(InMemoryDataset):
         pass
 
     def process(self):
-        # Read data into huge `Data` list.
-
         data_list = torch.load(self.raw_paths[0])
 
         if self.pre_filter is not None:
@@ -169,12 +170,10 @@ class Structures(InMemoryDataset):
 
     @property
     def raw_file_names(self):
-        # Returns empty list as raw copy is local.
         return ['structures.pt']
 
     @property
     def processed_file_names(self):
-        # How to know which one is returned as dataset?
         return ['structures.pt']
 
     def download(self):
@@ -195,18 +194,17 @@ class Structures(InMemoryDataset):
 
 
 class StoredStructures(Dataset):
+    # Doesn't work yet, something about not finding processed files.
     def __init__(self, root='./datasets/full/', transform=None, pre_transform=None):
         super(StoredStructures, self).__init__(root, transform, pre_transform)
         self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
-        # Returns empty list as raw copy is local.
         return ['structures.pt']
 
     @property
     def processed_file_names(self):
-        # How to know which one is returned as dataset?
         return ['structures_1.pt']
 
     def __len__(self):
