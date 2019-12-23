@@ -21,8 +21,8 @@ batch_size = 20
 validation_split = .2
 shuffle_dataset = True
 random_seed = 42
-dropout = True  # too much dropout?
-learning_rate = .01
+dropout = False  # too much dropout?
+learning_rate = .001
 weight_decay = 1e-4
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
