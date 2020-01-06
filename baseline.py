@@ -28,6 +28,7 @@ shuffle_dataset = False
 random_seed = 42
 dropout = False  # too much dropout?
 learning_rate = .001
+lr_decay = 0.99
 weight_decay = 1e-4
 
 dataset = MiniStructures(root='./datasets/mini_pos/', pre_transform=FaceToEdge())
@@ -72,17 +73,17 @@ labels = datapoint.y.to(device)
 writer.add_graph(model, input_to_model=(x, edge_index, labels, torch.Tensor()))
 
 loss = 1
-lr_changed = False
+prev_loss = 1
 for epoch in range(1, epochs+1):
     # rotate the structures between epochs
     model.train()
     # dataset_ = [converter(structure) for structure in dataset]
     first_batch_labels = torch.Tensor()
     pred = torch.Tensor()
-    if not lr_changed and loss < 0.14:
+    if prev_loss < loss:
         for g in optimizer.param_groups:
-            g['lr'] = 0.0001
-        lr_changed = True
+            g['lr'] = g['lr']*lr_decay
+    prev_loss = loss
     for batch_n, data in enumerate(train_loader):
         optimizer.zero_grad()
         x, edge_index = data.x.to(device), data.edge_index.to(device)
