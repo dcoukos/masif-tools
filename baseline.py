@@ -2,8 +2,9 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from torch_geometric.data import DataLoader
-from models import Basic_Net
+from models import BasicNet, FeaStNet
 from torch_geometric.transforms import FaceToEdge
+from torch_geometric.utils import precision, recall, f1_score
 from dataset import Structures, MiniStructures
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_curve, roc_auc_score
@@ -13,10 +14,14 @@ baseline.py implements a baseline model. Experiment using pytorch-geometric
     and FeaStNet.
 '''
 
-writer = SummaryWriter()
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 samples = 50  # Doesn't currently do anything.
-epochs = 300
+if str(device) == 'cuda':
+    epochs = 300
+else:
+    epochs = 10
 batch_size = 20
 validation_split = .2
 shuffle_dataset = False
@@ -25,7 +30,6 @@ dropout = False  # too much dropout?
 learning_rate = .001
 weight_decay = 1e-4
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 dataset = MiniStructures(root='./datasets/mini_pos/', pre_transform=FaceToEdge())
 # Add momentum? After a couple epochs, gradients locked in at 0.
 samples = len(dataset)
@@ -34,8 +38,13 @@ if shuffle_dataset:
 n_features = dataset.get(0).x.shape[1]
 
 
-model = Basic_Net(n_features, dropout=dropout).to(device)
+model = FeaStNet(n_features, dropout=dropout).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+
+writer = SummaryWriter(comment='model:{}_lr:{}_dr:{}_sh:{}'.format(str(type(model)).split('.')[1],
+                                                                   learning_rate,
+                                                                   dropout,
+                                                                   shuffle_dataset))
 
 cutoff = int(np.floor(samples*(1-validation_split)))
 train_dataset = dataset[:cutoff]
@@ -61,16 +70,19 @@ x, edge_index = datapoint.x.to(device), datapoint.edge_index.to(device)
 labels = datapoint.y.to(device)
 
 writer.add_graph(model, input_to_model=(x, edge_index, labels, torch.Tensor()))
+
 loss = 1
+lr_changed = False
 for epoch in range(1, epochs+1):
     # rotate the structures between epochs
     model.train()
     # dataset_ = [converter(structure) for structure in dataset]
     first_batch_labels = torch.Tensor()
     pred = torch.Tensor()
-    if loss < 0.14:
-        # reduce learning rate.
-        pass
+    if not lr_changed and loss < 0.14:
+        for g in optimizer.param_groups:
+            g['lr'] = 0.0001
+        lr_changed = True
     for batch_n, data in enumerate(train_loader):
         optimizer.zero_grad()
         x, edge_index = data.x.to(device), data.edge_index.to(device)
@@ -87,6 +99,9 @@ for epoch in range(1, epochs+1):
     (train_TP, train_FP, train_TN, train_FN) = perf_measure(pred, first_batch_labels)
     print("Performance measures: {} {} {} {}".format(train_TP, train_FP, train_TN, train_FN))
     # print(stats(last_batch_labels, pred))
+    train_precision = precision(pred, first_batch_labels, 2)[1].item()
+    train_recall = recall(pred, first_batch_labels, 2)[1].item()
+    train_f1 = f1_score(pred, first_batch_labels, 2)[1].item()
 
     model.eval()
     x, edge_index = test_data.x.to(device), test_data.edge_index.to(device)
@@ -95,7 +110,9 @@ for epoch in range(1, epochs+1):
     pred = out.detach().round().to(device)
 
     (test_TP, test_FP, test_TN, test_FN) = perf_measure(pred, test_labels)
-
+    test_precision = precision(pred, test_labels, 2)[1].item()
+    test_recall = recall(pred, test_labels, 2)[1].item()
+    test_f1 = f1_score(pred, test_labels, 2)[1].item()
     #  --------------  REPORTING ------------------------------------
 
     writer.add_scalars('True positive rate', {'train': train_TP,
@@ -106,7 +123,12 @@ for epoch in range(1, epochs+1):
                                               'test': test_TN}, epoch)
     writer.add_scalars('False negative rate', {'train': train_FN,
                                                'test': test_FN}, epoch)
-    # writer.add_scalars('Loss', {'train': })
+    writer.add_scalars('Recall', {'train': train_recall,
+                                  'test': test_recall}, epoch)
+    writer.add_scalars('Precision', {'train': train_precision,
+                                     'test': test_precision}, epoch)
+    writer.add_scalars('F1_score', {'train': train_f1,
+                                    'test': test_f1}, epoch)
 
     writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)
     writer.add_histogram('Layer 1 bias', model.conv1.bias, epoch+1)
@@ -127,6 +149,5 @@ for epoch in range(1, epochs+1):
     writer.add_histogram('Layer 5 weights', model.lin2.weight, epoch+1)
     writer.add_histogram('Layer 5 bias', model.lin2.bias, epoch+1)
     writer.add_histogram('Layer 5 weight gradients', model.lin2.weight.grad, epoch+1)
-
 
 writer.close()
