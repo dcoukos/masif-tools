@@ -209,18 +209,18 @@ class GraphUNet(torch.nn.Module):
         loss = F.binary_cross_entropy(x, target=labels, weight=generate_weights(labels))
         return loss, x
 
-        def augment_adj(self, edge_index, edge_weight, num_nodes):
-            edge_index, edge_weight = add_self_loops(edge_index, edge_weight,
-                                                     num_nodes=num_nodes)
-            edge_index, edge_weight = sort_edge_index(edge_index, edge_weight,
-                                                      num_nodes)
-            edge_index, edge_weight = spspmm(edge_index, edge_weight, edge_index,
-                                             edge_weight, num_nodes, num_nodes,
-                                             num_nodes)
-            edge_index, edge_weight = remove_self_loops(edge_index, edge_weight)
-            return edge_index, edge_weight
+    def augment_adj(self, edge_index, edge_weight, num_nodes):
+        edge_index, edge_weight = add_self_loops(edge_index, edge_weight,
+                                                 num_nodes=num_nodes)
+        edge_index, edge_weight = sort_edge_index(edge_index, edge_weight,
+                                                  num_nodes)
+        edge_index, edge_weight = spspmm(edge_index, edge_weight, edge_index,
+                                         edge_weight, num_nodes, num_nodes,
+                                         num_nodes)
+        edge_index, edge_weight = remove_self_loops(edge_index, edge_weight)
+        return edge_index, edge_weight
 
-        def __repr__(self):
-            return '{}({}, {}, {}, depth={}, pool_ratios={})'.format(
-                self.__class__.__name__, self.in_channels, self.hidden_channels,
-                self.out_channels, self.depth, self.pool_ratios)
+    def __repr__(self):
+        return '{}({}, {}, {}, depth={}, pool_ratios={})'.format(
+            self.__class__.__name__, self.in_channels, self.hidden_channels,
+            self.out_channels, self.depth, self.pool_ratios)
