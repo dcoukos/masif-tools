@@ -5,7 +5,7 @@ from torch_geometric.data import DataLoader
 from models import Basic_Net
 from torch_geometric.transforms import FaceToEdge
 from dataset import Structures, MiniStructures
-from torch.utils.tensorboard import SummaryWriter, FileWriter
+from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_curve, roc_auc_score
 from utils import perf_measure, stats
 '''
@@ -32,8 +32,6 @@ samples = len(dataset)
 if shuffle_dataset:
     dataset = dataset.shuffle()
 n_features = dataset.get(0).x.shape[1]
-
-dataset.get(0)
 
 
 model = Basic_Net(n_features, dropout=dropout).to(device)
@@ -63,13 +61,16 @@ x, edge_index = datapoint.x.to(device), datapoint.edge_index.to(device)
 labels = datapoint.y.to(device)
 
 writer.add_graph(model, input_to_model=(x, edge_index, labels, torch.Tensor()))
-
+loss = 1
 for epoch in range(1, epochs+1):
     # rotate the structures between epochs
     model.train()
     # dataset_ = [converter(structure) for structure in dataset]
     first_batch_labels = torch.Tensor()
     pred = torch.Tensor()
+    if loss < 0.14:
+        # reduce learning rate.
+        pass
     for batch_n, data in enumerate(train_loader):
         optimizer.zero_grad()
         x, edge_index = data.x.to(device), data.edge_index.to(device)

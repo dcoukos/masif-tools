@@ -22,11 +22,13 @@
     [/] Implement ROC AUC eval metric.
     [] Implement Weight Bias initializations.
     [x] Implement modifications to deal with unbalanced data
-    [] Train on full & mini dataset in cluster.
-    [] Analyzing why the model won't train:
-      - including more data?
+    [/] Train on full & mini dataset in cluster.
+    [x] Analyzing why the model won't train
+    [] Implement tensorboard hyperparameter tracking
 
     Next:
+    - Increasing parameters
+    - Include penalty for non-grouped predictions.
     - Implement FeaStNet network.
     - Introduce custom pooling algorithm which does avg on the charge & max on
         the surface.
@@ -34,7 +36,7 @@
     - adaptive learning rate.
     - evaluate optimizers other than Adam?
     - Data parallelism
-    - Implement tensorboard hyperparameter tuning
+    -
 
     Then:
     - Study following networks and determine if they might be interesting:

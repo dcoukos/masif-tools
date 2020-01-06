@@ -216,7 +216,7 @@ class StoredStructures(Dataset):
     def process(self):
         # Read data into huge `Data` list.
         for i, raw_path in enumerate(self.raw_paths):
-            data = torch.load(raw_path)
+            data_list = torch.load(raw_path)  # Is this the correct way to load?
 
             if self.pre_filter is not None:
                 data_list = [data for data in data_list if self.pre_filter(data)]
@@ -225,7 +225,7 @@ class StoredStructures(Dataset):
                 data_list = [self.pre_transform(data) for data in data_list]
             # Not possible to store as a single object anymore? No speedup?
 
-            torch.save(data, osp.join(self.processed_dir, 'structures_{}'.format(i)))
+            torch.save(data_list, osp.join(self.processed_dir, 'structures_{}'.format(i)))
 
     def get(self, idx):
         data = torch.load(osp.join(self.processed_dir, 'data_{}.pt'.format(idx)))
