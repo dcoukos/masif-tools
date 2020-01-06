@@ -41,7 +41,7 @@ n_features = dataset.get(0).x.shape[1]
 model = FeaStNet(n_features, dropout=dropout).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-writer = SummaryWriter(comment='model:{}_lr:{}_dr:{}_sh:{}'.format(str(type(model)).split('.')[1],
+writer = SummaryWriter(comment='model:{}_lr:{}_dr:{}_sh:{}'.format(str(type(model)).split('.')[1].split("\'")[0],
                                                                    learning_rate,
                                                                    dropout,
                                                                    shuffle_dataset))
