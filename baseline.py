@@ -40,7 +40,7 @@ if shuffle_dataset:
 n_features = dataset.get(0).x.shape[1]
 
 
-model = GraphUNet(n_features, hidden_channels=1024, out_channels=1, depth=3).to(device)
+model = GraphUNet(n_features, hidden_channels=64, out_channels=1, depth=3).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_dr:{}_sh:{}'.format(str(type(model)).split('.')[1].split("\'")[0],
