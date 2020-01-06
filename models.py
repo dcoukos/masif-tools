@@ -203,7 +203,7 @@ class GraphUNet(torch.nn.Module):
             up[perm] = x
             x = res + up if self.sum_res else torch.cat((res, up), dim=-1)
 
-            x = self.up_convs[i](x, edge_index, edge_weight)
+            x = self.up_convs[i](x, edge_index)
             x = self.act(x) if i < self.depth - 1 else x
 
         loss = F.binary_cross_entropy(x, target=labels, weight=generate_weights(labels))
