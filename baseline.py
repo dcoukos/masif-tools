@@ -133,7 +133,7 @@ for epoch in range(1, epochs+1):
                                      'test': test_precision}, epoch)
     writer.add_scalars('F1_score', {'train': train_f1,
                                     'test': test_f1}, epoch)
-
+'''
     writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)
     writer.add_histogram('Layer 1 bias', model.conv1.bias, epoch+1)
     writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
@@ -153,5 +153,5 @@ for epoch in range(1, epochs+1):
     writer.add_histogram('Layer 5 weights', model.lin2.weight, epoch+1)
     writer.add_histogram('Layer 5 bias', model.lin2.bias, epoch+1)
     writer.add_histogram('Layer 5 weight gradients', model.lin2.weight.grad, epoch+1)
-
+'''
 writer.close()
