@@ -1,8 +1,9 @@
 import torch
 import numpy as np
+from decimal import Decimal
 import matplotlib.pyplot as plt
 from torch_geometric.data import DataLoader
-from models import BasicNet, FeaStNet
+from models import BasicNet, FeaStNet, GraphUNet
 from torch_geometric.transforms import FaceToEdge
 from torch_geometric.utils import precision, recall, f1_score
 from dataset import Structures, MiniStructures
@@ -39,7 +40,7 @@ if shuffle_dataset:
 n_features = dataset.get(0).x.shape[1]
 
 
-model = FeaStNet(n_features, dropout=dropout).to(device)
+model = GraphUNet(n_features, hidden_channels=1024, out_channels=1, depth=3).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_dr:{}_sh:{}'.format(str(type(model)).split('.')[1].split("\'")[0],
@@ -70,8 +71,9 @@ datapoint = dataset.get(0)
 x, edge_index = datapoint.x.to(device), datapoint.edge_index.to(device)
 labels = datapoint.y.to(device)
 
-writer.add_graph(model, input_to_model=(x, edge_index, labels, torch.Tensor()))
+#writer.add_graph(model, input_to_model=(x, edge_index, labels))
 
+# previous loss stored for adaptive learning rate.
 loss = 1
 prev_loss = 1
 for epoch in range(1, epochs+1):
@@ -80,9 +82,10 @@ for epoch in range(1, epochs+1):
     # dataset_ = [converter(structure) for structure in dataset]
     first_batch_labels = torch.Tensor()
     pred = torch.Tensor()
-    if prev_loss < loss:
+    if prev_loss < loss:  # adaptive learning rate.
         for g in optimizer.param_groups:
-            g['lr'] = g['lr']*lr_decay
+            learning_rate = learning_rate*lr_decay
+            g['lr'] = learning_rate
     prev_loss = loss
     for batch_n, data in enumerate(train_loader):
         optimizer.zero_grad()
@@ -95,7 +98,7 @@ for epoch in range(1, epochs+1):
             first_batch_labels = data.y.clone().detach().to(device)
             pred = out.clone().detach().round().to(device)
 
-    print("---- Round {}: loss={:.4f} ".format(epoch, loss))  # n_counts changes ... why?
+    print("---- Round {}: loss={:.4f} lr:{:.4f}".format(epoch, loss, Decimal(learning_rate)))
 
     (train_TP, train_FP, train_TN, train_FN) = perf_measure(pred, first_batch_labels)
     print("Performance measures: {} {} {} {}".format(train_TP, train_FP, train_TN, train_FN))
