@@ -15,25 +15,25 @@ Step 1: Basline Implementation
 
 
 Step 2:
-- [] ~~Reimplement network with Deep Graph Library~~
+- [ ] ~~Reimplement network with Deep Graph Library~~
 - [/] Create in-memory dataset, and mini-dataset. --> Current
-- [] Create stored dataset
+- [ ] Create stored dataset
 - [x] Set-up tensorboard reporting
 - [x] Implement ROC AUC eval metric.
-- [] Implement Weight Bias initializations.
+- [ ] Implement Weight Bias initializations.
 - [x] Implement modifications to deal with unbalanced data
 - [/] Train on full & mini dataset in cluster.
 - [x] Analyzing why the model won't train
 
 Next:
-- [] Include penalty for non-grouped predictions.
-- [] Visualize predictions.
+- [ ] Include penalty for non-grouped predictions.
+- [ ] Visualize predictions.
 - [x] Implement FeaStNet network.
-- [] Introduce multi-scale architecture
+- [ ] Introduce multi-scale architecture
 - [x] adaptive learning rate.
-- [] evaluate optimizers other than Adam?
-- [] Data parallelism
-- [] Implement tensorboard hyperparameter tracking
+- [ ] evaluate optimizers other than Adam?
+- [ ] Data parallelism
+- [ ] Implement tensorboard hyperparameter tracking
 
 Then:
 - Study following networks and determine if they might be interesting:
