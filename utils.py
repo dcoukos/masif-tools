@@ -1,5 +1,4 @@
 import torch
-import pymesh
 from sklearn.metrics import classification_report
 from dataset import MiniStructures, read_ply
 from torch_geometric.transforms import FaceToEdge
@@ -45,6 +44,7 @@ def generate_example_surfaces(model_type, path, n_examples=5):
         structures through the model, and saves the graph vertices with the predicted surface
         interface labels.
     '''
+    import pymesh
     converter = FaceToEdge()
 
     paths = glob('./structures/*')[:n_examples]
