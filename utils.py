@@ -44,7 +44,6 @@ def generate_example_surfaces(model_type, path, n_examples=5):
         structures through the model, and saves the graph vertices with the predicted surface
         interface labels.
     '''
-    import pymesh
     converter = FaceToEdge()
 
     paths = glob('./structures/*')[:n_examples]
@@ -97,6 +96,8 @@ def save_ply(
         vertices: coordinates of vertices
         faces: mesh
     """
+    import pymesh  # No pymesh on gpu cluster
+    
     mesh = pymesh.form_mesh(vertices, faces)
     if normals is not None:
         n1 = normals[:, 0]

@@ -27,7 +27,7 @@ Step 2:
 
 Next:
 - [ ] Include penalty for non-grouped predictions.
-- [ ] Visualize predictions.
+- [x] Visualize predictions.
 - [x] Implement FeaStNet network.
 - [ ] Introduce multi-scale architecture
 - [x] adaptive learning rate.
