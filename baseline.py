@@ -3,13 +3,15 @@ import numpy as np
 from decimal import Decimal
 import matplotlib.pyplot as plt
 from torch_geometric.data import DataLoader
-from models import BasicNet, FeaStNet, GraphUNet
+from models import BasicNet, FeaStNet
 from torch_geometric.transforms import FaceToEdge
 from torch_geometric.utils import precision, recall, f1_score
 from dataset import Structures, MiniStructures
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_curve, roc_auc_score
 from utils import perf_measure, stats
+from glob import glob
+import datetime
 '''
 baseline.py implements a baseline model. Experiment using pytorch-geometric
     and FeaStNet.
@@ -40,7 +42,7 @@ if shuffle_dataset:
 n_features = dataset.get(0).x.shape[1]
 
 
-model = GraphUNet(n_features, hidden_channels=64, out_channels=1, depth=2).to(device)
+model = BasicNet(n_features, dropout=False).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_dr:{}_sh:{}'.format(str(type(model)).split('.')[1].split("\'")[0],
@@ -71,11 +73,15 @@ datapoint = dataset.get(0)
 x, edge_index = datapoint.x.to(device), datapoint.edge_index.to(device)
 labels = datapoint.y.to(device)
 
-#writer.add_graph(model, input_to_model=(x, edge_index, labels))
+# writer.add_graph(model, input_to_model=(x, edge_index, labels))
 
 # previous loss stored for adaptive learning rate.
 loss = 1
 prev_loss = 1
+
+# FOR DEVELOPMENT:
+epochs = 1
+
 for epoch in range(1, epochs+1):
     # rotate the structures between epochs
     model.train()
@@ -100,6 +106,8 @@ for epoch in range(1, epochs+1):
 
     print("---- Round {}: loss={:.4f} lr:{:.4f}".format(epoch, loss, Decimal(learning_rate)))
 
+    #  --------------  REPORTING ------------------------------------
+
     (train_TP, train_FP, train_TN, train_FN) = perf_measure(pred, first_batch_labels)
     print("Performance measures: {} {} {} {}".format(train_TP, train_FP, train_TN, train_FN))
     # print(stats(last_batch_labels, pred))
@@ -117,7 +125,6 @@ for epoch in range(1, epochs+1):
     test_precision = precision(pred, test_labels, 2)[1].item()
     test_recall = recall(pred, test_labels, 2)[1].item()
     test_f1 = f1_score(pred, test_labels, 2)[1].item()
-    #  --------------  REPORTING ------------------------------------
 
     writer.add_scalars('True positive rate', {'train': train_TP,
                                               'test': test_TP}, epoch)
@@ -133,7 +140,7 @@ for epoch in range(1, epochs+1):
                                      'test': test_precision}, epoch)
     writer.add_scalars('F1_score', {'train': train_f1,
                                     'test': test_f1}, epoch)
-'''
+
     writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)
     writer.add_histogram('Layer 1 bias', model.conv1.bias, epoch+1)
     writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
@@ -153,5 +160,8 @@ for epoch in range(1, epochs+1):
     writer.add_histogram('Layer 5 weights', model.lin2.weight, epoch+1)
     writer.add_histogram('Layer 5 bias', model.lin2.bias, epoch+1)
     writer.add_histogram('Layer 5 weight gradients', model.lin2.weight.grad, epoch+1)
-'''
+
 writer.close()
+
+now = datetime.datetime.now().strftime('%y%m%d%H%M')
+torch.save(model.state_dict(), 'models/{}_{}.pt'.format(str(model).split('(')[0], now))
