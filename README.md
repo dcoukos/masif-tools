@@ -8,6 +8,7 @@ Dev Goal 1: develop model for predicting interface in ply files.
 Step 1: Basline Implementation
 
 [x] Batch import the dataset
+
 [x] Figure out train/validation split
 [x] Create the network --> Current
 [x] Write a training step
