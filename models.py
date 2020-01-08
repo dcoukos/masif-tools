@@ -100,3 +100,59 @@ class FeaStNet(torch.nn.Module):
             loss = F.binary_cross_entropy(x, target=labels, weight=generate_weights(labels))
 
         return loss, x
+
+class ANN(torch.nn.Module):
+    '''
+        Large ANN.
+    '''
+    def __init__(self, n_features, dropout=False):
+        super(ANN, self)
+        self.lin1 = Linear(n_features, 100)
+        self.lin2 = Linear(100, 100)
+        self.lin3 = Linear(100, 100)
+        self.lin4 = Linear(100, 100)
+        self.lin5 = Linear(100, 100)
+        self.lin6 = Linear(100, 100)
+        self.lin7 = Linear(100, 100)
+        self.lin8 = Linear(100, 100)
+        self.lin9 = Linear(100, 100)
+        self.lin10 = Linear(100, 100)
+        self.lin11 = Linar(100, 1)
+        self.dropout = dropout
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    def forward(self, x, labels):
+        x = self.lin1(x)
+        x.relu(x)
+        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.lin2(x)
+        x.relu(x)
+        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.lin3(x)
+        x.relu(x)
+        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.lin4(x)
+        x.relu(x)
+        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.lin5(x)
+        x.relu(x)
+        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.lin6(x)
+        x.relu(x)
+        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.lin7(x)
+        x.relu(x)
+        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.lin8(x)
+        x.relu(x)
+        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.lin9(x)
+        x.relu(x)
+        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.lin10(x)
+        x.relu(x)
+        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.lin11(x)
+        x = torch.sigmoid(x)
+
+        return F.binary_cross_entropy(x, target=labels, weight=generate_weights(labels)), x
