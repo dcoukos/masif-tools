@@ -101,7 +101,7 @@ for epoch in range(1, epochs+1):
             first_batch_labels = data.y.clone().detach().to(device)
             pred = out.clone().detach().round().to(device)
 
-    print("---- Round {}: loss={:.4f} lr:{:.6f}").format(epoch, tr_loss, learning_rate))
+    print("---- Round {}: loss={:.4f} lr:{:.6f}".format(epoch, tr_loss, learning_rate))
 
     #  --------------  REPORTING ------------------------------------
 
@@ -138,7 +138,7 @@ for epoch in range(1, epochs+1):
     writer.add_scalars('F1_score', {'train': train_f1,
                                     'test': test_f1}, epoch)
     writer.add_scalars('Loss', {'train': tr_loss,
-                                    'test': te_loss}, epoch)
+                                'test': te_loss}, epoch)
     '''
     writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)
     writer.add_histogram('Layer 1 bias', model.conv1.bias, epoch+1)

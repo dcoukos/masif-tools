@@ -1,11 +1,8 @@
 import torch
 import torch.nn.functional as F
 from torch.nn import Linear
-from torch_geometric.nn import GCNConv, FeaStConv, graclus, max_pool, knn_interpolate, TopKPooling
+from torch_geometric.nn import GCNConv, FeaStConv
 from utils import generate_weights
-from torch_sparse import spspmm
-from torch_geometric.utils import add_self_loops, sort_edge_index, remove_self_loops
-from torch_geometric.utils.repeat import repeat
 
 
 '''
@@ -101,6 +98,7 @@ class FeaStNet(torch.nn.Module):
 
         return loss, x
 
+
 class ANN(torch.nn.Module):
     '''
         Large ANN.
@@ -157,23 +155,24 @@ class ANN(torch.nn.Module):
 
         return F.binary_cross_entropy(x, target=labels, weight=generate_weights(labels)), x
 
+
 class GCNN(torch.nn.Module):
     '''
         Large ANN.
     '''
     def __init__(self, n_features, dropout=True):
         super(ANN, self).__init__()
-        self.conv1 = GConv(n_features, 100)
-        self.conv2 = GConv(100, 100)
-        self.conv3 = GConv(100, 100)
-        self.conv4 = GConv(100, 100)
-        self.conv5 = GConv(100, 100)
-        self.conv6 = GConv(100, 100)
-        self.conv7 = GConv(100, 100)
-        self.conv8 = GConv(100, 100)
-        self.conv9 = GConv(100, 100)
-        self.lin10 = Linear(100, 100)
-        self.lin11 = Linear(100, 1)
+        self.conv1 = GCNConv(n_features, 100)
+        self.conv2 = GCNConv(100, 100)
+        self.conv3 = GCNConv(100, 100)
+        self.conv4 = GCNConv(100, 100)
+        self.conv5 = GCNConv(100, 100)
+        self.conv6 = GCNConv(100, 100)
+        self.conv7 = GCNConv(100, 100)
+        self.conv8 = GCNConv(100, 100)
+        self.conv9 = GCNConv(100, 100)
+        self.fc1 = Linear(100, 100)
+        self.fc2 = Linear(100, 1)
         self.dropout = dropout
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -193,6 +192,22 @@ class GCNN(torch.nn.Module):
         x = self.conv5(x, edge_index)
         x.relu()
         x = F.dropout(x, training=self.training) if self.dropout else x
-        x = self.conv2(x, edge_index)
+        x = self.conv6(x, edge_index)
         x.relu()
         x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.conv7(x, edge_index)
+        x.relu()
+        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.conv8(x, edge_index)
+        x.relu()
+        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.conv9(x, edge_index)
+        x.relu()
+        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.fc1(x)
+        x.relu()
+        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.fc2(x)
+        x = torch.sigmoid(x)
+
+        return F.binary_cross_entropy(x, target=labels, weight=generate_weights(labels)), x
