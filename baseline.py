@@ -3,7 +3,7 @@ import numpy as np
 from decimal import Decimal
 import matplotlib.pyplot as plt
 from torch_geometric.data import DataLoader
-from models import BasicNet, FeaStNet
+from models import BasicNet, FeaStNet, ANN
 from torch_geometric.transforms import FaceToEdge
 from torch_geometric.utils import precision, recall, f1_score
 from dataset import Structures, MiniStructures
@@ -22,10 +22,10 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 samples = 50  # Doesn't currently do anything.
 if str(device) == 'cuda':
-    epochs = 300
+    epochs = 600
 else:
     epochs = 10
-batch_size = 20
+batch_size = 10
 validation_split = .2
 shuffle_dataset = False
 random_seed = 42
@@ -34,7 +34,7 @@ learning_rate = .001
 lr_decay = 0.99
 weight_decay = 1e-4
 
-dataset = Structures(root='./datasets/full/', pre_transform=FaceToEdge())
+dataset = MiniStructures(root='./datasets/mini_pos/', pre_transform=FaceToEdge())
 # Add momentum? After a couple epochs, gradients locked in at 0.
 samples = len(dataset)
 if shuffle_dataset:
@@ -42,7 +42,7 @@ if shuffle_dataset:
 n_features = dataset.get(0).x.shape[1]
 
 
-model = BasicNet(n_features, dropout=False).to(device)
+model = ANN(n_features, dropout=False).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_dr:{}_sh:{}'.format(str(type(model)).split('.')[1].split("\'")[0],
@@ -76,11 +76,8 @@ labels = datapoint.y.to(device)
 # writer.add_graph(model, input_to_model=(x, edge_index, labels))
 
 # previous loss stored for adaptive learning rate.
-loss = 1
+tr_loss = 1
 prev_loss = 1
-
-# FOR DEVELOPMENT:
-epochs = 1
 
 for epoch in range(1, epochs+1):
     # rotate the structures between epochs
@@ -88,23 +85,23 @@ for epoch in range(1, epochs+1):
     # dataset_ = [converter(structure) for structure in dataset]
     first_batch_labels = torch.Tensor()
     pred = torch.Tensor()
-    if prev_loss < loss:  # adaptive learning rate.
+    if prev_loss < tr_loss:  # adaptive learning rate.
         for g in optimizer.param_groups:
             learning_rate = learning_rate*lr_decay
             g['lr'] = learning_rate
-    prev_loss = loss
+    prev_loss = tr_loss
     for batch_n, data in enumerate(train_loader):
         optimizer.zero_grad()
         x, edge_index = data.x.to(device), data.edge_index.to(device)
         labels = data.y.to(device)
-        loss, out = model(x, edge_index, labels)
-        loss.backward()
+        tr_loss, out = model(x, edge_index, labels)
+        tr_loss.backward()
         optimizer.step()
         if batch_n == 0:
             first_batch_labels = data.y.clone().detach().to(device)
             pred = out.clone().detach().round().to(device)
 
-    print("---- Round {}: loss={:.4f} lr:{:.4f}".format(epoch, loss, Decimal(learning_rate)))
+    print("---- Round {}: loss={:.4f} lr:{:.6f}").format(epoch, tr_loss, learning_rate))
 
     #  --------------  REPORTING ------------------------------------
 
@@ -118,7 +115,7 @@ for epoch in range(1, epochs+1):
     model.eval()
     x, edge_index = test_data.x.to(device), test_data.edge_index.to(device)
     labels = test_data.y.to(device)
-    _, out = model(x, edge_index, labels)
+    te_loss, out = model(x, edge_index, labels)
     pred = out.detach().round().to(device)
 
     (test_TP, test_FP, test_TN, test_FN) = perf_measure(pred, test_labels)
@@ -140,7 +137,9 @@ for epoch in range(1, epochs+1):
                                      'test': test_precision}, epoch)
     writer.add_scalars('F1_score', {'train': train_f1,
                                     'test': test_f1}, epoch)
-
+    writer.add_scalars('Loss', {'train': tr_loss,
+                                    'test': te_loss}, epoch)
+    '''
     writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)
     writer.add_histogram('Layer 1 bias', model.conv1.bias, epoch+1)
     writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
@@ -160,6 +159,7 @@ for epoch in range(1, epochs+1):
     writer.add_histogram('Layer 5 weights', model.lin2.weight, epoch+1)
     writer.add_histogram('Layer 5 bias', model.lin2.bias, epoch+1)
     writer.add_histogram('Layer 5 weight gradients', model.lin2.weight.grad, epoch+1)
+    '''
 
 writer.close()
 

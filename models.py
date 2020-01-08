@@ -105,8 +105,8 @@ class ANN(torch.nn.Module):
     '''
         Large ANN.
     '''
-    def __init__(self, n_features, dropout=False):
-        super(ANN, self)
+    def __init__(self, n_features, dropout=True):
+        super(ANN, self).__init__()
         self.lin1 = Linear(n_features, 100)
         self.lin2 = Linear(100, 100)
         self.lin3 = Linear(100, 100)
@@ -117,42 +117,82 @@ class ANN(torch.nn.Module):
         self.lin8 = Linear(100, 100)
         self.lin9 = Linear(100, 100)
         self.lin10 = Linear(100, 100)
-        self.lin11 = Linar(100, 1)
+        self.lin11 = Linear(100, 1)
         self.dropout = dropout
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def forward(self, x, labels):
+    def forward(self, x, edge_index, labels):
         x = self.lin1(x)
-        x.relu(x)
+        x.relu()
         x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.lin2(x)
-        x.relu(x)
+        x.relu()
         x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.lin3(x)
-        x.relu(x)
+        x.relu()
         x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.lin4(x)
-        x.relu(x)
+        x.relu()
         x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.lin5(x)
-        x.relu(x)
+        x.relu()
         x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.lin6(x)
-        x.relu(x)
+        x.relu()
         x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.lin7(x)
-        x.relu(x)
+        x.relu()
         x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.lin8(x)
-        x.relu(x)
+        x.relu()
         x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.lin9(x)
-        x.relu(x)
+        x.relu()
         x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.lin10(x)
-        x.relu(x)
+        x.relu()
         x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.lin11(x)
         x = torch.sigmoid(x)
 
         return F.binary_cross_entropy(x, target=labels, weight=generate_weights(labels)), x
+
+class GCNN(torch.nn.Module):
+    '''
+        Large ANN.
+    '''
+    def __init__(self, n_features, dropout=True):
+        super(ANN, self).__init__()
+        self.conv1 = GConv(n_features, 100)
+        self.conv2 = GConv(100, 100)
+        self.conv3 = GConv(100, 100)
+        self.conv4 = GConv(100, 100)
+        self.conv5 = GConv(100, 100)
+        self.conv6 = GConv(100, 100)
+        self.conv7 = GConv(100, 100)
+        self.conv8 = GConv(100, 100)
+        self.conv9 = GConv(100, 100)
+        self.lin10 = Linear(100, 100)
+        self.lin11 = Linear(100, 1)
+        self.dropout = dropout
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    def forward(self, x, edge_index, labels):
+        x = self.conv1(x, edge_index)
+        x.relu()
+        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.conv2(x, edge_index)
+        x.relu()
+        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.conv3(x, edge_index)
+        x.relu()
+        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.conv4(x, edge_index)
+        x.relu()
+        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.conv5(x, edge_index)
+        x.relu()
+        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.conv2(x, edge_index)
+        x.relu()
+        x = F.dropout(x, training=self.training) if self.dropout else x
