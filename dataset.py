@@ -1,28 +1,23 @@
-from os import path as osp
 from glob import glob
 from tqdm import tqdm
 import torch
 from plyfile import PlyData
-from torch_geometric.data import Data, InMemoryDataset, Dataset
+from torch_geometric.data import Data, InMemoryDataset
 from itertools import product
 
 
 '''
 File to generate the dataset from the ply files.
-
-TODO:
-    - Create in-memory dataset
-    - Create mini in-memory dataset
 '''
 
 
 def convert_data(path_to_raw='./structures/'):
-    '''Generate raw unprocessed torch file to generate pyg datasets.
+    '''Generate raw unprocessed torch file to generate pyg datasets using all structures.
     '''
-    structures = [read_ply(path) for path in tqdm(glob(path_to_raw + '*'),
+    structures = [read_ply(path, use_shape_data=True) for path in tqdm(glob(path_to_raw + '*'),
                   desc='Reading structures')]
     print('Saving structures to file as pytorch object...')
-    torch.save(structures, 'datasets/full/raw/structures.pt')
+    torch.save(structures, 'datasets/full_pos/raw/structures.pt')
     print('Done.')
 
 
@@ -164,7 +159,7 @@ class MiniStructures(InMemoryDataset):
 
 
 class Structures(InMemoryDataset):
-    def __init__(self, root='./datasets/full/', transform=None, pre_transform=None):
+    def __init__(self, root='./datasets/full_pos/', transform=None, pre_transform=None):
         super(Structures, self).__init__(root, transform, pre_transform)
         self.data, self.slices = torch.load(self.processed_paths[0])
 
@@ -191,42 +186,3 @@ class Structures(InMemoryDataset):
 
         data, slices = self.collate(data_list)
         torch.save((data, slices), self.processed_paths[0])
-
-
-class StoredStructures(Dataset):
-    # Doesn't work yet, something about not finding processed files.
-    def __init__(self, root='./datasets/full/', transform=None, pre_transform=None):
-        super(StoredStructures, self).__init__(root, transform, pre_transform)
-        self.data, self.slices = torch.load(self.processed_paths[0])
-
-    @property
-    def raw_file_names(self):
-        return ['structures.pt']
-
-    @property
-    def processed_file_names(self):
-        return ['structures_1.pt']
-
-    def __len__(self):
-        return len(self.processed_file_names)
-
-    def download(self):
-        pass
-
-    def process(self):
-        # Read data into huge `Data` list.
-        for i, raw_path in enumerate(self.raw_paths):
-            data_list = torch.load(raw_path)  # Is this the correct way to load?
-
-            if self.pre_filter is not None:
-                data_list = [data for data in data_list if self.pre_filter(data)]
-
-            if self.pre_transform is not None:
-                data_list = [self.pre_transform(data) for data in data_list]
-            # Not possible to store as a single object anymore? No speedup?
-
-            torch.save(data_list, osp.join(self.processed_dir, 'structures_{}'.format(i)))
-
-    def get(self, idx):
-        data = torch.load(osp.join(self.processed_dir, 'data_{}.pt'.format(idx)))
-        return data

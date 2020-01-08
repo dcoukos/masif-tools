@@ -100,7 +100,3 @@ class FeaStNet(torch.nn.Module):
             loss = F.binary_cross_entropy(x, target=labels, weight=generate_weights(labels))
 
         return loss, x
-
-
-def custom_pool():
-    pass

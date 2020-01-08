@@ -34,7 +34,7 @@ learning_rate = .001
 lr_decay = 0.99
 weight_decay = 1e-4
 
-dataset = MiniStructures(root='./datasets/mini_pos/', pre_transform=FaceToEdge())
+dataset = Structures(root='./datasets/full/', pre_transform=FaceToEdge())
 # Add momentum? After a couple epochs, gradients locked in at 0.
 samples = len(dataset)
 if shuffle_dataset:
