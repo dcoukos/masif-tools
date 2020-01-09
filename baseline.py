@@ -31,10 +31,14 @@ shuffle_dataset = False
 random_seed = 42
 dropout = False  # too much dropout?
 learning_rate = .001
-lr_decay = 0.95
+lr_decay = 0.98
 weight_decay = 1e-4
+momentum = 0.9
 
 dataset = Structures(root='./datasets/full_pos/', pre_transform=FaceToEdge())
+is_full_ds = ''
+if dataset is Structures:
+    is_full_ds = '_full'
 # Add momentum? After a couple epochs, gradients locked in at 0.
 samples = len(dataset)
 if shuffle_dataset:
@@ -42,13 +46,18 @@ if shuffle_dataset:
 n_features = dataset.get(0).x.shape[1]
 
 
-model = FeaStNet(n_features, dropout=False).to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+model = ANN(n_features, dropout=False).to(device)
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay,
+                             momentum=momentum)
 
-writer = SummaryWriter(comment='model:{}_lr:{}_dr:{}_sh:{}_full'.format(str(type(model)).split('.')[1].split("\'")[0],
-                                                                   learning_rate,
-                                                                   dropout,
-                                                                   shuffle_dataset))
+writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_momentum:{}dr:{}_sh:{}{}'.format(str(type(model))
+                       .split('.')[1].split("\'")[0],
+                       learning_rate,
+                       lr_decay,
+                       momentum,
+                       dropout,
+                       shuffle_dataset,
+                       is_full_ds))
 
 cutoff = int(np.floor(samples*(1-validation_split)))
 train_dataset = dataset[:cutoff]
@@ -101,7 +110,8 @@ for epoch in range(1, epochs+1):
             first_batch_labels = data.y.clone().detach().to(device)
             pred = out.clone().detach().round().to(device)
 
-    print("---- Round {}: loss={:.4f} lr:{:.6f}".format(epoch, tr_loss, optimizer.param_groups[0]['lr']))
+    print("---- Round {}: loss={:.4f} lr:{:.6f}"
+          .format(epoch, tr_loss, optimizer.param_groups[0]['lr']))
 
     #  --------------  REPORTING ------------------------------------
 
