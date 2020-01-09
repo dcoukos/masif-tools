@@ -3,7 +3,7 @@ import numpy as np
 from decimal import Decimal
 import matplotlib.pyplot as plt
 from torch_geometric.data import DataLoader
-from models import BasicNet, FeaStNet, ANN
+from models import BasicNet, FeaStNet, ANN, GCNN
 from torch_geometric.transforms import FaceToEdge
 from torch_geometric.utils import precision, recall, f1_score
 from dataset import Structures, MiniStructures
@@ -22,7 +22,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 samples = 50  # Doesn't currently do anything.
 if str(device) == 'cuda':
-    epochs = 600
+    epochs = 300
 else:
     epochs = 10
 batch_size = 10
@@ -31,10 +31,10 @@ shuffle_dataset = False
 random_seed = 42
 dropout = False  # too much dropout?
 learning_rate = .001
-lr_decay = 0.99
+lr_decay = 0.95
 weight_decay = 1e-4
 
-dataset = MiniStructures(root='./datasets/mini_pos/', pre_transform=FaceToEdge())
+dataset = Structures(root='./datasets/full_pos/', pre_transform=FaceToEdge())
 # Add momentum? After a couple epochs, gradients locked in at 0.
 samples = len(dataset)
 if shuffle_dataset:
@@ -42,10 +42,10 @@ if shuffle_dataset:
 n_features = dataset.get(0).x.shape[1]
 
 
-model = ANN(n_features, dropout=False).to(device)
+model = FeaStNet(n_features, dropout=False).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-writer = SummaryWriter(comment='model:{}_lr:{}_dr:{}_sh:{}'.format(str(type(model)).split('.')[1].split("\'")[0],
+writer = SummaryWriter(comment='model:{}_lr:{}_dr:{}_sh:{}_full'.format(str(type(model)).split('.')[1].split("\'")[0],
                                                                    learning_rate,
                                                                    dropout,
                                                                    shuffle_dataset))

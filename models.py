@@ -124,25 +124,18 @@ class ANN(torch.nn.Module):
     def forward(self, x, edge_index, labels):
         x = self.lin1(x)
         x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.lin2(x)
         x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.lin3(x)
         x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.lin4(x)
         x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.lin5(x)
         x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.lin6(x)
         x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.lin7(x)
         x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.lin8(x)
         x.relu()
         x = F.dropout(x, training=self.training) if self.dropout else x
@@ -163,7 +156,7 @@ class GCNN(torch.nn.Module):
         Large ANN.
     '''
     def __init__(self, n_features, dropout=True):
-        super(ANN, self).__init__()
+        super(GCNN, self).__init__()
         self.conv1 = GCNConv(n_features, 100)
         self.conv2 = GCNConv(100, 100)
         self.conv3 = GCNConv(100, 100)
@@ -181,25 +174,18 @@ class GCNN(torch.nn.Module):
     def forward(self, x, edge_index, labels):
         x = self.conv1(x, edge_index)
         x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.conv2(x, edge_index)
         x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.conv3(x, edge_index)
         x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.conv4(x, edge_index)
         x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.conv5(x, edge_index)
         x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.conv6(x, edge_index)
         x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.conv7(x, edge_index)
         x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
         x = self.conv8(x, edge_index)
         x.relu()
         x = F.dropout(x, training=self.training) if self.dropout else x
