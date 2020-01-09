@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch.nn import Linear
-from torch_geometric.nn import GCNConv, FeaStConv
+from torch_geometric.nn import GCNConv, FeaStConv, EdgeConv, DynamicEdgeConv
 from utils import generate_weights
 
 
@@ -54,6 +54,8 @@ class BasicNet(torch.nn.Module):
 
 
 class FeaStNet(torch.nn.Module):
+    # Seems underpowered, but less epoch-to-epoch variance in prediction compared to BasicNet
+    # Quick Setup: back to back with max pool and pass through?
     '''
         Single-scale graph convolutional network based on Verma et al.
 
@@ -211,3 +213,28 @@ class GCNN(torch.nn.Module):
         x = torch.sigmoid(x)
 
         return F.binary_cross_entropy(x, target=labels, weight=generate_weights(labels)), x
+
+
+class DGCNN(torch.nn.Module):
+    '''
+        Network based on Wang et al., 2019
+    '''
+    def __init__(self, n_features, dropout=True):
+        super(DGCNN, self).__init__()
+        self.econv1 = EdgeConv(edge_function(n_features, 64), 60, 'max') # First layer should use pre-existing edges?
+        self.econv2 = DynamicEdgeConv(edge_function(64, 64), 60, 'max')
+        self.econv3 = DynamicEdgeConv(edge_function(64, 64), 60, 'max')
+        self.fc1 = Linear(1024)
+
+
+class edge_function(torch.nn.Module):
+    '''
+        h_theta to be implemented in each edge convolutional block.
+    '''
+    def __init__(self, n_in, n_out):
+        super(edge_function, self).__init__()
+        self.lin = Linear(n_in, n_out)
+
+    def forward(self, x):
+        x = self.lin(x)
+        return x.relu()

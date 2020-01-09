@@ -101,7 +101,7 @@ for epoch in range(1, epochs+1):
             first_batch_labels = data.y.clone().detach().to(device)
             pred = out.clone().detach().round().to(device)
 
-    print("---- Round {}: loss={:.4f} lr:{:.6f}".format(epoch, tr_loss, learning_rate))
+    print("---- Round {}: loss={:.4f} lr:{:.6f}".format(epoch, tr_loss, optimizer.param_groups[0]['lr']))
 
     #  --------------  REPORTING ------------------------------------
 
