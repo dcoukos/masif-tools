@@ -35,14 +35,14 @@ lr_decay = 0.98
 weight_decay = 1e-4
 momentum = 0.9
 
-dataset = Structures(root='./datasets/full_pos/', pre_transform=FaceToEdge())
+dataset = MiniStructures(root='./datasets/mini_pos/', pre_transform=FaceToEdge())
 is_full_ds = ''
 if dataset is Structures:
     is_full_ds = '_full'
 # Add momentum? After a couple epochs, gradients locked in at 0.
 samples = len(dataset)
 if shuffle_dataset:
-    dataset = dataset.shuffle()
+       dataset = dataset.shuffle()
 n_features = dataset.get(0).x.shape[1]
 
 
