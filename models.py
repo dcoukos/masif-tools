@@ -56,9 +56,9 @@ class BasicNet(torch.nn.Module):
 class OneConv(torch.nn.Module):
     def __init__(self, n_features, dropout=True):
         super(OneConv, self).__init__()
-        self.conv1 = FeaStConv(n_features, 8)
-        self.lin1 = Linear(8, 4)
-        self.out = Linear(4, 1)
+        self.conv1 = FeaStConv(n_features, 16)
+        self.lin1 = Linear(16, 8)
+        self.out = Linear(8, 1)
 
     def forward(self, in_, edge_index, labels, weights):
         x = self.conv1(in_, edge_index)

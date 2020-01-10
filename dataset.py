@@ -130,7 +130,7 @@ def read_ply(path, use_shape_data=False, learn_iface=True):
 
 
 class MiniStructures(InMemoryDataset):
-    def __init__(self, root='./datasets/mini/', transform=None, pre_transform=None):
+    def __init__(self, root='./datasets/mini_pos/', transform=None, pre_transform=None):
         super(MiniStructures, self).__init__(root, transform, pre_transform)
         self.data, self.slices = torch.load(self.processed_paths[0])
 
