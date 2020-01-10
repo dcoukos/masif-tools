@@ -21,6 +21,7 @@ Ignore test metrics for now.
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+cpu = torch.device('cpu')
 
 if str(device) == 'cuda':
     epochs = p.epochs
@@ -99,7 +100,7 @@ for epoch in range(1, epochs+1):
     train_precision = precision(pred, first_batch_labels, 2)[1].item()
     train_recall = recall(pred, first_batch_labels, 2)[1].item()
     train_f1 = f1_score(pred, first_batch_labels, 2)[1].item()
-    roc_auc = roc_auc_score(first_batch_labels.cpu(), pred.cpu(), sample_weight=tr_weights)
+    roc_auc = roc_auc_score(first_batch_labels.to(cpu), pred.to(cpu), sample_weight=tr_weights)
 
     model.eval()
     x, edge_index = test_data.x.to(device), test_data.edge_index.to(device)
@@ -111,7 +112,8 @@ for epoch in range(1, epochs+1):
     test_precision = precision(pred, test_labels, 2)[1].item()
     test_recall = recall(pred, test_labels, 2)[1].item()
     test_f1 = f1_score(pred, test_labels, 2)[1].item()
-    roc_auc_te = roc_auc_score(labels.cpu(), pred.cpu(), sample_weight=te_weights)
+    roc_auc_te = roc_auc_score(labels.to(cpu), pred.to(cpu), sample_weight=te_weights)
+    # Does this add more overhead than just making cpu tensors and copying from cuda tensor?
 
     writer.add_scalars('Recall', {'train': train_recall,
                                   'test': test_recall}, epoch)
