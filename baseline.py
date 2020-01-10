@@ -72,8 +72,8 @@ for epoch in range(1, epochs+1):
 
     if prev_loss < tr_loss:  # adaptive learning rate.
         for g in optimizer.param_groups:
-            learning_rate = lr*p.lr_decay  # Does this add overhead?
-            g['lr'] = learning_rate
+            lr = lr*p.lr_decay  # Does this add overhead?
+            g['lr'] = lr
     prev_loss = tr_loss
 
 # ------- DEV: 1 batch run --------------------------
