@@ -1,14 +1,17 @@
 import torch
 import numpy as np
-from torch.nn.functional import binary_cross_entropy
+from decimal import Decimal
+import matplotlib.pyplot as plt
 from torch_geometric.data import DataLoader
+from models import BasicNet, FeaStNet, ANN, GCNN
 from torch_geometric.transforms import FaceToEdge
 from torch_geometric.utils import precision, recall, f1_score
 from dataset import Structures, MiniStructures
 from torch.utils.tensorboard import SummaryWriter
+from sklearn.metrics import roc_curve, roc_auc_score
+from utils import perf_measure, stats
+from glob import glob
 import datetime
-from torch_geometric.nn import GraphUNet
-from utils import generate_weights, perf_measure
 '''
 baseline.py implements a baseline model. Experiment using pytorch-geometric
     and FeaStNet.
@@ -19,7 +22,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 samples = 50  # Doesn't currently do anything.
 if str(device) == 'cuda':
-    epochs = 600
+    epochs = 300
 else:
     epochs = 10
 batch_size = 10
@@ -28,24 +31,30 @@ shuffle_dataset = False
 random_seed = 42
 dropout = False  # too much dropout?
 learning_rate = .001
-lr_decay = 0.99
+lr_decay = 0.98
 weight_decay = 1e-4
 
 dataset = MiniStructures(root='./datasets/mini_pos/', pre_transform=FaceToEdge())
+is_full_ds = ''
+if dataset is Structures:
+    is_full_ds = '_full'
 # Add momentum? After a couple epochs, gradients locked in at 0.
 samples = len(dataset)
 if shuffle_dataset:
-    dataset = dataset.shuffle()
+       dataset = dataset.shuffle()
 n_features = dataset.get(0).x.shape[1]
 
 
-model = GraphUNet(n_features, 100, 1, 10).to(device)
+model = ANN(n_features, dropout=False).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-writer = SummaryWriter(comment='model:{}_lr:{}_dr:{}_sh:{}'.format(str(type(model)).split('.')[1].split("\'")[0],
-                                                                   learning_rate,
-                                                                   dropout,
-                                                                   shuffle_dataset))
+writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_momentum:{}dr:{}_sh:{}{}'.format(str(type(model))
+                       .split('.')[1].split("\'")[0],
+                       learning_rate,
+                       lr_decay,
+                       dropout,
+                       shuffle_dataset,
+                       is_full_ds))
 
 cutoff = int(np.floor(samples*(1-validation_split)))
 train_dataset = dataset[:cutoff]
@@ -91,16 +100,15 @@ for epoch in range(1, epochs+1):
         optimizer.zero_grad()
         x, edge_index = data.x.to(device), data.edge_index.to(device)
         labels = data.y.to(device)
-        inter = model(x, edge_index, labels)
-        out = torch.sigmoid(inter)
-        tr_loss = binary_cross_entropy(out, labels, weights=generate_weights())
+        tr_loss, out = model(x, edge_index, labels)
         tr_loss.backward()
         optimizer.step()
         if batch_n == 0:
             first_batch_labels = data.y.clone().detach().to(device)
             pred = out.clone().detach().round().to(device)
 
-    print("---- Round {}: loss={:.4f} lr:{:.6f}".format(epoch, tr_loss, optimizer.param_groups[0]['lr']))
+    print("---- Round {}: loss={:.4f} lr:{:.6f}"
+          .format(epoch, tr_loss, optimizer.param_groups[0]['lr']))
 
     #  --------------  REPORTING ------------------------------------
 
@@ -138,6 +146,27 @@ for epoch in range(1, epochs+1):
                                     'test': test_f1}, epoch)
     writer.add_scalars('Loss', {'train': tr_loss,
                                 'test': te_loss}, epoch)
+    '''
+    writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)
+    writer.add_histogram('Layer 1 bias', model.conv1.bias, epoch+1)
+    writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
+
+    writer.add_histogram('Layer 2 weights', model.conv2.weight, epoch+1)
+    writer.add_histogram('Layer 2 bias', model.conv2.bias, epoch+1)
+    writer.add_histogram('Layer 2 weight gradients', model.conv2.weight.grad, epoch+1)
+
+    writer.add_histogram('Layer 3 weights', model.conv3.weight, epoch+1)
+    writer.add_histogram('Layer 3 bias', model.conv3.bias, epoch+1)
+    writer.add_histogram('Layer 3 weight gradients', model.conv3.weight.grad, epoch+1)
+
+    writer.add_histogram('Layer 4 weights', model.lin1.weight, epoch+1)
+    writer.add_histogram('Layer 4 bias', model.lin1.bias, epoch+1)
+    writer.add_histogram('Layer 4 weight gradients', model.lin1.weight.grad, epoch+1)
+
+    writer.add_histogram('Layer 5 weights', model.lin2.weight, epoch+1)
+    writer.add_histogram('Layer 5 bias', model.lin2.bias, epoch+1)
+    writer.add_histogram('Layer 5 weight gradients', model.lin2.weight.grad, epoch+1)
+    '''
 
 writer.close()
 

@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch.nn import Linear
-from torch_geometric.nn import GCNConv, FeaStConv, EdgeConv, DynamicEdgeConv
+from torch_geometric.nn import GCNConv, FeaStConv, EdgeConv, DynamicEdgeConv, max_pool
 from utils import generate_weights
 
 
@@ -53,6 +53,25 @@ class BasicNet(torch.nn.Module):
         return loss, x
 
 
+class OneConv(torch.nn.Module):
+    def __init__(self, n_features, dropout=True):
+        super(OneConv, self).__init__()
+        self.conv1 = FeaStConv(n_features, 8)
+        self.lin1 = Linear(8, 4)
+        self.out = Linear(4, 1)
+
+    def forward(self, in_, edge_index, labels, weights):
+        x = self.conv1(in_, edge_index)
+        x = x.relu()
+        x = self.lin1(x)
+        x = x.relu()
+        x = self.out(x)
+        x = torch.sigmoid(x)
+        loss = F.binary_cross_entropy(x, target=labels, weight=weights)
+
+        return loss, x
+
+
 class FeaStNet(torch.nn.Module):
     # Seems underpowered, but less epoch-to-epoch variance in prediction compared to BasicNet
     # Quick Setup: back to back with max pool and pass through?
@@ -63,14 +82,14 @@ class FeaStNet(torch.nn.Module):
     '''
     # TODO: confirm that linear layers defined below are functionally equivalent to 1x1 conv
 
-    def __init__(self, n_features, dropout=True):
+    def __init__(self, n_features, n_out=1, dropout=True):
         super(FeaStNet, self).__init__()
         self.lin1 = Linear(n_features, 16)
         self.conv1 = FeaStConv(16, 32)
         self.conv2 = FeaStConv(32, 64)
         self.conv3 = FeaStConv(64, 128)
         self.lin2 = Linear(128, 1024)
-        self.lin3 = Linear(1024, 1)
+        self.lin3 = Linear(1024, n_out)
         self.dropout = dropout
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -93,10 +112,12 @@ class FeaStNet(torch.nn.Module):
         x = self.lin3(x)
         x = torch.sigmoid(x)
 
-        if type(graph_to_tb) == torch.Tensor:
-            loss = F.binary_cross_entropy(x, target=labels)
-        else:
-            loss = F.binary_cross_entropy(x, target=labels, weight=generate_weights(labels))
+        loss = None
+        if n_out == 1:
+            if type(graph_to_tb) == torch.Tensor:
+                loss = F.binary_cross_entropy(x, target=labels)
+            else:
+                loss = F.binary_cross_entropy(x, target=labels, weight=generate_weights(labels))
 
         return loss, x
 
@@ -207,20 +228,61 @@ class DGCNN(torch.nn.Module):
     '''
     def __init__(self, n_features, dropout=True):
         super(DGCNN, self).__init__()
-        self.econv1 = EdgeConv(edge_function(n_features, 64), 60, 'max') # First layer should use pre-existing edges?
-        self.econv2 = DynamicEdgeConv(edge_function(64, 64), 60, 'max')
-        self.econv3 = DynamicEdgeConv(edge_function(64, 64), 60, 'max')
-        self.fc1 = Linear(1024)
+        self.econv1 = EdgeConv(edge_function_2(n_features, 64), 'max') # First layer should use pre-existing edges?
+        self.econv2 = DynamicEdgeConv(edge_function_2(64, 64), 60, 'max')
+        self.econv3 = DynamicEdgeConv(edge_function_1(64, 64), 60, 'max')
+        self.fc1 = Linear(192, 1024)
+        self.fc2 = Linear(1216, 256)
+        self.fc3 = Linear(256, 256)
+        self.fc4 = Linear(256, 128)
+        self.fc5 = Linear(128, 1)
+
+    def forward(self, x, edge_index, labels):
+        x = self.econv1(x, edge_index)  # --> shape: nx64
+        y = self.econv2(x)
+        z = self.econv3(y)
+        stack1 = [x, y, z]
+        stack1 = torch.stack(stack1, dim=-1)
+        a = self.fc1(stack1)
+        a = a.relu()
+        stack2 = torch.stack([stack1, a], dim=-1)
+        b = self.fc2(stack2)
+        b = b.relu()
+        b = self.fc3(b)
+        b = b.relu()
+        b = self.fc4(b)
+        b = b.relu()
+        b = self.fc5(b)
+        b = torch.sigmoid(b)
+        loss = F.binary_cross_entropy(x, target=labels, weight=generate_weights())
+
+        return loss, b
+# TODO: where is the value of k addressed below?
 
 
-class edge_function(torch.nn.Module):
+class edge_function_2(torch.nn.Module):
+    def __init__(self, n_in, n_out):
+        super(edge_function_2, self).__init__()
+        self.lin1 = Linear(n_in, 64)
+        self.lin2 = Linear(64, n_out)
+
+    def forward(self, x):
+        x = self.lin1(x)
+        x = x.relu()
+        x = self.lin2(x)
+        x = max_pool
+        return x.relu()
+
+
+class edge_function_1(torch.nn.Module):
     '''
         h_theta to be implemented in each edge convolutional block.
     '''
     def __init__(self, n_in, n_out):
-        super(edge_function, self).__init__()
+        super(edge_function_1, self).__init__()
         self.lin = Linear(n_in, n_out)
 
     def forward(self, x):
         x = self.lin(x)
-        return x.relu()
+        x = x.relu()
+        return max_pool(x)
