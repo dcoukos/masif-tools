@@ -21,6 +21,7 @@ Ignore test metrics for now.
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+lr = p.learn_rate
 
 if str(device) == 'cuda':
     epochs = p.epochs
@@ -35,7 +36,7 @@ n_features = dataset.get(0).x.shape[1]
 
 
 model = OneConv(n_features).to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=p.learn_rate, weight_decay=p.weight_decay)
+optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=p.weight_decay)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}'.format(
                        p.version,
@@ -61,7 +62,6 @@ prev_loss = 1
 # DEV: only one batch!
 data = next(iter(train_loader))
 
-
 for epoch in range(1, epochs+1):
     # rotate the structures between epochs
 
@@ -72,7 +72,7 @@ for epoch in range(1, epochs+1):
 
     if prev_loss < tr_loss:  # adaptive learning rate.
         for g in optimizer.param_groups:
-            learning_rate = p.learn_rate*p.lr_decay  # Does this add overhead?
+            learning_rate = lr*p.lr_decay  # Does this add overhead?
             g['lr'] = learning_rate
     prev_loss = tr_loss
 
