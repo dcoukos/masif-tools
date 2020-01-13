@@ -73,14 +73,12 @@ for epoch in range(1, epochs+1):
     pred = torch.Tensor()
     tr_weights = torch.Tensor()
 
-'''
-    if prev_loss < tr_loss and prev_prev_loss < tr_loss:  # adaptive learning rate.
-        for g in optimizer.param_groups:
-            lr = lr*p.lr_decay  # Does this add overhead?
-            g['lr'] = lr
-    prev_prev_loss = prev_loss
-    prev_loss = tr_loss
-'''
+#    if prev_loss < tr_loss and prev_prev_loss < tr_loss:  # adaptive learning rate.
+#        for g in optimizer.param_groups:
+#            lr = lr*p.lr_decay  # Does this add overhead?
+#            g['lr'] = lr
+#    prev_prev_loss = prev_loss
+#    prev_loss = tr_loss
 
 # ------- DEV: 1 batch run --------------------------
     batch_n = 0
