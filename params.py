@@ -1,5 +1,5 @@
 # REMEMBER TO CHANGE VERSION NUMBER
-batch_size = 10
+batch_size = 100
 validation_split = .2
 shuffle_dataset = False
 random_seed = 42
