@@ -125,7 +125,7 @@ for epoch in range(1, epochs+1):
                                 'test': te_loss}, epoch)
     writer.add_scalars('ROC AUC', {'train': roc_auc,
                                    'test': roc_auc_te}, epoch)
-    writer.add_scalars('learning rate', lr, epoch)
+    writer.add_scalar('learning rate', lr, epoch)
     writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
     '''
     writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)

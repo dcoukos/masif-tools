@@ -76,7 +76,7 @@ class OneConv(torch.nn.Module):
 class TwoConv(torch.nn.Module):
     def __init__(self, n_features, dropout=True):
         # REMEMBER TO UPDATE MODEL NAME
-        super(OneConv, self).__init__()
+        super(TwoConv, self).__init__()
         self.conv1 = FeaStConv(n_features, 16)
         self.conv2 = FeaStConv(16, 16)
         self.lin1 = Linear(16, 8)
