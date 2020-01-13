@@ -60,6 +60,7 @@ test_labels = test_data.y.to(device)
 # previous loss stored for adaptive learning rate.
 tr_loss = 1
 prev_loss = 1
+prev_prev_loss = 1
 
 # DEV: only one batch!
 data = next(iter(train_loader))
@@ -72,11 +73,13 @@ for epoch in range(1, epochs+1):
     pred = torch.Tensor()
     tr_weights = torch.Tensor()
 
-    if prev_loss < tr_loss:  # adaptive learning rate.
+    if prev_loss < tr_loss and prev_prev_loss < tr_loss:  # adaptive learning rate.
         for g in optimizer.param_groups:
             lr = lr*p.lr_decay  # Does this add overhead?
             g['lr'] = lr
+    prev_prev_loss = prev_loss
     prev_loss = tr_loss
+
 
 # ------- DEV: 1 batch run --------------------------
     batch_n = 0
