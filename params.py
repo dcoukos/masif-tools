@@ -8,3 +8,4 @@ lr_decay = 0.99
 weight_decay = 1e-4
 epochs = 4000
 version = '0.02'
+suppress_warnings = True

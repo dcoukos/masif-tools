@@ -19,6 +19,9 @@ Then increase model complexity to accomodate the increase in data.
 Ignore test metrics for now.
 '''
 
+if p.suppress_warnings:
+    import warnings
+    warnings.filterwarnings("ignore")
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 lr = p.learn_rate
@@ -122,8 +125,8 @@ for epoch in range(1, epochs+1):
                                 'test': te_loss}, epoch)
     writer.add_scalars('ROC AUC', {'train': roc_auc,
                                    'test': roc_auc_te}, epoch)
+    writer.add_scalars('learning rate', lr, epoch)
     writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
-    
     '''
     writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)
     writer.add_histogram('Layer 1 bias', model.conv1.bias, epoch+1)
