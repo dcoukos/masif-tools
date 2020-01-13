@@ -117,7 +117,7 @@ class FeaStNet(torch.nn.Module):
         self.conv1 = FeaStConv(n_features, 16)
         self.conv2 = FeaStConv(16, 32)
         self.conv3 = FeaStConv(32, 64)
-        self.lin1 = FeaStConv(64, 32)
+        self.lin1 = Linear(64, 32)
         self.lin2 = Linear(32, 16)
         self.lin3 = Linear(16, 8)
         self.lin4 = Linear(8, 4)
