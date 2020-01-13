@@ -73,6 +73,29 @@ class OneConv(torch.nn.Module):
         return loss, x
 
 
+class TwoConv(torch.nn.Module):
+    def __init__(self, n_features, dropout=True):
+        # REMEMBER TO UPDATE MODEL NAME
+        super(OneConv, self).__init__()
+        self.conv1 = FeaStConv(n_features, 16)
+        self.conv2 = FeaStConv(16, 16)
+        self.lin1 = Linear(16, 8)
+        self.out = Linear(8, 1)
+
+    def forward(self, in_, edge_index, labels, weights):
+        x = self.conv1(in_, edge_index)
+        x = x.relu()
+        x = self.conv2(x, edge_index)
+        x = x.relu()
+        x = self.lin1(x)
+        x = x.relu()
+        x = self.out(x)
+        x = torch.sigmoid(x)
+        loss = F.binary_cross_entropy(x, target=labels, weight=weights)
+
+        return loss, x
+
+
 class FeaStNet(torch.nn.Module):
     # Seems underpowered, but less epoch-to-epoch variance in prediction compared to BasicNet
     # Quick Setup: back to back with max pool and pass through?
@@ -91,6 +114,7 @@ class FeaStNet(torch.nn.Module):
         self.conv3 = FeaStConv(64, 128)
         self.lin2 = Linear(128, 1024)
         self.lin3 = Linear(1024, n_out)
+        self.n_out = n_out
         self.dropout = dropout
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -114,7 +138,7 @@ class FeaStNet(torch.nn.Module):
         x = torch.sigmoid(x)
 
         loss = None
-        if n_out == 1:
+        if self.n_out == 1:
             if type(graph_to_tb) == torch.Tensor:
                 loss = F.binary_cross_entropy(x, target=labels)
             else:
