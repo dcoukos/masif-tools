@@ -112,43 +112,38 @@ class FeaStNet(torch.nn.Module):
     '''
     # TODO: confirm that linear layers defined below are functionally equivalent to 1x1 conv
 
-    def __init__(self, n_features, n_out=1, dropout=True):
+    def __init__(self, n_features, dropout=True):
         super(FeaStNet, self).__init__()
-        self.lin1 = Linear(n_features, 16)
-        self.conv1 = FeaStConv(16, 32)
-        self.conv2 = FeaStConv(32, 64)
-        self.conv3 = FeaStConv(64, 128)
-        self.lin2 = Linear(128, 1024)
-        self.lin3 = Linear(1024, n_out)
-        self.n_out = n_out
+        self.conv1 = FeaStConv(n_features, 16)
+        self.conv2 = FeaStConv(16, 32)
+        self.conv3 = FeaStConv(32, 64)
+        self.lin1 = FeaStConv(64, 32)
+        self.lin2 = Linear(32, 16)
+        self.lin3 = Linear(16, 8)
+        self.lin4 = Linear(8, 4)
+        self.out = Linear(4, 1)
         self.dropout = dropout
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def forward(self, x, edge_index, labels, graph_to_tb=False):
+    def forward(self, in_, edge_index, labels, weights):
         # Should edge_index be redefined during run?
-        x = self.lin1(x)
-        x = F.relu(x)
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = self.conv1(in_, edge_index)
+        x = x.relu()
         x = self.conv2(x, edge_index)
-        x = F.relu(x)
-        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = x.relu()
         x = self.conv3(x, edge_index)
-        x = F.relu(x)
-        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = x.relu()
+        x = self.lin1(x)
+        x = x.relu()
         x = self.lin2(x)
-        x = F.relu(x)
-        x = F.dropout(x, training=self.training) if self.dropout else x
+        x = x.relu()
         x = self.lin3(x)
+        x = x.relu()
+        x = self.lin4(x)
+        x = x.relu()
+        x = self.out(x)
         x = torch.sigmoid(x)
-
-        loss = None
-        if self.n_out == 1:
-            if type(graph_to_tb) == torch.Tensor:
-                loss = F.binary_cross_entropy(x, target=labels)
-            else:
-                loss = F.binary_cross_entropy(x, target=labels, weight=generate_weights(labels))
+        loss = F.binary_cross_entropy(x, target=labels, weight=weights)
 
         return loss, x
 
