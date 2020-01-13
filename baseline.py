@@ -122,14 +122,17 @@ for epoch in range(1, epochs+1):
                                 'test': te_loss}, epoch)
     writer.add_scalars('ROC AUC', {'train': roc_auc,
                                    'test': roc_auc_te}, epoch)
-
+    writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
+    
+    '''
     writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)
     writer.add_histogram('Layer 1 bias', model.conv1.bias, epoch+1)
-    writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
+
 
     writer.add_histogram('Layer 2 weights', model.lin1.weight, epoch+1)
     writer.add_histogram('Layer 2 bias', model.lin1.bias, epoch+1)
     writer.add_histogram('Layer 2 weight gradients', model.lin1.weight.grad, epoch+1)
+    '''
 
 writer.close()
 
