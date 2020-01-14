@@ -109,7 +109,7 @@ class ThreeConv(torch.nn.Module):
     # TODO: confirm that linear layers defined below are functionally equivalent to 1x1 conv
 
     def __init__(self, n_features, dropout=True):
-        super(FeaStNet, self).__init__()
+        super(ThreeConv, self).__init__()
         self.conv1 = FeaStConv(n_features, 16)
         self.conv2 = FeaStConv(16, 32)
         self.conv3 = FeaStConv(32, 64)
