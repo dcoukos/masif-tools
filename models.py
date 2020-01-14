@@ -108,11 +108,11 @@ class ThreeConv(torch.nn.Module):
 
     # TODO: confirm that linear layers defined below are functionally equivalent to 1x1 conv
 
-    def __init__(self, n_features, dropout=True):
+    def __init__(self, n_features, heads=1, dropout=True):
         super(ThreeConv, self).__init__()
-        self.conv1 = FeaStConv(n_features, 16, heads=4)
-        self.conv2 = FeaStConv(16, 32, heads=4)
-        self.conv3 = FeaStConv(32, 64, heads=4)
+        self.conv1 = FeaStConv(n_features, 16, heads=heads)
+        self.conv2 = FeaStConv(16, 32, heads=heads)
+        self.conv3 = FeaStConv(32, 64, heads=heads)
         self.lin1 = Linear(64, 32)
         self.lin2 = Linear(32, 16)
         self.lin3 = Linear(16, 8)
@@ -156,7 +156,7 @@ class SixConv(torch.nn.Module):
         self.conv2 = FeaStConv(16, 16, heads=heads)
         self.conv3 = FeaStConv(16, 16, heads=heads)
         self.conv4 = FeaStConv(16, 16)
-        self.conv5 = FeaStConv(16, 16)
+        self.conv5 = FeaStConv(16, 32)
         self.conv6 = FeaStConv(32, 64)
         self.lin1 = Linear(64, 32)
         self.lin2 = Linear(32, 16)
@@ -174,7 +174,7 @@ class SixConv(torch.nn.Module):
         x = x.relu()
         x = self.conv3(x, edge_index)
         x = x.relu()
-        x = self.conv4(in_, edge_index)
+        x = self.conv4(x, edge_index)
         x = x.relu()
         x = self.conv5(x, edge_index)
         x = x.relu()
