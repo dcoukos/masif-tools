@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from torch_geometric.data import DataLoader
-from models import FeaStNet
+from models import ThreeConv
 from torch_geometric.transforms import FaceToEdge
 from torch_geometric.utils import precision, recall, f1_score
 from dataset import MiniStructures
@@ -37,7 +37,7 @@ if p.shuffle_dataset:
     dataset = dataset.shuffle()
 n_features = dataset.get(0).x.shape[1]
 
-model = FeaStNet(n_features).to(device)
+model = ThreeConv(n_features).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=p.weight_decay)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}'.format(
@@ -63,7 +63,7 @@ tr_loss = 1
 #prev_prev_loss = 1
 
 # DEV: only one batch!
-data = next(iter(train_loader))
+
 
 for epoch in range(1, epochs+1):
     # rotate the structures between epochs
@@ -81,22 +81,21 @@ for epoch in range(1, epochs+1):
 #    prev_loss = tr_loss
 
 # ------- DEV: 1 batch run --------------------------
-    batch_n = 0
-#    for batch_n, data in enumerate(train_loader):
-    optimizer.zero_grad()
-    x, edge_index = data.x.to(device), data.edge_index.to(device)
-    labels = data.y.to(device)
-    weights = generate_weights(labels)
-    tr_loss, out = model(x, edge_index, labels, weights)
-    tr_loss.backward()
-    optimizer.step()
-    if batch_n == 0:
-        tr_weights = weights
-        first_batch_labels = data.y.clone().detach().to(device)
-        pred = out.clone().detach().round().to(device)
+    for batch_n, data in enumerate(train_loader):
+        optimizer.zero_grad()
+        x, edge_index = data.x.to(device), data.edge_index.to(device)
+        labels = data.y.to(device)
+        weights = generate_weights(labels)
+        tr_loss, out = model(x, edge_index, labels, weights)
+        tr_loss.backward()
+        optimizer.step()
+        if batch_n == 0:
+            tr_weights = weights
+            first_batch_labels = data.y.clone().detach().to(device)
+            pred = out.clone().detach().round().to(device)
 
-    print("---- Round {}: loss={:.4f} lr:{:.6f}"
-          .format(epoch, tr_loss, optimizer.param_groups[0]['lr']))
+        print("---- Round {}: loss={:.4f} lr:{:.6f}"
+              .format(epoch, tr_loss, optimizer.param_groups[0]['lr']))
 
     #  --------------  REPORTING ------------------------------------
 
@@ -128,8 +127,8 @@ for epoch in range(1, epochs+1):
     writer.add_scalars('ROC AUC', {'train': roc_auc,
                                    'test': roc_auc_te}, epoch)
     writer.add_scalar('learning rate', lr, epoch)
-'''
     writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
+    '''
     writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)
     writer.add_histogram('Layer 1 bias', model.conv1.bias, epoch+1)
 

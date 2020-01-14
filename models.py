@@ -102,7 +102,7 @@ class TwoConv(torch.nn.Module):
         return loss, x
 
 
-class FeaStNet(torch.nn.Module):
+class ThreeConv(torch.nn.Module):
     # Seems underpowered, but less epoch-to-epoch variance in prediction compared to BasicNet
     # Quick Setup: back to back with max pool and pass through?
 
