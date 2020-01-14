@@ -110,9 +110,9 @@ class ThreeConv(torch.nn.Module):
 
     def __init__(self, n_features, dropout=True):
         super(ThreeConv, self).__init__()
-        self.conv1 = FeaStConv(n_features, 16)
-        self.conv2 = FeaStConv(16, 32)
-        self.conv3 = FeaStConv(32, 64)
+        self.conv1 = FeaStConv(n_features, 16, heads=4)
+        self.conv2 = FeaStConv(16, 32, heads=4)
+        self.conv3 = FeaStConv(32, 64, heads=4)
         self.lin1 = Linear(64, 32)
         self.lin2 = Linear(32, 16)
         self.lin3 = Linear(16, 8)
@@ -128,6 +128,57 @@ class ThreeConv(torch.nn.Module):
         x = self.conv2(x, edge_index)
         x = x.relu()
         x = self.conv3(x, edge_index)
+        x = x.relu()
+        x = self.lin1(x)
+        x = x.relu()
+        x = self.lin2(x)
+        x = x.relu()
+        x = self.lin3(x)
+        x = x.relu()
+        x = self.lin4(x)
+        x = x.relu()
+        x = self.out(x)
+        x = torch.sigmoid(x)
+        loss = F.binary_cross_entropy(x, target=labels, weight=weights)
+
+        return loss, x
+
+
+class SixConv(torch.nn.Module):
+    # Seems underpowered, but less epoch-to-epoch variance in prediction compared to BasicNet
+    # Quick Setup: back to back with max pool and pass through?
+
+    # TODO: confirm that linear layers defined below are functionally equivalent to 1x1 conv
+
+    def __init__(self, n_features, heads=1, dropout=True):
+        super(SixConv, self).__init__()
+        self.conv1 = FeaStConv(n_features, 16, heads=heads)
+        self.conv2 = FeaStConv(16, 16, heads=heads)
+        self.conv3 = FeaStConv(16, 16, heads=heads)
+        self.conv4 = FeaStConv(16, 16)
+        self.conv5 = FeaStConv(16, 16)
+        self.conv6 = FeaStConv(32, 64)
+        self.lin1 = Linear(64, 32)
+        self.lin2 = Linear(32, 16)
+        self.lin3 = Linear(16, 8)
+        self.lin4 = Linear(8, 4)
+        self.out = Linear(4, 1)
+        self.dropout = dropout
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    def forward(self, in_, edge_index, labels, weights):
+        # Should edge_index be redefined during run?
+        x = self.conv1(in_, edge_index)
+        x = x.relu()
+        x = self.conv2(x, edge_index)
+        x = x.relu()
+        x = self.conv3(x, edge_index)
+        x = x.relu()
+        x = self.conv4(in_, edge_index)
+        x = x.relu()
+        x = self.conv5(x, edge_index)
+        x = x.relu()
+        x = self.conv6(x, edge_index)
         x = x.relu()
         x = self.lin1(x)
         x = x.relu()

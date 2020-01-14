@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from torch_geometric.data import DataLoader
-from models import ThreeConv
+from models import ThreeConv, SixConv
 from torch_geometric.transforms import FaceToEdge
 from torch_geometric.utils import precision, recall, f1_score
 from dataset import MiniStructures
@@ -37,7 +37,8 @@ if p.shuffle_dataset:
     dataset = dataset.shuffle()
 n_features = dataset.get(0).x.shape[1]
 
-model = ThreeConv(n_features).to(device)
+model = SixConv(n_features).to(device)
+
 optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=p.weight_decay)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}'.format(
@@ -59,8 +60,8 @@ test_labels = test_data.y.to(device)
 
 # previous loss stored for adaptive learning rate.
 tr_loss = 1
-#prev_loss = 1
-#prev_prev_loss = 1
+# prev_loss = 1
+# prev_prev_loss = 1
 
 # DEV: only one batch!
 
