@@ -105,11 +105,7 @@ class TwoConv(torch.nn.Module):
 class FeaStNet(torch.nn.Module):
     # Seems underpowered, but less epoch-to-epoch variance in prediction compared to BasicNet
     # Quick Setup: back to back with max pool and pass through?
-    '''
-        Single-scale graph convolutional network based on Verma et al.
 
-        0 - input(3) - LIN(16) - CONV(32) - CONV(64) - CONV(128) - LIN(1024) - Output(50)
-    '''
     # TODO: confirm that linear layers defined below are functionally equivalent to 1x1 conv
 
     def __init__(self, n_features, dropout=True):

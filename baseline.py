@@ -31,7 +31,7 @@ if str(device) == 'cuda':
 else:
     epochs = 20
 
-dataset = MiniStructures(root='./datasets/mini_pos/', pre_transform=FaceToEdge())
+dataset = MiniStructures(root='./datasets/mini/', pre_transform=FaceToEdge())
 samples = len(dataset)
 if p.shuffle_dataset:
     dataset = dataset.shuffle()
