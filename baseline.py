@@ -128,16 +128,21 @@ for epoch in range(1, epochs+1):
     writer.add_scalars('ROC AUC', {'train': roc_auc,
                                    'test': roc_auc_te}, epoch)
     writer.add_scalar('learning rate', lr, epoch)
+
+# Observing the gradient for model v.10
+
     writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
-    '''
-    writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)
-    writer.add_histogram('Layer 1 bias', model.conv1.bias, epoch+1)
+    writer.add_histogram('Layer 2 weight gradients', model.conv2.weight.grad, epoch+1)
+    writer.add_histogram('Layer 3 weight gradients', model.conv3.weight.grad, epoch+1)
+    writer.add_histogram('Layer 4 weight gradients', model.conv4.weight.grad, epoch+1)
+    writer.add_histogram('Layer 5 weight gradients', model.conv5.weight.grad, epoch+1)
+    writer.add_histogram('Layer 6 weight gradients', model.conv6.weight.grad, epoch+1)
+    writer.add_histogram('Layer 7 weight gradients', model.lin1.weight.grad, epoch+1)
+    writer.add_histogram('Layer 8 weight gradients', model.lin2.weight.grad, epoch+1)
+    writer.add_histogram('Layer 9 weight gradients', model.lin3.weight.grad, epoch+1)
+    writer.add_histogram('Layer 10 weight gradients', model.lin4.weight.grad, epoch+1)
+    writer.add_histogram('Output layer weight gradients', model.out.weight.grad, epoch+1)
 
-
-    writer.add_histogram('Layer 2 weights', model.lin1.weight, epoch+1)
-    writer.add_histogram('Layer 2 bias', model.lin1.bias, epoch+1)
-    writer.add_histogram('Layer 2 weight gradients', model.lin1.weight.grad, epoch+1)
-    '''
 
 writer.close()
 

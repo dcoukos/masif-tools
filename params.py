@@ -7,6 +7,6 @@ dropout = False  # too much dropout?
 learn_rate = .0001
 lr_decay = 0.99
 weight_decay = 1e-4
-epochs = 1000
+epochs = 100
 version = '0.10a'
 suppress_warnings = True

@@ -12,6 +12,10 @@ temp/
 structures/
 datasets/
 
+# Training/testing data
+/earlier-runs/
+
+
 # C extensions
 *.so
 
