@@ -8,5 +8,5 @@ learn_rate = .001
 lr_decay = 0.99
 weight_decay = 1e-4
 epochs = 200
-version = '-'
+version = '11a'
 suppress_warnings = True
