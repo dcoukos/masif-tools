@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from torch_geometric.data import DataLoader
-from models import ThreeConv, SixConv
+from models import ThreeConv, SixConv, SixConvPassThrough
 from torch_geometric.transforms import FaceToEdge
 from torch_geometric.utils import precision, recall, f1_score
 from dataset import MiniStructures
@@ -37,7 +37,8 @@ if p.shuffle_dataset:
     dataset = dataset.shuffle()
 n_features = dataset.get(0).x.shape[1]
 
-model = SixConv(n_features, heads=1).to(device)
+model = SixConvPassThrough(n_features, heads=1).to(device)
+
 
 optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=p.weight_decay)
 
