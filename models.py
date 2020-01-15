@@ -118,7 +118,8 @@ class ThreeConv(torch.nn.Module):
         self.lin3 = Linear(16, 8)
         self.lin4 = Linear(8, 4)
         self.out = Linear(4, 1)
-        self.dropout = dropout
+        self.drop_bool = dropout
+        self.dropout = Dropout(p=0.3)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, in_, edge_index, labels, weights):
@@ -130,12 +131,16 @@ class ThreeConv(torch.nn.Module):
         x = self.conv3(x, edge_index)
         x = x.relu()
         x = self.lin1(x)
+        x = self.dropout(x) if self.drop_bool else x
         x = x.relu()
         x = self.lin2(x)
+        x = self.dropout(x) if self.drop_bool else x
         x = x.relu()
         x = self.lin3(x)
+        x = self.dropout(x) if self.drop_bool else x
         x = x.relu()
         x = self.lin4(x)
+        x = self.dropout(x) if self.drop_bool else x
         x = x.relu()
         x = self.out(x)
         x = torch.sigmoid(x)
