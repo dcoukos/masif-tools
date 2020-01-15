@@ -258,6 +258,65 @@ class SixConvPassThrough(torch.nn.Module):
         return loss, x6
 
 
+class SixConvPT_LFC(torch.nn.Module):
+    # Seems underpowered, but less epoch-to-epoch variance in prediction compared to BasicNet
+    # Quick Setup: back to back with max pool and pass through?
+
+    # TODO: confirm that linear layers defined below are functionally equivalent to 1x1 conv
+
+    def __init__(self, n_features, heads=1, dropout=True):
+        super(SixConvPassThrough, self).__init__()
+        self.conv1 = FeaStConv(n_features, 16, heads=heads)
+        torch.nn.init.xavier_uniform(self.conv1.weight)
+        self.conv2 = FeaStConv(16, 16, heads=heads)
+        torch.nn.init.xavier_uniform(self.conv2.weight)
+        self.conv3 = FeaStConv(16, 16, heads=heads)
+        torch.nn.init.xavier_uniform(self.conv3.weight)
+        self.conv4 = FeaStConv(16, 16)
+        torch.nn.init.xavier_uniform(self.conv4.weight)
+        self.conv5 = FeaStConv(16, 32)
+        torch.nn.init.xavier_uniform(self.conv5.weight)
+        self.conv6 = FeaStConv(32, 64)
+        torch.nn.init.xavier_uniform(self.conv6.weight)
+        self.lin1 = Linear(96, 256)
+        self.lin2 = Linear(256, 64)
+        self.lin3 = Linear(64, 16)
+        self.out = Linear(16, 1)
+        self.drop_bool = dropout
+        self.dropout = Dropout(p=0.5)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    def forward(self, in_, edge_index, labels, weights):
+        # Should edge_index be redefined during run?
+        x1 = self.conv1(in_, edge_index)
+        x1 = x1.relu()
+        x2 = self.conv2(x1, edge_index)
+        x2 = x2.relu()
+        x2 = self.conv3(x2, edge_index)
+        x2 = x2.relu()
+        x3 = self.conv4(x2, edge_index)
+        x3 = x3.relu()
+        x3 = self.conv5(x3, edge_index)
+        x3 = x3.relu()
+        x3 = self.conv6(x3, edge_index)
+        x4 = torch.cat((x1, x2, x3), dim=1)
+        x4 = x4.relu()
+        x4 = self.lin1(x4)
+        x4 = self.dropout(x4) if self.drop_bool else x4
+        x4 = x4.relu()
+        x4 = self.lin2(x4)
+        x4 = self.dropout(x4) if self.drop_bool else x4
+        x4 = x4.relu()
+        x4 = self.lin3(x4)
+        x4 = self.dropout(x4) if self.drop_bool else x4
+        x4 = x4.relu()
+        x4 = self.out(x4)
+        x4 = torch.sigmoid(x4)
+        loss = F.binary_cross_entropy(x4, target=labels, weight=weights)
+
+        return loss, x4
+
+
 class ANN(torch.nn.Module):
     '''
         Large ANN.
