@@ -39,7 +39,6 @@ n_features = dataset.get(0).x.shape[1]
 
 model = SixConvPassThrough(n_features, heads=1).to(device)
 
-
 optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=p.weight_decay)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}'.format(

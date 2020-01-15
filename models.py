@@ -161,7 +161,8 @@ class SixConv(torch.nn.Module):
         self.lin1 = Linear(64, 16)
         self.lin2 = Linear(16, 4)
         self.out = Linear(4, 1)
-        self.dropout = dropout
+        self.drop_bool = dropout
+        self.dropout = Dropout(p=0.3)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, in_, edge_index, labels, weights):
@@ -179,8 +180,10 @@ class SixConv(torch.nn.Module):
         x = self.conv6(x, edge_index)
         x = x.relu()
         x = self.lin1(x)
+        x = self.dropout(x) if self.drop_bool else x
         x = x.relu()
         x = self.lin2(x)
+        x = self.dropout(x) if self.drop_bool else x
         x = x.relu()
         x = self.out(x)
         x = torch.sigmoid(x)
@@ -206,7 +209,8 @@ class SixConvPassThrough(torch.nn.Module):
         self.lin1 = Linear(96, 16)
         self.lin2 = Linear(16, 4)
         self.out = Linear(4, 1)
-        self.dropout = dropout
+        self.drop_bool = dropout
+        self.dropout = Dropout(p=0.3)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, in_, edge_index, labels, weights):
@@ -225,12 +229,14 @@ class SixConvPassThrough(torch.nn.Module):
         x4 = torch.cat((x1, x2, x3), dim=1)
         x4 = x4.relu()
         x4 = self.lin1(x4)
-        x4 = x4.relu()
-        x4 = self.lin2(x4)
-        x4 = x4.relu()
-        x4 = self.out(x4)
-        x4 = torch.sigmoid(x4)
-        loss = F.binary_cross_entropy(x4, target=labels, weight=weights)
+        x5 = self.dropout(x4) if self.drop_bool else x4
+        x5 = x5.relu()
+        x5 = self.lin2(x5)
+        x6 = self.dropout(x5) if self.drop_bool else x4
+        x6 = x6.relu()
+        x6 = self.out(x6)
+        x6 = torch.sigmoid(x6)
+        loss = F.binary_cross_entropy(x6, target=labels, weight=weights)
 
         return loss, x4
 
