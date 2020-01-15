@@ -238,7 +238,7 @@ class SixConvPassThrough(torch.nn.Module):
         x6 = torch.sigmoid(x6)
         loss = F.binary_cross_entropy(x6, target=labels, weight=weights)
 
-        return loss, x4
+        return loss, x6
 
 
 class ANN(torch.nn.Module):
