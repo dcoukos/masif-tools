@@ -37,7 +37,7 @@ if p.shuffle_dataset:
     dataset = dataset.shuffle()
 n_features = dataset.get(0).x.shape[1]
 
-model = ThreeConv(n_features, heads=2, dropout=False).to(device)
+model = ThreeConv(n_features, heads=2, dropout=True).to(device)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=p.weight_decay)
 
@@ -135,23 +135,27 @@ for epoch in range(1, epochs+1):
     writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
     writer.add_histogram('Layer 2 weight gradients', model.conv2.weight.grad, epoch+1)
     writer.add_histogram('Layer 3 weight gradients', model.conv3.weight.grad, epoch+1)
+    '''
     writer.add_histogram('Layer 4 weight gradients', model.conv4.weight.grad, epoch+1)
     writer.add_histogram('Layer 5 weight gradients', model.conv5.weight.grad, epoch+1)
     writer.add_histogram('Layer 6 weight gradients', model.conv6.weight.grad, epoch+1)
+    '''
     writer.add_histogram('Layer 7 weight gradients', model.lin1.weight.grad, epoch+1)
     writer.add_histogram('Layer 8 weight gradients', model.lin2.weight.grad, epoch+1)
     writer.add_histogram('Output layer weight gradients', model.out.weight.grad, epoch+1)
-
+    '''
     writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)
     writer.add_histogram('Layer 2 weights', model.conv2.weight, epoch+1)
     writer.add_histogram('Layer 3 weights', model.conv3.weight, epoch+1)
+   
     writer.add_histogram('Layer 4 weights', model.conv4.weight, epoch+1)
     writer.add_histogram('Layer 5 weights', model.conv5.weight, epoch+1)
+    
     writer.add_histogram('Layer 6 weights', model.conv6.weight, epoch+1)
     writer.add_histogram('Layer 7 weights', model.lin1.weight, epoch+1)
     writer.add_histogram('Layer 8 weights', model.lin2.weight, epoch+1)
     writer.add_histogram('Output layer weights', model.out.weight, epoch+1)
-
+    '''
 
 writer.close()
 
