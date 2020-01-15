@@ -140,8 +140,6 @@ for epoch in range(1, epochs+1):
     writer.add_histogram('Layer 6 weight gradients', model.conv6.weight.grad, epoch+1)
     writer.add_histogram('Layer 7 weight gradients', model.lin1.weight.grad, epoch+1)
     writer.add_histogram('Layer 8 weight gradients', model.lin2.weight.grad, epoch+1)
-    writer.add_histogram('Layer 9 weight gradients', model.lin3.weight.grad, epoch+1)
-    writer.add_histogram('Layer 10 weight gradients', model.lin4.weight.grad, epoch+1)
     writer.add_histogram('Output layer weight gradients', model.out.weight.grad, epoch+1)
 
     writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)
@@ -152,8 +150,6 @@ for epoch in range(1, epochs+1):
     writer.add_histogram('Layer 6 weights', model.conv6.weight, epoch+1)
     writer.add_histogram('Layer 7 weights', model.lin1.weight, epoch+1)
     writer.add_histogram('Layer 8 weights', model.lin2.weight, epoch+1)
-    writer.add_histogram('Layer 9 weights', model.lin3.weight, epoch+1)
-    writer.add_histogram('Layer 10 weights', model.lin4.weight, epoch+1)
     writer.add_histogram('Output layer weights', model.out.weight, epoch+1)
 
 
