@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
-from torch.nn import Linear
-from torch_geometric.nn import GCNConv, FeaStConv, EdgeConv, DynamicEdgeConv, max_pool
+from torch.nn import Linear, Dropout, LeakyReLU
+from torch_geometric.nn import GCNConv, FeaStConv, EdgeConv, DynamicEdgeConv, max_pool, BatchNorm
 from utils import generate_weights
 
 
@@ -165,29 +165,30 @@ class SixConv(torch.nn.Module):
         self.out = Linear(4, 1)
         self.dropout = dropout
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.lrelu = LeakyReLU()
 
     def forward(self, in_, edge_index, labels, weights):
         # Should edge_index be redefined during run?
         x = self.conv1(in_, edge_index)
-        x = x.relu()
+        x = self.lrelu(x)
         x = self.conv2(x, edge_index)
-        x = x.relu()
+        x = self.lrelu(x)
         x = self.conv3(x, edge_index)
-        x = x.relu()
+        x = x.lrelu()
         x = self.conv4(x, edge_index)
-        x = x.relu()
+        x = x.lrelu()
         x = self.conv5(x, edge_index)
-        x = x.relu()
+        x = x.lrelu()
         x = self.conv6(x, edge_index)
-        x = x.relu()
+        x = x.lrelu()
         x = self.lin1(x)
-        x = x.relu()
+        x = x.lrelu()
         x = self.lin2(x)
-        x = x.relu()
+        x = x.lrelu()
         x = self.lin3(x)
-        x = x.relu()
+        x = x.lrelu()
         x = self.lin4(x)
-        x = x.relu()
+        x = x.lrelu()
         x = self.out(x)
         x = torch.sigmoid(x)
         loss = F.binary_cross_entropy(x, target=labels, weight=weights)
