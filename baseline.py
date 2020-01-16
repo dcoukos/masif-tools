@@ -25,8 +25,8 @@ if p.suppress_warnings:
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # reproducibility
-torch.manual_seed(0)
-np.random.seed(0)
+torch.manual_seed(p.random_seed)
+np.random.seed(p.random_seed)
 
 lr = p.learn_rate
 
