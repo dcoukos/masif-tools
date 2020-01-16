@@ -63,14 +63,6 @@ test_data = next(iter(test_loader))
 test_labels = test_data.y.to(device)
 
 
-# previous loss stored for adaptive learning rate.
-tr_loss = 1
-# prev_loss = 1
-# prev_prev_loss = 1
-
-# DEV: only one batch!
-
-
 for epoch in range(1, epochs+1):
     # rotate the structures between epochs
 
@@ -79,21 +71,14 @@ for epoch in range(1, epochs+1):
     pred = torch.Tensor()
     tr_weights = torch.Tensor()
     loss = []
-#    if prev_loss < tr_loss and prev_prev_loss < tr_loss:  # adaptive learning rate.
-#        for g in optimizer.param_groups:
-#            lr = lr*p.lr_decay  # Does this add overhead?
-#            g['lr'] = lr
-#    prev_prev_loss = prev_loss
-#    prev_loss = tr_loss
 
-# ------- DEV: 1 batch run --------------------------
     for batch_n, data in enumerate(train_loader):
         optimizer.zero_grad()
         x, edge_index = data.x.to(device), data.edge_index.to(device)
         labels = data.y.to(device)
         weights = generate_weights(labels)
         tr_loss, out = model(x, edge_index, labels, weights)
-        loss.append(tr_loss)
+        loss.append(tr_loss.detach().item())
         tr_loss.backward()
         optimizer.step()
         if batch_n == 0:
