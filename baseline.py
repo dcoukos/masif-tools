@@ -50,7 +50,7 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
 
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}'.format(
                        p.version,
-                       p.learn_rate,
+                       lr,
                        p.lr_decay))
 
 cutoff = int(np.floor(samples*(1-p.validation_split)))
@@ -61,9 +61,23 @@ test_dataset = dataset[cutoff:]
 train_loader = DataLoader(train_dataset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
 test_loader = DataLoader(test_dataset, shuffle=False, batch_size=p.test_batch_size)
 
+intermediate_lr = p.intermediate_learn_rate
+prev_lr = lr
+steps_down = 0
 
 for epoch in range(1, epochs+1):
     # rotate the structures between epochs
+
+    # Reboost the learning rate
+    learn_rate = optimizer.param_groups[0]['lr']
+    if prev_lr > learn_rate:
+        steps_down += 1
+        prev_lr = learn_rate
+    if steps_down == 5:
+        for group in optimizer.param_groups:
+            group['lr'] = intermediate_lr
+            intermediate_lr *= p.lr_cap_decay
+        steps_down = 0
 
     model.train()
     first_batch_labels = torch.Tensor()
@@ -87,7 +101,7 @@ for epoch in range(1, epochs+1):
 
     loss = mean(loss)
     print("---- Round {}: loss={:.4f} lr:{:.6f}"
-          .format(epoch, loss, optimizer.param_groups[0]['lr']))
+          .format(epoch, loss, learn_rate))
 
     #  --------------  REPORTING ------------------------------------
     '''
@@ -128,7 +142,7 @@ for epoch in range(1, epochs+1):
                                 'test': te_loss}, epoch)
     writer.add_scalars('ROC AUC', {'train': roc_auc,
                                    'test': roc_auc_te}, epoch)
-    writer.add_scalar('learning rate', optimizer.param_groups[0]['lr'], epoch)
+    writer.add_scalar('learning rate', learn_rate, epoch)
 
 # Observing the gradient for model v.10
 # looking for dead neurons/dying,exploding gradient
