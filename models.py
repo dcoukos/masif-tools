@@ -317,6 +317,70 @@ class SixConvPT_LFC(torch.nn.Module):
         return loss, x4
 
 
+class SixConvResidual(torch.nn.Module):
+    # Seems underpowered, but less epoch-to-epoch variance in prediction compared to BasicNet
+    # Quick Setup: back to back with max pool and pass through?
+
+    # TODO: confirm that linear layers defined below are functionally equivalent to 1x1 conv
+
+    def __init__(self, n_features, heads=1, dropout=True):
+        super(SixConvPT_LFC, self).__init__()
+        self.conv1 = FeaStConv(n_features, 16, heads=heads)
+        torch.nn.init.xavier_uniform(self.conv1.weight)
+        self.conv2 = FeaStConv(19, 32, heads=heads)
+        torch.nn.init.xavier_uniform(self.conv2.weight)
+        self.conv3 = FeaStConv(51, 32, heads=heads)
+        torch.nn.init.xavier_uniform(self.conv3.weight)
+        self.conv4 = FeaStConv(83, 32)
+        torch.nn.init.xavier_uniform(self.conv4.weight)
+        self.conv5 = FeaStConv(115, 32)
+        torch.nn.init.xavier_uniform(self.conv5.weight)
+        self.conv6 = FeaStConv(147, 64)
+        torch.nn.init.xavier_uniform(self.conv6.weight)
+        self.lin1 = Linear(211, 256)
+        self.lin2 = Linear(256, 64)
+        self.lin3 = Linear(64, 16)
+        self.out = Linear(16, 1)
+        self.drop_bool = dropout
+        self.dropout = Dropout(p=0.5)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    def forward(self, in_, edge_index, labels, weights):
+        # Should edge_index be redefined during run?
+        x1 = self.conv1(in_, edge_index)
+        x1 = x1.relu()
+        cat0 = torch.cat((x1, in_), dim=1)
+        x2 = self.conv2(cat0, edge_index)
+        x2 = x2.relu()
+        cat1 = torch.cat((cat0, x2), dim=1)
+        x3 = self.conv3(cat1, edge_index)
+        x3 = x3.relu()
+        cat2 = torch.cat((cat1, x3), dim=1)
+        x4 = self.conv4(cat2, edge_index)
+        x4 = x4.relu()
+        cat3 = torch.cat((cat2, x4))
+        x5 = self.conv5(cat3, edge_index)
+        x5 = x5.relu()
+        cat4 = torch.cat((cat3, x5))
+        x6 = self.conv6(cat4, edge_index)
+        z = torch.cat((cat4, x6), dim=1)
+        z = z.relu()
+        z = self.lin1(z)
+        z = self.dropout(z) if self.drop_bool else z
+        z = z.relu()
+        z = self.lin2(z)
+        z = self.dropout(z) if self.drop_bool else z
+        z = z.relu()
+        z = self.lin3(z)
+        z = self.dropout(z) if self.drop_bool else z
+        z = z.relu()
+        z = self.out(z)
+        z = torch.sigmoid(z)
+        loss = F.binary_cross_entropy(z, target=labels, weight=weights)
+
+        return loss, z
+
+
 class ANN(torch.nn.Module):
     '''
         Large ANN.
