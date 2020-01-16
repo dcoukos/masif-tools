@@ -10,6 +10,7 @@ from sklearn.metrics import roc_auc_score
 from utils import generate_weights
 import datetime
 import params as p
+from statistics import mean
 '''
 baseline.py implements a baseline model. Experiment using pytorch-geometric
     and FeaStNet.
@@ -41,7 +42,7 @@ if p.shuffle_dataset:
     dataset = dataset.shuffle()
 n_features = dataset.get(0).x.shape[1]
 
-model = ThreeConv(n_features, heads=2, dropout=True).to(device)
+model = ThreeConv(n_features, heads=2, dropout=p.dropout).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=p.weight_decay)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2)
 
@@ -77,7 +78,7 @@ for epoch in range(1, epochs+1):
     first_batch_labels = torch.Tensor()
     pred = torch.Tensor()
     tr_weights = torch.Tensor()
-
+    loss = []
 #    if prev_loss < tr_loss and prev_prev_loss < tr_loss:  # adaptive learning rate.
 #        for g in optimizer.param_groups:
 #            lr = lr*p.lr_decay  # Does this add overhead?
@@ -92,6 +93,7 @@ for epoch in range(1, epochs+1):
         labels = data.y.to(device)
         weights = generate_weights(labels)
         tr_loss, out = model(x, edge_index, labels, weights)
+        loss.append(tr_loss)
         tr_loss.backward()
         optimizer.step()
         if batch_n == 0:
@@ -99,8 +101,9 @@ for epoch in range(1, epochs+1):
             first_batch_labels = data.y.clone().detach().to(device)
             pred = out.clone().detach().round().to(device)
 
+    loss = mean(loss)
     print("---- Round {}: loss={:.4f} lr:{:.6f}"
-          .format(epoch, tr_loss, optimizer.param_groups[0]['lr']))
+          .format(epoch, loss, optimizer.param_groups[0]['lr']))
 
     #  --------------  REPORTING ------------------------------------
 
@@ -157,7 +160,7 @@ for epoch in range(1, epochs+1):
     writer.add_histogram('Layer 8 weights', model.lin2.weight, epoch+1)
     writer.add_histogram('Output layer weights', model.out.weight, epoch+1)
     '''
-    scheduler.step(tr_loss)
+    scheduler.step(loss)
 writer.close()
 
 now = datetime.datetime.now().strftime('%y%m%d%H%M')
