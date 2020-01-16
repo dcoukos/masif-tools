@@ -42,9 +42,10 @@ if p.shuffle_dataset:
     dataset = dataset.shuffle()
 n_features = dataset.get(0).x.shape[1]
 
-model = ThreeConv(n_features, heads=2, dropout=p.dropout).to(device)
+model = ThreeConv(n_features, heads=1, dropout=p.dropout).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=p.weight_decay)
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2)
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2,
+                                                       patience=100)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}'.format(
                        p.version,
