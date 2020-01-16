@@ -324,7 +324,7 @@ class SixConvResidual(torch.nn.Module):
     # TODO: confirm that linear layers defined below are functionally equivalent to 1x1 conv
 
     def __init__(self, n_features, heads=1, dropout=True):
-        super(SixConvPT_LFC, self).__init__()
+        super(SixConvResidual, self).__init__()
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
         torch.nn.init.xavier_uniform(self.conv1.weight)
         self.conv2 = FeaStConv(19, 32, heads=heads)

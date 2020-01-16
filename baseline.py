@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from torch_geometric.data import DataLoader
-from models import ThreeConv, SixConv, SixConvPassThrough, SixConvPT_LFC
+from models import ThreeConv, SixConv, SixConvPassThrough, SixConvPT_LFC, SixConvResidual
 from torch_geometric.transforms import FaceToEdge
 from torch_geometric.utils import precision, recall, f1_score
 from dataset import MiniStructures
@@ -42,10 +42,11 @@ if p.shuffle_dataset:
     dataset = dataset.shuffle()
 n_features = dataset.get(0).x.shape[1]
 
-model = SixConv(n_features, heads=1, dropout=p.dropout).to(device)
+model = SixConvPassThrough(n_features, heads=1, dropout=p.dropout).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=p.weight_decay)
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5,
-                                                       patience=100)
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
+                                                       factor=p.lr_decay,
+                                                       patience=p.patience)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}'.format(
                        p.version,
@@ -131,7 +132,7 @@ for epoch in range(1, epochs+1):
 
 # Observing the gradient for model v.10
 # looking for dead neurons/dying,exploding gradient
-
+    '''
     writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
     writer.add_histogram('Layer 2 weight gradients', model.conv2.weight.grad, epoch+1)
     writer.add_histogram('Layer 3 weight gradients', model.conv3.weight.grad, epoch+1)
@@ -152,7 +153,7 @@ for epoch in range(1, epochs+1):
     writer.add_histogram('Layer 7 weights', model.lin1.weight, epoch+1)
     writer.add_histogram('Layer 8 weights', model.lin2.weight, epoch+1)
     writer.add_histogram('Output layer weights', model.out.weight, epoch+1)
-
+    '''
     scheduler.step(loss)
 writer.close()
 
