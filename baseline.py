@@ -58,10 +58,7 @@ test_dataset = dataset[cutoff:]
 
 
 train_loader = DataLoader(train_dataset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
-test_loader = DataLoader(test_dataset, shuffle=False, batch_size=len(test_dataset))
-
-test_data = next(iter(test_loader))
-test_labels = test_data.y.to(device)
+test_loader = DataLoader(test_dataset, shuffle=False, batch_size=p.test_batch_size)
 
 
 for epoch in range(1, epochs+1):
@@ -92,30 +89,39 @@ for epoch in range(1, epochs+1):
           .format(epoch, loss, optimizer.param_groups[0]['lr']))
 
     #  --------------  REPORTING ------------------------------------
-
+    '''
     train_precision = precision(pred, first_batch_labels, 2)[1].item()
     train_recall = recall(pred, first_batch_labels, 2)[1].item()
     train_f1 = f1_score(pred, first_batch_labels, 2)[1].item()
+    '''
     roc_auc = roc_auc_score(first_batch_labels.cpu(), pred.cpu(), sample_weight=tr_weights.cpu())
 
     model.eval()
-    x, edge_index = test_data.x.to(device), test_data.edge_index.to(device)
-    labels = test_data.y.to(device)
-    te_weights = generate_weights(labels)
-    te_loss, out = model(x, edge_index, labels, te_weights)
-    pred = out.detach().round().to(device)
+    cum_pred = torch.Tensor()
+    cum_labels = torch.Tensor()
+    for batch_n, data in enumerate(test_loader):
+        x, edge_index = data.x.to(device), data.edge_index.to(device)
+        labels = data.y.to(device)
+        te_weights = generate_weights(labels)
+        te_loss, out = model(x, edge_index, labels, te_weights)
+        pred = out.detach().round().to(device)
+        cum_labels = torch.stack((cum_labels, labels.clone().detach()), dim=0)
+        cum_pred = torch.stack((cum_pred, pred.clone().detach()), dim=0)
+    '''
+    test_precision = precision(cum_pred, cum_labels, 2)[1].item()
+    test_recall = recall(cum_pred, cum_labels, 2)[1].item()
+    test_f1 = f1_score(cum_pred, cum_labels, 2)[1].item()
+    '''
+    roc_auc_te = roc_auc_score(cum_labels.cpu(), cum_pred.cpu(), sample_weight=te_weights.cpu())
 
-    test_precision = precision(pred, test_labels, 2)[1].item()
-    test_recall = recall(pred, test_labels, 2)[1].item()
-    test_f1 = f1_score(pred, test_labels, 2)[1].item()
-    roc_auc_te = roc_auc_score(labels.cpu(), pred.cpu(), sample_weight=te_weights.cpu())
-
+    '''
     writer.add_scalars('Recall', {'train': train_recall,
                                   'test': test_recall}, epoch)
     writer.add_scalars('Precision', {'train': train_precision,
                                      'test': test_precision}, epoch)
     writer.add_scalars('F1_score', {'train': train_f1,
                                     'test': test_f1}, epoch)
+    '''
     writer.add_scalars('Loss', {'train': tr_loss,
                                 'test': te_loss}, epoch)
     writer.add_scalars('ROC AUC', {'train': roc_auc,
@@ -124,7 +130,7 @@ for epoch in range(1, epochs+1):
 
 # Observing the gradient for model v.10
 # looking for dead neurons/dying,exploding gradient
-    '''
+
     writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
     writer.add_histogram('Layer 2 weight gradients', model.conv2.weight.grad, epoch+1)
     writer.add_histogram('Layer 3 weight gradients', model.conv3.weight.grad, epoch+1)
@@ -145,7 +151,7 @@ for epoch in range(1, epochs+1):
     writer.add_histogram('Layer 7 weights', model.lin1.weight, epoch+1)
     writer.add_histogram('Layer 8 weights', model.lin2.weight, epoch+1)
     writer.add_histogram('Output layer weights', model.out.weight, epoch+1)
-    '''
+
     scheduler.step(loss)
 writer.close()
 
