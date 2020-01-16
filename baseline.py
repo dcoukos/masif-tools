@@ -126,7 +126,7 @@ for epoch in range(1, epochs+1):
                                 'test': te_loss}, epoch)
     writer.add_scalars('ROC AUC', {'train': roc_auc,
                                    'test': roc_auc_te}, epoch)
-    writer.add_scalar('learning rate', lr, epoch)
+    writer.add_scalar('learning rate', optimizer.param_groups[0]['lr'], epoch)
 
 # Observing the gradient for model v.10
 # looking for dead neurons/dying,exploding gradient
