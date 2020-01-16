@@ -24,6 +24,10 @@ if p.suppress_warnings:
     warnings.filterwarnings("ignore")
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# reproducibility
+torch.manual_seed(0)
+np.random.seed(0)
+
 lr = p.learn_rate
 
 if str(device) == 'cuda':
@@ -37,9 +41,9 @@ if p.shuffle_dataset:
     dataset = dataset.shuffle()
 n_features = dataset.get(0).x.shape[1]
 
-model = SixConvPT_LFC(n_features, heads=2, dropout=True).to(device)
-
+model = ThreeConv(n_features, heads=2, dropout=True).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=p.weight_decay)
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}'.format(
                        p.version,
@@ -144,16 +148,16 @@ for epoch in range(1, epochs+1):
     writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)
     writer.add_histogram('Layer 2 weights', model.conv2.weight, epoch+1)
     writer.add_histogram('Layer 3 weights', model.conv3.weight, epoch+1)
-   
+
     writer.add_histogram('Layer 4 weights', model.conv4.weight, epoch+1)
     writer.add_histogram('Layer 5 weights', model.conv5.weight, epoch+1)
-    
+
     writer.add_histogram('Layer 6 weights', model.conv6.weight, epoch+1)
     writer.add_histogram('Layer 7 weights', model.lin1.weight, epoch+1)
     writer.add_histogram('Layer 8 weights', model.lin2.weight, epoch+1)
     writer.add_histogram('Output layer weights', model.out.weight, epoch+1)
     '''
-
+    scheduler.step(tr_loss)
 writer.close()
 
 now = datetime.datetime.now().strftime('%y%m%d%H%M')
