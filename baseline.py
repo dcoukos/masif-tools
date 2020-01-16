@@ -42,7 +42,7 @@ if p.shuffle_dataset:
     dataset = dataset.shuffle()
 n_features = dataset.get(0).x.shape[1]
 
-model = SixConvPassThrough(n_features, heads=1, dropout=p.dropout).to(device)
+model = SixConv(n_features, heads=1, dropout=p.dropout).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=p.weight_decay)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5,
                                                        patience=100)
@@ -97,21 +97,22 @@ for epoch in range(1, epochs+1):
     roc_auc = roc_auc_score(first_batch_labels.cpu(), pred.cpu(), sample_weight=tr_weights.cpu())
 
     model.eval()
-    cum_pred = torch.Tensor()
-    cum_labels = torch.Tensor()
+    cum_pred = torch.Tensor().to(device)
+    cum_labels = torch.Tensor().to(device)
     for batch_n, data in enumerate(test_loader):
         x, edge_index = data.x.to(device), data.edge_index.to(device)
         labels = data.y.to(device)
         te_weights = generate_weights(labels)
         te_loss, out = model(x, edge_index, labels, te_weights)
         pred = out.detach().round().to(device)
-        cum_labels = torch.stack((cum_labels, labels.clone().detach()), dim=0)
-        cum_pred = torch.stack((cum_pred, pred.clone().detach()), dim=0)
+        cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
+        cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
     '''
     test_precision = precision(cum_pred, cum_labels, 2)[1].item()
     test_recall = recall(cum_pred, cum_labels, 2)[1].item()
     test_f1 = f1_score(cum_pred, cum_labels, 2)[1].item()
     '''
+    te_weights = generate_weights(cum_labels)
     roc_auc_te = roc_auc_score(cum_labels.cpu(), cum_pred.cpu(), sample_weight=te_weights.cpu())
 
     '''
