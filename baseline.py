@@ -90,10 +90,10 @@ for epoch in range(1, epochs+1):
     tr_weights = torch.Tensor()
     loss = []
 
-    for batch_n, data in enumerate(train_loader):
+    for batch_n, datalist in enumerate(train_loader):
         optimizer.zero_grad()
-        out = model(data)
-        labels = data.y.to(out.device)
+        out = model(datalist)
+        labels = torch.cat([data.y for data in datalist]).to(out.device)
         weights = generate_weights(labels).to(out.device)
         tr_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights())
         loss.append(tr_loss.detach().item())
