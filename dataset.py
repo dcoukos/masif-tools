@@ -142,17 +142,18 @@ class MiniStructures(InMemoryDataset):
 
 
 class Structures(InMemoryDataset):
-    def __init__(self, root='./datasets/full_pos/', transform=None, pre_transform=None):
+    def __init__(self, root='./datasets/full_pos/', transform=None, pre_transform=None, prefix=''):
         super(Structures, self).__init__(root, transform, pre_transform)
         self.data, self.slices = torch.load(self.processed_paths[0])
+        self.prefix = prefix
 
     @property
     def raw_file_names(self):
-        return ['structures.pt']
+        return ['{}structures.pt'.format(self.prefix + '_')]
 
     @property
     def processed_file_names(self):
-        return ['structures.pt']
+        return ['{}structures.pt'.format(self.prefix + '_')]
 
     def download(self):
         pass
