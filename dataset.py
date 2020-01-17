@@ -75,7 +75,7 @@ def collate(data_list):
 def generate_raw_data(use_structural_data=True):
     # function for development, no longer used.
     data_list = [read_ply(path, use_structural_data) for path in
-                 glob.glob('./structures/*')]
+                 glob('./structures/*')]
     data, slices = collate(data_list)
     torch.save((data, slices), './structures/raw/data.pt')
 
@@ -83,7 +83,7 @@ def generate_raw_data(use_structural_data=True):
 def generate_raw_mini_data(n_structures=300, use_structural_data=True, prefix='mini'):
     # function for development, no longer used.
     data_list = [read_ply(path, use_structural_data) for path in
-                 glob.glob('./structures/*')[:n_structures]]
+                 glob('./structures/*')[:n_structures]]
     data, slices = collate(data_list)
     torch.save((data, slices), './{}_structures/raw/data.pt'.format(prefix))
 
