@@ -12,7 +12,7 @@ from utils import generate_weights
 import datetime
 import params as p
 from statistics import mean
-import torch.functional as F
+import torch.nn.functional as F
 '''
 baseline.py implements a baseline model. Experiment using pytorch-geometric
     and FeaStNet.
@@ -115,9 +115,9 @@ for epoch in range(1, epochs+1):
     cum_pred = torch.Tensor()
     cum_labels = torch.Tensor()
     te_weights = torch.Tensor()
-    for batch_n, data in enumerate(test_loader):
-        out = model(data)
-        labels = data.y.to(out.device)
+    for batch_n, datalist in enumerate(test_loader):
+        out = model(datalist)
+        labels = torch.cat([data.y for data in datalist]).to(out.device)
         weights = generate_weights(labels).to(out.device)
         te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights())
         loss.append(te_loss.detach().item())
