@@ -4,7 +4,7 @@ from torch_geometric.data import DataLoader
 from models import ThreeConv, SixConv, SixConvPassThrough, SixConvPT_LFC, SixConvResidual
 from torch_geometric.transforms import FaceToEdge
 from torch_geometric.utils import precision, recall, f1_score
-from dataset import MiniStructures
+from dataset import MiniStructures, Structures
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_auc_score
 from utils import generate_weights
@@ -36,7 +36,7 @@ if str(device) == 'cuda':
 else:
     epochs = 20
 
-dataset = MiniStructures(root='./datasets/mini/', pre_transform=FaceToEdge())
+dataset = Structures(root='./datasets/full/', pre_transform=FaceToEdge())
 samples = len(dataset)
 if p.shuffle_dataset:
     dataset = dataset.shuffle()
