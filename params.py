@@ -14,3 +14,4 @@ weight_decay = 1e-4
 epochs = 3000
 version = '11c'
 suppress_warnings = True
+dataset = 'thous'

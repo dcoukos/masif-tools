@@ -38,7 +38,8 @@ if str(device) == 'cuda:0':
 else:
     epochs = 20
 
-dataset = Structures(root='./datasets/full/', pre_transform=FaceToEdge())
+dataset = Structures(root='./datasets/{}/'.format(p.dataset),
+                     pre_transform=FaceToEdge(), prefix=p.dataset)
 samples = len(dataset)
 if p.shuffle_dataset:
     dataset = dataset.shuffle()
