@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from torch_geometric.data import DataLoader
+from torch_geometric.data import DataListLoader
 from models import ThreeConv, SixConv, SixConvPassThrough, SixConvPT_LFC, SixConvResidual
 from torch_geometric.transforms import FaceToEdge, ToDense
 from torch_geometric.utils import precision, recall, f1_score
@@ -40,7 +40,7 @@ else:
 
 dataset = Structures(root='./datasets/{}/'.format(p.dataset),
                      pre_transform=FaceToEdge(), prefix=p.dataset)
-dataset = ToDense(dataset)
+# dataset = ToDense(dataset)
 samples = len(dataset)
 if p.shuffle_dataset:
     dataset = dataset.shuffle()
@@ -63,8 +63,8 @@ train_dataset = dataset[:cutoff]
 test_dataset = dataset[cutoff:]
 
 
-train_loader = DataLoader(train_dataset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
-test_loader = DataLoader(test_dataset, shuffle=False, batch_size=p.test_batch_size)
+train_loader = DataListLoader(train_dataset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
+test_loader = DataListLoader(test_dataset, shuffle=False, batch_size=p.test_batch_size)
 
 intermediate_lr = p.intermediate_learn_rate
 prev_lr = lr
@@ -109,11 +109,6 @@ for epoch in range(1, epochs+1):
           .format(epoch, loss, learn_rate))
 
     #  --------------  REPORTING ------------------------------------
-    '''
-    train_precision = precision(pred, first_batch_labels, 2)[1].item()
-    train_recall = recall(pred, first_batch_labels, 2)[1].item()
-    train_f1 = f1_score(pred, first_batch_labels, 2)[1].item()
-    '''
     roc_auc = roc_auc_score(first_batch_labels.cpu(), pred.cpu(), sample_weight=tr_weights.cpu())
 
     model.eval()
@@ -130,51 +125,14 @@ for epoch in range(1, epochs+1):
         cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
         cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
         te_weights = torch.cat((te_weights, weights.clone().detach()), dim=0)
-    '''
-    test_precision = precision(cum_pred, cum_labels, 2)[1].item()
-    test_recall = recall(cum_pred, cum_labels, 2)[1].item()
-    test_f1 = f1_score(cum_pred, cum_labels, 2)[1].item()
-    '''
-    roc_auc_te = roc_auc_score(cum_labels.cpu(), cum_pred.cpu(), sample_weight=te_weights.cpu())
 
-    '''
-    writer.add_scalars('Recall', {'train': train_recall,
-                                  'test': test_recall}, epoch)
-    writer.add_scalars('Precision', {'train': train_precision,
-                                     'test': test_precision}, epoch)
-    writer.add_scalars('F1_score', {'train': train_f1,
-                                    'test': test_f1}, epoch)
-    '''
+    roc_auc_te = roc_auc_score(cum_labels.cpu(), cum_pred.cpu(), sample_weight=te_weights.cpu())
     writer.add_scalars('Loss', {'train': tr_loss,
                                 'test': te_loss}, epoch)
     writer.add_scalars('ROC AUC', {'train': roc_auc,
                                    'test': roc_auc_te}, epoch)
     writer.add_scalar('learning rate', learn_rate, epoch)
 
-# Observing the gradient for model v.10
-# looking for dead neurons/dying,exploding gradient
-    '''
-    writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
-    writer.add_histogram('Layer 2 weight gradients', model.conv2.weight.grad, epoch+1)
-    writer.add_histogram('Layer 3 weight gradients', model.conv3.weight.grad, epoch+1)
-    writer.add_histogram('Layer 4 weight gradients', model.conv4.weight.grad, epoch+1)
-    writer.add_histogram('Layer 5 weight gradients', model.conv5.weight.grad, epoch+1)
-    writer.add_histogram('Layer 6 weight gradients', model.conv6.weight.grad, epoch+1)
-    writer.add_histogram('Layer 7 weight gradients', model.lin1.weight.grad, epoch+1)
-    writer.add_histogram('Layer 8 weight gradients', model.lin2.weight.grad, epoch+1)
-    writer.add_histogram('Output layer weight gradients', model.out.weight.grad, epoch+1)
-    writer.add_histogram('Layer 1 weights', model.conv1.weight, epoch+1)
-    writer.add_histogram('Layer 2 weights', model.conv2.weight, epoch+1)
-    writer.add_histogram('Layer 3 weights', model.conv3.weight, epoch+1)
-
-    writer.add_histogram('Layer 4 weights', model.conv4.weight, epoch+1)
-    writer.add_histogram('Layer 5 weights', model.conv5.weight, epoch+1)
-
-    writer.add_histogram('Layer 6 weights', model.conv6.weight, epoch+1)
-    writer.add_histogram('Layer 7 weights', model.lin1.weight, epoch+1)
-    writer.add_histogram('Layer 8 weights', model.lin2.weight, epoch+1)
-    writer.add_histogram('Output layer weights', model.out.weight, epoch+1)
-    '''
     scheduler.step(loss)
 writer.close()
 
