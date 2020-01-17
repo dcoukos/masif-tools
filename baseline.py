@@ -92,6 +92,8 @@ for epoch in range(1, epochs+1):
     for batch_n, data in enumerate(train_loader):
         optimizer.zero_grad()
         x, edge_index = data.x, data.edge_index
+        print("Input: {}, {}".format(type(x), x.shape))
+        print("Edge Index: {}, {}".format(type(edge_index), edge_index.shape))
         out = model(x, edge_index)
         labels = data.y.to(out.device)
         weights = generate_weights(labels)
