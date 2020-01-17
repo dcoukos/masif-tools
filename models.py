@@ -56,7 +56,8 @@ class OneConv(torch.nn.Module):
         self.lin1 = Linear(16, 8)
         self.out = Linear(8, 1)
 
-    def forward(self, in_, edge_index):
+    def forward(self, data):
+        in_, edge_index = data.x, data.edge_index
         x = self.conv1(in_, edge_index)
         x = x.relu()
         x = self.lin1(x)
@@ -78,7 +79,8 @@ class TwoConv(torch.nn.Module):
         self.lin3 = Linear(8, 4)
         self.out = Linear(4, 1)
 
-    def forward(self, in_, edge_index):
+    def forward(self, data):
+        in_, edge_index = data.x, data.edge_index
         x = self.conv1(in_, edge_index)
         x = x.relu()
         x = self.conv2(x, edge_index)
@@ -115,8 +117,8 @@ class ThreeConv(torch.nn.Module):
         self.dropout = Dropout(p=0.3)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def forward(self, in_, edge_index):
-        # Should edge_index be redefined during run?
+    def forward(self, data):
+        in_, edge_index = data.x, data.edge_index
         x = self.conv1(in_, edge_index)
         x = x.relu()
         x = self.conv2(x, edge_index)
@@ -168,9 +170,8 @@ class SixConv(torch.nn.Module):
         self.dropout = Dropout(p=0.3)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def forward(self, in_, edge_index):
-        # Should edge_index be redefined during run?
-        x = self.conv1(in_, edge_index)
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
         x = x.relu()
         x = self.conv2(x, edge_index)
         x = x.relu()
@@ -221,8 +222,8 @@ class SixConvPassThrough(torch.nn.Module):
         self.dropout = Dropout(p=0.3)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def forward(self, in_, edge_index):
-        # Should edge_index be redefined during run?
+    def forward(self, data):
+        in_, edge_index = data.x, data.edge_index
         x1 = self.conv1(in_, edge_index)
         x1 = x1.relu()
         x2 = self.conv2(x1, edge_index)
@@ -276,8 +277,8 @@ class SixConvPT_LFC(torch.nn.Module):
         self.dropout = Dropout(p=0.5)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def forward(self, in_, edge_index):
-        # Should edge_index be redefined during run?
+    def forward(self, data):
+        in_, edge_index = data.x, data.edge_index
         x1 = self.conv1(in_, edge_index)
         x1 = x1.relu()
         x2 = self.conv2(x1, edge_index)
@@ -334,8 +335,8 @@ class SixConvResidual(torch.nn.Module):
         self.dropout = Dropout(p=0.5)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def forward(self, in_, edge_index):
-        # Should edge_index be redefined during run?
+    def forward(self, data):
+        in_, edge_index = data.x, data.edge_index
         x1 = self.conv1(in_, edge_index)
         x1 = x1.relu()
         cat0 = torch.cat((x1, in_), dim=1)
@@ -389,7 +390,8 @@ class ANN(torch.nn.Module):
         self.dropout = dropout
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def forward(self, x, edge_index):
+    def forward(self, data):
+        x = data.x
         x = self.lin1(x)
         x.relu()
         x = self.lin2(x)
@@ -439,7 +441,8 @@ class GCNN(torch.nn.Module):
         self.dropout = dropout
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def forward(self, x, edge_index):
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
         x = self.conv1(x, edge_index)
         x.relu()
         x = self.conv2(x, edge_index)

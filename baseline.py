@@ -91,13 +91,10 @@ for epoch in range(1, epochs+1):
 
     for batch_n, data in enumerate(train_loader):
         optimizer.zero_grad()
-        x, edge_index = data.x, data.edge_index
-        print("Input: {}, {}".format(type(x), x.shape))
-        print("Edge Index: {}, {}".format(type(edge_index), edge_index.shape))
-        out = model(x, edge_index)
+        out = model(data)
         labels = data.y.to(out.device)
-        weights = generate_weights(labels)
-        tr_loss = F.binary_cross_entropy(x, target=labels, weight=generate_weights())
+        weights = generate_weights(labels).to(out.device)
+        tr_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights())
         loss.append(tr_loss.detach().item())
         tr_loss.backward()
         optimizer.step()
@@ -123,11 +120,10 @@ for epoch in range(1, epochs+1):
     cum_labels = torch.Tensor()
     te_weights = torch.Tensor()
     for batch_n, data in enumerate(test_loader):
-        x, edge_index = data.x, data.edge_index
-        out = model(x, edge_index)
+        out = model(data)
         labels = data.y.to(out.device)
-        weights = generate_weights(labels)
-        te_loss = F.binary_cross_entropy(x, target=labels, weight=generate_weights())
+        weights = generate_weights(labels).to(out.device)
+        te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights())
         loss.append(te_loss.detach().item())
         pred = out.detach().round().to(device)
         cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
