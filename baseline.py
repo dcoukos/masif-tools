@@ -120,7 +120,6 @@ for epoch in range(1, epochs+1):
         labels = torch.cat([data.y for data in datalist]).to(out.device)
         weights = generate_weights(labels).to(out.device)
         te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
-        loss.append(te_loss.detach().item())
         pred = out.detach().round().to(device)
         cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
         cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
