@@ -31,7 +31,7 @@ class BasicNet(torch.nn.Module):
         self.dropout = dropout
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def forward(self, x, edge_index, labels, graph_to_tb=False):  # Had to modify to work with Tensorboard
+    def forward(self, x, edge_index):  # Had to modify to work with Tensorboard
         x = self.conv1(x, edge_index)
         x = F.relu(x)
         x = F.dropout(x, training=self.training) if self.dropout else x
@@ -45,12 +45,7 @@ class BasicNet(torch.nn.Module):
         x = self.lin2(x)
         x = torch.sigmoid(x)
 
-        if type(graph_to_tb) == torch.Tensor:
-            loss = F.binary_cross_entropy(x, target=labels)
-        else:
-            loss = F.binary_cross_entropy(x, target=labels, weight=generate_weights(labels))
-
-        return loss, x
+        return x
 
 
 class OneConv(torch.nn.Module):
@@ -61,16 +56,15 @@ class OneConv(torch.nn.Module):
         self.lin1 = Linear(16, 8)
         self.out = Linear(8, 1)
 
-    def forward(self, in_, edge_index, labels, weights):
+    def forward(self, in_, edge_index):
         x = self.conv1(in_, edge_index)
         x = x.relu()
         x = self.lin1(x)
         x = x.relu()
         x = self.out(x)
         x = torch.sigmoid(x)
-        loss = F.binary_cross_entropy(x, target=labels, weight=weights)
 
-        return loss, x
+        return x
 
 
 class TwoConv(torch.nn.Module):
@@ -84,7 +78,7 @@ class TwoConv(torch.nn.Module):
         self.lin3 = Linear(8, 4)
         self.out = Linear(4, 1)
 
-    def forward(self, in_, edge_index, labels, weights):
+    def forward(self, in_, edge_index):
         x = self.conv1(in_, edge_index)
         x = x.relu()
         x = self.conv2(x, edge_index)
@@ -97,9 +91,8 @@ class TwoConv(torch.nn.Module):
         x = x.relu()
         x = self.out(x)
         x = torch.sigmoid(x)
-        loss = F.binary_cross_entropy(x, target=labels, weight=weights)
 
-        return loss, x
+        return x
 
 
 class ThreeConv(torch.nn.Module):
@@ -122,7 +115,7 @@ class ThreeConv(torch.nn.Module):
         self.dropout = Dropout(p=0.3)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def forward(self, in_, edge_index, labels, weights):
+    def forward(self, in_, edge_index):
         # Should edge_index be redefined during run?
         x = self.conv1(in_, edge_index)
         x = x.relu()
@@ -144,9 +137,8 @@ class ThreeConv(torch.nn.Module):
         x = x.relu()
         x = self.out(x)
         x = torch.sigmoid(x)
-        loss = F.binary_cross_entropy(x, target=labels, weight=weights)
 
-        return loss, x
+        return x
 
 
 class SixConv(torch.nn.Module):
@@ -176,7 +168,7 @@ class SixConv(torch.nn.Module):
         self.dropout = Dropout(p=0.3)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def forward(self, in_, edge_index, labels, weights):
+    def forward(self, in_, edge_index):
         # Should edge_index be redefined during run?
         x = self.conv1(in_, edge_index)
         x = x.relu()
@@ -198,9 +190,8 @@ class SixConv(torch.nn.Module):
         x = x.relu()
         x = self.out(x)
         x = torch.sigmoid(x)
-        loss = F.binary_cross_entropy(x, target=labels, weight=weights)
 
-        return loss, x
+        return x
 
 
 class SixConvPassThrough(torch.nn.Module):
@@ -230,7 +221,7 @@ class SixConvPassThrough(torch.nn.Module):
         self.dropout = Dropout(p=0.3)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def forward(self, in_, edge_index, labels, weights):
+    def forward(self, in_, edge_index):
         # Should edge_index be redefined during run?
         x1 = self.conv1(in_, edge_index)
         x1 = x1.relu()
@@ -253,9 +244,8 @@ class SixConvPassThrough(torch.nn.Module):
         x6 = x6.relu()
         x6 = self.out(x6)
         x6 = torch.sigmoid(x6)
-        loss = F.binary_cross_entropy(x6, target=labels, weight=weights)
 
-        return loss, x6
+        return x6
 
 
 class SixConvPT_LFC(torch.nn.Module):
@@ -286,7 +276,7 @@ class SixConvPT_LFC(torch.nn.Module):
         self.dropout = Dropout(p=0.5)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def forward(self, in_, edge_index, labels, weights):
+    def forward(self, in_, edge_index):
         # Should edge_index be redefined during run?
         x1 = self.conv1(in_, edge_index)
         x1 = x1.relu()
@@ -312,9 +302,8 @@ class SixConvPT_LFC(torch.nn.Module):
         x4 = x4.relu()
         x4 = self.out(x4)
         x4 = torch.sigmoid(x4)
-        loss = F.binary_cross_entropy(x4, target=labels, weight=weights)
 
-        return loss, x4
+        return x4
 
 
 class SixConvResidual(torch.nn.Module):
@@ -345,7 +334,7 @@ class SixConvResidual(torch.nn.Module):
         self.dropout = Dropout(p=0.5)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def forward(self, in_, edge_index, labels, weights):
+    def forward(self, in_, edge_index):
         # Should edge_index be redefined during run?
         x1 = self.conv1(in_, edge_index)
         x1 = x1.relu()
@@ -376,9 +365,8 @@ class SixConvResidual(torch.nn.Module):
         z = z.relu()
         z = self.out(z)
         z = torch.sigmoid(z)
-        loss = F.binary_cross_entropy(z, target=labels, weight=weights)
 
-        return loss, z
+        return z
 
 
 class ANN(torch.nn.Module):
@@ -401,7 +389,7 @@ class ANN(torch.nn.Module):
         self.dropout = dropout
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def forward(self, x, edge_index, labels):
+    def forward(self, x, edge_index):
         x = self.lin1(x)
         x.relu()
         x = self.lin2(x)
@@ -428,7 +416,7 @@ class ANN(torch.nn.Module):
         x = self.lin11(x)
         x = torch.sigmoid(x)
 
-        return F.binary_cross_entropy(x, target=labels, weight=generate_weights(labels)), x
+        return x
 
 
 class GCNN(torch.nn.Module):
@@ -451,7 +439,7 @@ class GCNN(torch.nn.Module):
         self.dropout = dropout
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def forward(self, x, edge_index, labels):
+    def forward(self, x, edge_index):
         x = self.conv1(x, edge_index)
         x.relu()
         x = self.conv2(x, edge_index)
@@ -478,7 +466,7 @@ class GCNN(torch.nn.Module):
         x = self.fc2(x)
         x = torch.sigmoid(x)
 
-        return F.binary_cross_entropy(x, target=labels, weight=generate_weights(labels)), x
+        return x
 
 
 class DGCNN(torch.nn.Module):
@@ -496,7 +484,7 @@ class DGCNN(torch.nn.Module):
         self.fc4 = Linear(256, 128)
         self.fc5 = Linear(128, 1)
 
-    def forward(self, x, edge_index, labels):
+    def forward(self, x, edge_index):
         x = self.econv1(x, edge_index)  # --> shape: nx64
         y = self.econv2(x)
         z = self.econv3(y)
@@ -513,9 +501,8 @@ class DGCNN(torch.nn.Module):
         b = b.relu()
         b = self.fc5(b)
         b = torch.sigmoid(b)
-        loss = F.binary_cross_entropy(x, target=labels, weight=generate_weights())
 
-        return loss, b
+        return b
 # TODO: where is the value of k addressed below?
 
 

@@ -4,6 +4,7 @@ from torch_geometric.data import DataLoader
 from models import ThreeConv, SixConv, SixConvPassThrough, SixConvPT_LFC, SixConvResidual
 from torch_geometric.transforms import FaceToEdge
 from torch_geometric.utils import precision, recall, f1_score
+from torch_geometric.nn import DataParallel
 from dataset import MiniStructures, Structures
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_auc_score
@@ -11,6 +12,7 @@ from utils import generate_weights
 import datetime
 import params as p
 from statistics import mean
+import torch.functional as F
 '''
 baseline.py implements a baseline model. Experiment using pytorch-geometric
     and FeaStNet.
@@ -24,14 +26,14 @@ if p.suppress_warnings:
     import warnings
     warnings.filterwarnings("ignore")
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # reproducibility
 torch.manual_seed(p.random_seed)
 np.random.seed(p.random_seed)
 
 lr = p.learn_rate
 
-if str(device) == 'cuda':
+if str(device) == 'cuda:0':
     epochs = p.epochs
 else:
     epochs = 20
@@ -43,6 +45,7 @@ if p.shuffle_dataset:
 n_features = dataset.get(0).x.shape[1]
 
 model = SixConvResidual(n_features, heads=1, dropout=p.dropout).to(device)
+model = DataParallel(model).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=p.weight_decay)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
                                                        factor=p.lr_decay,
@@ -87,10 +90,11 @@ for epoch in range(1, epochs+1):
 
     for batch_n, data in enumerate(train_loader):
         optimizer.zero_grad()
-        x, edge_index = data.x.to(device), data.edge_index.to(device)
-        labels = data.y.to(device)
+        x, edge_index = data.x, data.edge_index
+        out = model(x, edge_index)
+        labels = data.y.to(out.device)
         weights = generate_weights(labels)
-        tr_loss, out = model(x, edge_index, labels, weights)
+        tr_loss = F.binary_cross_entropy(x, target=labels, weight=generate_weights())
         loss.append(tr_loss.detach().item())
         tr_loss.backward()
         optimizer.step()
@@ -112,22 +116,25 @@ for epoch in range(1, epochs+1):
     roc_auc = roc_auc_score(first_batch_labels.cpu(), pred.cpu(), sample_weight=tr_weights.cpu())
 
     model.eval()
-    cum_pred = torch.Tensor().to(device)
-    cum_labels = torch.Tensor().to(device)
+    cum_pred = torch.Tensor()
+    cum_labels = torch.Tensor()
+    te_weights = torch.Tensor()
     for batch_n, data in enumerate(test_loader):
-        x, edge_index = data.x.to(device), data.edge_index.to(device)
-        labels = data.y.to(device)
-        te_weights = generate_weights(labels)
-        te_loss, out = model(x, edge_index, labels, te_weights)
+        x, edge_index = data.x, data.edge_index
+        out = model(x, edge_index)
+        labels = data.y.to(out.device)
+        weights = generate_weights(labels)
+        te_loss = F.binary_cross_entropy(x, target=labels, weight=generate_weights())
+        loss.append(te_loss.detach().item())
         pred = out.detach().round().to(device)
         cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
         cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
+        te_weights = torch.cat((te_weights, weights.clone().detach()), dim=0)
     '''
     test_precision = precision(cum_pred, cum_labels, 2)[1].item()
     test_recall = recall(cum_pred, cum_labels, 2)[1].item()
     test_f1 = f1_score(cum_pred, cum_labels, 2)[1].item()
     '''
-    te_weights = generate_weights(cum_labels)
     roc_auc_te = roc_auc_score(cum_labels.cpu(), cum_pred.cpu(), sample_weight=te_weights.cpu())
 
     '''
