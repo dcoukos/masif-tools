@@ -112,9 +112,9 @@ for epoch in range(1, epochs+1):
     roc_auc = roc_auc_score(first_batch_labels.cpu(), pred.cpu(), sample_weight=tr_weights.cpu())
 
     model.eval()
-    cum_pred = torch.Tensor()
-    cum_labels = torch.Tensor()
-    te_weights = torch.Tensor()
+    cum_pred = torch.Tensor().to(device)
+    cum_labels = torch.Tensor().to(device)
+    te_weights = torch.Tensor().to(device)
     for batch_n, datalist in enumerate(test_loader):
         out = model(datalist)
         labels = torch.cat([data.y for data in datalist]).to(out.device)
