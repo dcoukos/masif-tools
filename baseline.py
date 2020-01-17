@@ -46,7 +46,7 @@ if p.shuffle_dataset:
     dataset = dataset.shuffle()
 n_features = dataset.get(0).x.shape[1]
 
-model = SixConvPassThrough(n_features, heads=1, dropout=p.dropout).to(device)
+model = SixConvPT_LFC(n_features, heads=1, dropout=p.dropout).to(device)
 model = DataParallel(model).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=p.weight_decay)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
