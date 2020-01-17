@@ -101,7 +101,7 @@ for epoch in range(1, epochs+1):
         optimizer.step()
         if batch_n == 0:
             tr_weights = weights
-            first_batch_labels = data.y.clone().detach().to(device)
+            first_batch_labels = labels.clone().detach().to(device)
             pred = out.clone().detach().round().to(device)
 
     loss = mean(loss)
