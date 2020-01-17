@@ -14,5 +14,3 @@ weight_decay = 1e-4
 epochs = 2000
 version = '13'
 suppress_warnings = True
-
-npsqrt(40)
