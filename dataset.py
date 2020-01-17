@@ -72,23 +72,23 @@ def collate(data_list):
     return data, slices
 
 
-def generate_raw_data():
+def generate_raw_data(use_structural_data=True):
     # function for development, no longer used.
-    data_list = [read_ply(path, True) for path in
+    data_list = [read_ply(path, use_structural_data) for path in
                  glob.glob('./structures/*')]
     data, slices = collate(data_list)
     torch.save((data, slices), './structures/raw/data.pt')
 
 
-def generate_raw_mini_data(n_structures=300):
+def generate_raw_mini_data(n_structures=300, use_structural_data=True, prefix='mini'):
     # function for development, no longer used.
-    data_list = [read_ply(path, True) for path in
+    data_list = [read_ply(path, use_structural_data) for path in
                  glob.glob('./structures/*')[:n_structures]]
     data, slices = collate(data_list)
-    torch.save((data, slices), './mini_structures/raw/data.pt')
+    torch.save((data, slices), './{}_structures/raw/data.pt'.format(prefix))
 
 
-def read_ply(path, use_shape_data=False, learn_iface=True):
+def read_ply(path, use_structural_data=False, learn_iface=True):
     '''
         read_ply from pytorch_geometric does not capture the properties in ply
         file. This function adds to pyg's read_ply function by capturing extra
@@ -111,7 +111,7 @@ def read_ply(path, use_shape_data=False, learn_iface=True):
     x = ([torch.tensor(data['vertex'][axis]) for axis in ['charge', 'hbond', 'hphob']])
     x = torch.stack(x, dim=-1)
     y = None
-    if use_shape_data:
+    if use_structural_data:
         x = torch.stack((x, pos, norm), dim=1)
         x = x.reshape(-1, 9)
 
