@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from torch_geometric.data import DataLoader
 from models import ThreeConv, SixConv, SixConvPassThrough, SixConvPT_LFC, SixConvResidual
-from torch_geometric.transforms import FaceToEdge
+from torch_geometric.transforms import FaceToEdge, ToDense
 from torch_geometric.utils import precision, recall, f1_score
 from torch_geometric.nn import DataParallel
 from dataset import MiniStructures, Structures
@@ -40,6 +40,7 @@ else:
 
 dataset = Structures(root='./datasets/{}/'.format(p.dataset),
                      pre_transform=FaceToEdge(), prefix=p.dataset)
+dataset = ToDense(dataset)
 samples = len(dataset)
 if p.shuffle_dataset:
     dataset = dataset.shuffle()
