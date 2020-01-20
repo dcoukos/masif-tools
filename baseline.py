@@ -46,17 +46,19 @@ if p.shuffle_dataset:
     dataset = dataset.shuffle()
 n_features = dataset.get(0).x.shape[1]
 
-model = SixConvPT_LFC(n_features, heads=1, dropout=p.dropout).to(device)
+model = SixConvResidual(n_features, heads=1, dropout=p.dropout).to(device)
 model = DataParallel(model).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=p.weight_decay)
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
-                                                       factor=p.lr_decay,
-                                                       patience=p.patience)
+#scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
+#                                                       factor=p.lr_decay,
+#                                                       patience=p.patience)
 
-writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}'.format(
+writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.format(
                        p.version,
                        lr,
-                       p.lr_decay))
+                       p.lr_decay,
+                       p.shuffle_dataset,
+                       p.random_seed))
 
 cutoff = int(np.floor(samples*(1-p.validation_split)))
 train_dataset = dataset[:cutoff]
@@ -75,6 +77,7 @@ for epoch in range(1, epochs+1):
 
     # Reboost the learning rate
     learn_rate = optimizer.param_groups[0]['lr']
+    '''
     if prev_lr > learn_rate:
         steps_down += 1
         prev_lr = learn_rate
@@ -83,7 +86,7 @@ for epoch in range(1, epochs+1):
             group['lr'] = intermediate_lr
             intermediate_lr *= p.lr_cap_decay
         steps_down = 0
-
+    '''
     model.train()
     first_batch_labels = torch.Tensor()
     pred = torch.Tensor()
@@ -132,7 +135,16 @@ for epoch in range(1, epochs+1):
                                    'test': roc_auc_te}, epoch)
     writer.add_scalar('learning rate', learn_rate, epoch)
 
-    scheduler.step(loss)
+    if epoch == 0:
+        writer.add_histogram('Layer 1 weight gradients', model.module.conv1.weight.grad, epoch+1)
+        writer.add_histogram('Layer 2 weight gradients', model.conv2.weight.grad, epoch+1)
+        writer.add_histogram('Layer 3 weight gradients', model.conv3.weight.grad, epoch+1)
+        writer.add_histogram('Layer 4 weight gradients', model.conv4.weight.grad, epoch+1)
+        writer.add_histogram('Layer 5 weight gradients', model.conv5.weight.grad, epoch+1)
+        writer.add_histogram('Layer 6 weight gradients', model.conv6.weight.grad, epoch+1)
+        writer.add_histogram('Layer 7 weight gradients', model.lin1.weight.grad, epoch+1)
+        writer.add_histogram('Layer 8 weight gradients', model.lin2.weight.grad, epoch+1)
+    #scheduler.step(loss)
 writer.close()
 
 now = datetime.datetime.now().strftime('%y%m%d%H%M')
