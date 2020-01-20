@@ -135,7 +135,7 @@ for epoch in range(1, epochs+1):
                                    'test': roc_auc_te}, epoch)
     writer.add_scalar('learning rate', learn_rate, epoch)
 
-    if epoch == 0:
+    if epoch == 1:
         writer.add_histogram('Layer 1 weight gradients', model.module.conv1.weight.grad, epoch+1)
         writer.add_histogram('Layer 2 weight gradients', model.conv2.weight.grad, epoch+1)
         writer.add_histogram('Layer 3 weight gradients', model.conv3.weight.grad, epoch+1)
