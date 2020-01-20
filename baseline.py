@@ -137,14 +137,14 @@ for epoch in range(1, epochs+1):
 
     if epoch == 1:
         writer.add_histogram('Layer 1 weight gradients', model.module.conv1.weight.grad, epoch+1)
-        writer.add_histogram('Layer 2 weight gradients', model.conv2.weight.grad, epoch+1)
-        writer.add_histogram('Layer 3 weight gradients', model.conv3.weight.grad, epoch+1)
-        writer.add_histogram('Layer 4 weight gradients', model.conv4.weight.grad, epoch+1)
-        writer.add_histogram('Layer 5 weight gradients', model.conv5.weight.grad, epoch+1)
-        writer.add_histogram('Layer 6 weight gradients', model.conv6.weight.grad, epoch+1)
-        writer.add_histogram('Layer 7 weight gradients', model.lin1.weight.grad, epoch+1)
-        writer.add_histogram('Layer 8 weight gradients', model.lin2.weight.grad, epoch+1)
-    #scheduler.step(loss)
+        writer.add_histogram('Layer 2 weight gradients', model.module.conv2.weight.grad, epoch+1)
+        writer.add_histogram('Layer 3 weight gradients', model.module.conv3.weight.grad, epoch+1)
+        writer.add_histogram('Layer 4 weight gradients', model.module.conv4.weight.grad, epoch+1)
+        writer.add_histogram('Layer 5 weight gradients', model.module.conv5.weight.grad, epoch+1)
+        writer.add_histogram('Layer 6 weight gradients', model.module.conv6.weight.grad, epoch+1)
+        writer.add_histogram('Layer 7 weight gradients', model.module.lin1.weight.grad, epoch+1)
+        writer.add_histogram('Layer 8 weight gradients', model.module.lin2.weight.grad, epoch+1)
+    # scheduler.step(loss)
 writer.close()
 
 now = datetime.datetime.now().strftime('%y%m%d%H%M')
