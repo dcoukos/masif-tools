@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from torch_geometric.data import DataListLoader
-from models import ThreeConv, SixConv, SixConvPassThrough, SixConvPT_LFC, SixConvResidual
+from models import ThreeConvGlobal, SixConv, SixConvPassThrough, SixConvPT_LFC, SixConvResidual
 from torch_geometric.transforms import FaceToEdge, ToDense
 from torch_geometric.utils import precision, recall, f1_score
 from torch_geometric.nn import DataParallel
@@ -46,7 +46,7 @@ if p.shuffle_dataset:
     dataset = dataset.shuffle()
 n_features = dataset.get(0).x.shape[1]
 
-model = SixConvResidual(n_features, heads=1, dropout=p.dropout).to(device)
+model = ThreeConvGlobal(n_features, heads=1, dropout=p.dropout).to(device)
 model = DataParallel(model).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
