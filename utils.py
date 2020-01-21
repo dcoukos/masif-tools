@@ -38,23 +38,38 @@ def generate_weights(labels):
     return (labels.clone().detach()*ratio_neg + ratio_pos)
 
 
-def generate_example_surfaces(model_type, path, n_examples=5):
+def generate_example_surfaces(model_type, path, n_examples=5, parallel=True):
     '''
         Save graph vertices in ply file format. Loads a model from path and runs n_example
         structures through the model, and saves the graph vertices with the predicted surface
         interface labels.
     '''
+    from models import SixConvResidual
+    from 
+    model_type = SixConvResidual
+    path = './models/DataParallel_2001211119.pt'
+    n_examples = 10
+
+
     converter = FaceToEdge()
 
     paths = glob('./structures/*')[:n_examples]
     names = [path.split('/')[-1]for path in paths]
-    structures = [read_ply(path, use_shape_data=True) for path in paths]
-    faces = torch.tensor([structure.face for structure in structures])
+    structures = [read_ply(path, use_structural_data=False) for path in paths]
+
+    structures = FaceToEdge(structures)
+    f1 = structures[0].face
+    f2 = structures[1].face
+    f3 = structures[2].face
+    torch.tensor([f1, f2, f3])
+
+    #faces = torch.Tensor([structure.face for structure in structures])
     structures = [converter(structure) for structure in structures]
+
 
     device = torch.device('cpu')
     model = model_type(structures[0].x.shape[1])
-    model.load_state_dict(torch.load(path))
+    model.load_state_dict(torch.load(path, map_location=torch.device('cpu')))
     model.eval()
 
     predictions = []
@@ -63,6 +78,8 @@ def generate_example_surfaces(model_type, path, n_examples=5):
         labels = data.y.to(device)
         loss, out_ = model(x, edge_index, labels)
         predictions.append(out_)
+
+    # ---- Make directory ---
 
     for n, structure in enumerate(structures):
         save_ply(
@@ -75,6 +92,8 @@ def generate_example_surfaces(model_type, path, n_examples=5):
             hphob=structure.x[:, 2].reshape(-1, 1).detach().numpy(),
             iface=predictions[n].detach().numpy()
         )
+
+generate_example_surfaces('v13b', './models/DataParallel_2001211119.pt', n_examples=10)
 
 
 def save_ply(

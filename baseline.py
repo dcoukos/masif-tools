@@ -114,4 +114,6 @@ for epoch in range(1, epochs+1):
 writer.close()
 
 now = datetime.datetime.now().strftime('%y%m%d%H%M')
-torch.save(model.state_dict(), 'models/{}_{}.pt'.format(str(model).split('(')[0], now))
+path = 'models/{}_{}.pt'.format(str(model).split('(')[0], now)
+with open(path, 'a+'):
+    torch.save(model.state_dict(), path)

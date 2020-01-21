@@ -150,4 +150,4 @@ writer.close()
 now = datetime.datetime.now().strftime('%y%m%d%H%M')
 path = 'models/{}_{}.pt'.format(str(model).split('(')[0], now)
 with open(path, 'a+'):
-    torch.save(model.state_dict(), path)
+    torch.save(model.module.state_dict(), path)
