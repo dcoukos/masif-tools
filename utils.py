@@ -84,7 +84,6 @@ def generate_example_surfaces(model_type, path, n_examples=5):
             iface=predictions[n].detach().numpy()
         )
 
-generate_example_surfaces(SixConvResidual, './models/DataParallel_2001211228.pt', 10)
 
 def save_ply(
     filename,
