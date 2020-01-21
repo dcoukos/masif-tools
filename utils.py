@@ -97,7 +97,7 @@ def save_ply(
         faces: mesh
     """
     import pymesh  # No pymesh on gpu cluster
-    
+
     mesh = pymesh.form_mesh(vertices, faces)
     if normals is not None:
         n1 = normals[:, 0]

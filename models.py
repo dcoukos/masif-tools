@@ -1,7 +1,8 @@
 import torch
 import torch.nn.functional as F
 from torch.nn import Linear, Dropout, LeakyReLU
-from torch_geometric.nn import GCNConv, FeaStConv, EdgeConv, DynamicEdgeConv, max_pool, BatchNorm, graclus, avg_pool_x
+from torch_geometric.nn import GCNConv, FeaStConv, EdgeConv, DynamicEdgeConv, max_pool, BatchNorm
+# graclus, avg_pool_x
 from utils import generate_weights
 
 
@@ -368,7 +369,7 @@ class SixConvResidual(torch.nn.Module):
         z = torch.sigmoid(z)
 
         return z
-
+"""
 
 class MiniModel(torch.nn.Module):
     '''
@@ -422,3 +423,4 @@ class MiniModel(torch.nn.Module):
         x = avg_pool_x(cluster, data.x)
         y = max_pool(cluster, data.y)
         return x, y
+"""

@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from torch_geometric.data import DataLoader
-from models import SixConvResidual, MiniModel
+from models import SixConvResidual  #, MiniModel
 from torch_geometric.transforms import FaceToEdge
 from dataset import MiniStructures
 from torch.utils.tensorboard import SummaryWriter
@@ -40,7 +40,7 @@ if p.shuffle_dataset:
     dataset = dataset.shuffle()
 n_features = dataset.get(0).x.shape[1]
 
-model = MiniModel(n_features, heads=1, dropout=p.dropout).to(device)
+model = SixConvResidual(n_features, heads=1, dropout=p.dropout).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
                                                        factor=p.lr_decay,

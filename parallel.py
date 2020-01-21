@@ -31,7 +31,7 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 torch.manual_seed(p.random_seed)
 np.random.seed(p.random_seed)
 
-lr = p.learn_rate
+learn_rate = p.learn_rate
 
 if str(device) == 'cuda:0':
     epochs = p.epochs
@@ -50,14 +50,14 @@ n_features = dataset.get(0).x.shape[1]
 
 model = SixConvResidual(n_features, heads=1, dropout=p.dropout).to(device)
 model = DataParallel(model).to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=p.weight_decay)
+optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
 #                                                       factor=p.lr_decay,
 #                                                       patience=p.patience)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.format(
                        p.version,
-                       lr,
+                       learn_rate,
                        p.lr_decay,
                        p.shuffle_dataset,
                        p.random_seed))
@@ -71,7 +71,7 @@ train_loader = DataListLoader(train_dataset, shuffle=p.shuffle_dataset, batch_si
 test_loader = DataListLoader(test_dataset, shuffle=False, batch_size=p.test_batch_size)
 
 intermediate_lr = p.intermediate_learn_rate
-prev_lr = lr
+prev_lr = learn_rate
 steps_down = 0
 
 for epoch in range(1, epochs+1):
