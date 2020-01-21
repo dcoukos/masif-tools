@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch.nn import Linear, Dropout, LeakyReLU
-from torch_geometric.nn import GCNConv, FeaStConv, EdgeConv, DynamicEdgeConv, max_pool, BatchNorm
+from torch_geometric.nn import GCNConv, FeaStConv, EdgeConv, DynamicEdgeConv, max_pool, BatchNorm, graclus, avg_pool_x
 from utils import generate_weights
 
 
@@ -370,168 +370,55 @@ class SixConvResidual(torch.nn.Module):
         return z
 
 
-class ANN(torch.nn.Module):
+class MiniModel(torch.nn.Module):
     '''
-        Large ANN.
+        This module is based on the concept of curriculum learning. It's goal is to simplify the
+        problem to allow the network to start in the correct solution space.
     '''
-    def __init__(self, n_features, dropout=True):
-        super(ANN, self).__init__()
-        self.lin1 = Linear(n_features, 100)
-        self.lin2 = Linear(100, 100)
-        self.lin3 = Linear(100, 100)
-        self.lin4 = Linear(100, 100)
-        self.lin5 = Linear(100, 100)
-        self.lin6 = Linear(100, 100)
-        self.lin7 = Linear(100, 100)
-        self.lin8 = Linear(100, 100)
-        self.lin9 = Linear(100, 100)
-        self.lin10 = Linear(100, 100)
-        self.lin11 = Linear(100, 1)
-        self.dropout = dropout
+    def __init__(self, n_features, heads=1, dropout=True):
+        super(ThreeConv, self).__init__()
+        self.conv1 = FeaStConv(n_features, 16, heads=heads)
+        self.conv2 = FeaStConv(16, 32, heads=heads)
+        self.conv3 = FeaStConv(32, 64, heads=heads)
+        self.lin1 = Linear(64, 32)
+        self.lin2 = Linear(32, 16)
+        self.lin3 = Linear(16, 8)
+        self.lin4 = Linear(8, 4)
+        self.out = Linear(4, 1)
+        self.drop_bool = dropout
+        self.dropout = Dropout(p=0.3)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, data):
-        x = data.x
-        x = self.lin1(x)
-        x.relu()
-        x = self.lin2(x)
-        x.relu()
-        x = self.lin3(x)
-        x.relu()
-        x = self.lin4(x)
-        x.relu()
-        x = self.lin5(x)
-        x.relu()
-        x = self.lin6(x)
-        x.relu()
-        x = self.lin7(x)
-        x.relu()
-        x = self.lin8(x)
-        x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
-        x = self.lin9(x)
-        x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
-        x = self.lin10(x)
-        x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
-        x = self.lin11(x)
-        x = torch.sigmoid(x)
-
-        return x
-
-
-class GCNN(torch.nn.Module):
-    '''
-        Large ANN.
-    '''
-    def __init__(self, n_features, dropout=True):
-        super(GCNN, self).__init__()
-        self.conv1 = GCNConv(n_features, 100)
-        self.conv2 = GCNConv(100, 100)
-        self.conv3 = GCNConv(100, 100)
-        self.conv4 = GCNConv(100, 100)
-        self.conv5 = GCNConv(100, 100)
-        self.conv6 = GCNConv(100, 100)
-        self.conv7 = GCNConv(100, 100)
-        self.conv8 = GCNConv(100, 100)
-        self.conv9 = GCNConv(100, 100)
-        self.fc1 = Linear(100, 100)
-        self.fc2 = Linear(100, 1)
-        self.dropout = dropout
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    def forward(self, data):
-        x, edge_index = data.x, data.edge_index
-        x = self.conv1(x, edge_index)
-        x.relu()
+        in_, edge_index = data.x, data.edge_index
+        if self.cluster is None:
+            self.cluster = graclus(edge_index)
+        in_ = avg_pool_x(self.cluster)
+        x = self.conv1(in_, edge_index)
+        x = x.relu()
         x = self.conv2(x, edge_index)
-        x.relu()
+        x = x.relu()
         x = self.conv3(x, edge_index)
-        x.relu()
-        x = self.conv4(x, edge_index)
-        x.relu()
-        x = self.conv5(x, edge_index)
-        x.relu()
-        x = self.conv6(x, edge_index)
-        x.relu()
-        x = self.conv7(x, edge_index)
-        x.relu()
-        x = self.conv8(x, edge_index)
-        x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
-        x = self.conv9(x, edge_index)
-        x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
-        x = self.fc1(x)
-        x.relu()
-        x = F.dropout(x, training=self.training) if self.dropout else x
-        x = self.fc2(x)
+        x = x.relu()
+        x = self.lin1(x)
+        x = self.dropout(x) if self.drop_bool else x
+        x = x.relu()
+        x = self.lin2(x)
+        x = self.dropout(x) if self.drop_bool else x
+        x = x.relu()
+        x = self.lin3(x)
+        x = self.dropout(x) if self.drop_bool else x
+        x = x.relu()
+        x = self.lin4(x)
+        x = self.dropout(x) if self.drop_bool else x
+        x = x.relu()
+        x = self.out(x)
         x = torch.sigmoid(x)
 
         return x
 
-
-class DGCNN(torch.nn.Module):
-    '''
-        Network based on Wang et al., 2019
-    '''
-    def __init__(self, n_features, dropout=True):
-        super(DGCNN, self).__init__()
-        self.econv1 = EdgeConv(edge_function_2(n_features, 64), 'max') # First layer should use pre-existing edges?
-        self.econv2 = DynamicEdgeConv(edge_function_2(64, 64), 60, 'max')
-        self.econv3 = DynamicEdgeConv(edge_function_1(64, 64), 60, 'max')
-        self.fc1 = Linear(192, 1024)
-        self.fc2 = Linear(1216, 256)
-        self.fc3 = Linear(256, 256)
-        self.fc4 = Linear(256, 128)
-        self.fc5 = Linear(128, 1)
-
-    def forward(self, x, edge_index):
-        x = self.econv1(x, edge_index)  # --> shape: nx64
-        y = self.econv2(x)
-        z = self.econv3(y)
-        stack1 = [x, y, z]
-        stack1 = torch.stack(stack1, dim=-1)
-        a = self.fc1(stack1)
-        a = a.relu()
-        stack2 = torch.stack([stack1, a], dim=-1)
-        b = self.fc2(stack2)
-        b = b.relu()
-        b = self.fc3(b)
-        b = b.relu()
-        b = self.fc4(b)
-        b = b.relu()
-        b = self.fc5(b)
-        b = torch.sigmoid(b)
-
-        return b
-# TODO: where is the value of k addressed below?
-
-
-class edge_function_2(torch.nn.Module):
-    def __init__(self, n_in, n_out):
-        super(edge_function_2, self).__init__()
-        self.lin1 = Linear(n_in, 64)
-        self.lin2 = Linear(64, n_out)
-
-    def forward(self, x):
-        x = self.lin1(x)
-        x = x.relu()
-        x = self.lin2(x)
-        x = max_pool
-        return x.relu()
-
-
-class edge_function_1(torch.nn.Module):
-    '''
-        h_theta to be implemented in each edge convolutional block.
-    '''
-    def __init__(self, n_in, n_out):
-        super(edge_function_1, self).__init__()
-        self.lin = Linear(n_in, n_out)
-
-    def forward(self, x):
-        x = self.lin(x)
-        x = x.relu()
-        return max_pool(x)
+    def downsample(self, data):
+        cluster = graclus(data.edge_index)
+        x = avg_pool_x(cluster, data.x)
+        y = max_pool(cluster, data.y)
+        return x, y
