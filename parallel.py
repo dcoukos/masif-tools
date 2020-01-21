@@ -98,7 +98,7 @@ for epoch in range(1, epochs+1):
         out = model(datalist)
         labels = torch.cat([data.y for data in datalist]).to(out.device)
         weights = generate_weights(labels).to(out.device)
-        tr_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
+        tr_loss = F.binary_cross_entropy(out, target=labels, weight=weights)
         loss.append(tr_loss.detach().item())
         tr_loss.backward()
         optimizer.step()

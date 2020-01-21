@@ -4,6 +4,8 @@ from sklearn.metrics import classification_report
 from dataset import MiniStructures, read_ply
 from torch_geometric.transforms import FaceToEdge
 from glob import glob
+import torch.nn.functional as F
+
 
 
 def perf_measure(pred, labels):
@@ -44,12 +46,6 @@ def generate_example_surfaces(model_type, path, n_examples=5):
         Save graph vertices in ply file format. Loads a model from path and runs n_example
         structures through the model, and saves the graph vertices with the predicted surface
         interface labels.
-
-        from models import SixConvResidual
-
-        model_type = SixConvResidual
-        path = './models/DataParallel_2001211119.pt'
-        n_examples = 10
     '''
     converter = FaceToEdge()
 
@@ -57,30 +53,28 @@ def generate_example_surfaces(model_type, path, n_examples=5):
     names = [path.split('/')[-1]for path in paths]
     structures = [read_ply(path, use_structural_data=False) for path in paths]
 
-    # used to be torch, but should be list
     faces = [structure.face for structure in structures]
     structures = [converter(structure) for structure in structures]
 
     device = torch.device('cpu')
     model = model_type(structures[0].x.shape[1])
-    model.load_state_dict(torch.load(path, map_location=torch.device('cpu')))
+    model.load_state_dict(torch.load(path, map_location=device))
     model.eval()
 
     predictions = []
     for data in structures:
-        x, edge_index = data.x.to(device), data.edge_index.to(device)
-        labels = data.y.to(device)
-        loss, out_ = model(x, edge_index, labels)
-        predictions.append(out_)
+        out = model(data)
+        predictions.append(out)
 
     # ---- Make directory ---
-    str(model_type).split('\'')[1].split('.')[1]
-    dir = str(model_type).split('\'')[1].split('.')[1] + '_' + path.split('_')[1]
-    os.mkdir(os.path.expanduser('~/Desktop/Drawer/LPDI/masif-tools/models/'+dir))
+    dir = str(model_type).split('\'')[1].split('.')[1] + '_' + path.split('_')[1].split('.')[0]
+    full_path = os.path.expanduser('~/Desktop/Drawer/LPDI/masif-tools/surfaces/'+ dir)
+    if not os.path.exists(full_path):
+        os.mkdir(full_path)
 
     for n, structure in enumerate(structures):
         save_ply(
-            filename='./{}/{}'.format(dir, names[n]),
+            filename='./surfaces/{}/{}'.format(dir, names[n]),
             vertices=structure.pos.detach().numpy(),
             normals=structure.norm.detach().numpy(),
             faces=faces[n].t().detach().numpy(),
@@ -90,6 +84,7 @@ def generate_example_surfaces(model_type, path, n_examples=5):
             iface=predictions[n].detach().numpy()
         )
 
+generate_example_surfaces(SixConvResidual, './models/DataParallel_2001211228.pt', 10)
 
 def save_ply(
     filename,
@@ -111,7 +106,6 @@ def save_ply(
         faces: mesh
     """
     import pymesh  # No pymesh on gpu cluster
-
     mesh = pymesh.form_mesh(vertices, faces)
     if normals is not None:
         n1 = normals[:, 0]

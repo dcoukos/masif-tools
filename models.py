@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch.nn import Linear, Dropout, LeakyReLU
-from torch_geometric.nn import GCNConv, FeaStConv, EdgeConv, DynamicEdgeConv, max_pool, BatchNorm
+from torch_geometric.nn import GCNConv, FeaStConv, DynamicEdgeConv, max_pool, BatchNorm
 # graclus, avg_pool_x
 from utils import generate_weights
 
@@ -369,39 +369,42 @@ class SixConvResidual(torch.nn.Module):
         z = torch.sigmoid(z)
 
         return z
-"""
 
-class MiniModel(torch.nn.Module):
+
+class ThreeConvGlobal(torch.nn.Module):
     '''
-        This module is based on the concept of curriculum learning. It's goal is to simplify the
-        problem to allow the network to start in the correct solution space.
     '''
+
     def __init__(self, n_features, heads=1, dropout=True):
-        super(ThreeConv, self).__init__()
+        super(ThreeConvGlobal, self).__init__()
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
         self.conv2 = FeaStConv(16, 32, heads=heads)
-        self.conv3 = FeaStConv(32, 64, heads=heads)
-        self.lin1 = Linear(64, 32)
-        self.lin2 = Linear(32, 16)
-        self.lin3 = Linear(16, 8)
-        self.lin4 = Linear(8, 4)
-        self.out = Linear(4, 1)
+        self.conv3 = FeaStConv(64, 64, heads=heads)
+        self.edge1 = DynamicEdgeConv(16, 32, k=50)
+        self.edge2 = DynamicEdgeConv(16, 32, k=50)
+        self.lin1 = Linear(96, 96)
+        self.lin2 = Linear(96, 32)
+        self.lin3 = Linear(32, 8)
+        self.out = Linear(8, 1)
         self.drop_bool = dropout
-        self.dropout = Dropout(p=0.3)
+        self.dropout = Dropout(p=0.4)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, data):
         in_, edge_index = data.x, data.edge_index
-        if self.cluster is None:
-            self.cluster = graclus(edge_index)
-        in_ = avg_pool_x(self.cluster)
         x = self.conv1(in_, edge_index)
         x = x.relu()
+        y = self.edge1(x)
+        y = y.relu()
+        cat0 = torch.cat((x, y), dim=1)
         x = self.conv2(x, edge_index)
         x = x.relu()
-        x = self.conv3(x, edge_index)
+        y = self.edge2(y)
+        y = y.relu()
+        x = self.conv3(cat0, edge_index)
         x = x.relu()
-        x = self.lin1(x)
+        cat1 = torch.cat((x, y), dim=1)
+        x = self.lin1(cat1)
         x = self.dropout(x) if self.drop_bool else x
         x = x.relu()
         x = self.lin2(x)
@@ -410,17 +413,8 @@ class MiniModel(torch.nn.Module):
         x = self.lin3(x)
         x = self.dropout(x) if self.drop_bool else x
         x = x.relu()
-        x = self.lin4(x)
-        x = self.dropout(x) if self.drop_bool else x
         x = x.relu()
         x = self.out(x)
         x = torch.sigmoid(x)
 
         return x
-
-    def downsample(self, data):
-        cluster = graclus(data.edge_index)
-        x = avg_pool_x(cluster, data.x)
-        y = max_pool(cluster, data.y)
-        return x, y
-"""
