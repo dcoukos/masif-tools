@@ -38,8 +38,6 @@ if str(device) == 'cuda:0':
 else:
     epochs = 20
 
-epochs = 2
-
 dataset = Structures(root='./datasets/{}/'.format(p.dataset),
                      pre_transform=FaceToEdge(), prefix=p.dataset)
 # dataset = ToDense(dataset)
