@@ -48,7 +48,7 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
 
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}'.format(
                        p.version,
-                       lr,
+                       learn_rate,
                        p.lr_decay))
 
 cutoff = int(np.floor(samples*(1-p.validation_split)))
