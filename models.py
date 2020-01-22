@@ -1,9 +1,8 @@
 import torch
 import torch.nn.functional as F
-from torch.nn import Linear, Dropout, LeakyReLU
-from torch_geometric.nn import GCNConv, FeaStConv, DynamicEdgeConv, max_pool, BatchNorm
+from torch.nn import Linear, Dropout
+from torch_geometric.nn import GCNConv, FeaStConv, DynamicEdgeConv
 # graclus, avg_pool_x
-from utils import generate_weights
 
 
 '''

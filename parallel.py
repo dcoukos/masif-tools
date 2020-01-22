@@ -1,10 +1,9 @@
 import torch
 import numpy as np
 from torch_geometric.data import DataListLoader
-from torch_geometric.transforms import FaceToEdge, ToDense
-from torch_geometric.utils import precision, recall, f1_score
+from torch_geometric.transforms import FaceToEdge
 from torch_geometric.nn import DataParallel
-from dataset import MiniStructures, Structures
+from dataset import Structures
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_auc_score
 from utils import generate_weights, generate_example_surfaces

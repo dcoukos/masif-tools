@@ -4,7 +4,6 @@ from sklearn.metrics import classification_report
 from dataset import MiniStructures, read_ply
 from torch_geometric.transforms import FaceToEdge
 from glob import glob
-import torch.nn.functional as F
 import params as p
 
 
