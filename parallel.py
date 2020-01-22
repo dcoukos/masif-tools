@@ -157,4 +157,4 @@ import params as p
 from utils import generate_example_surfaces
 type(p.model_type)
 import models
-generate_example_surfaces(models.SixConvResidual, 'models/DataParallel_2001211840.pt', 8)
+generate_example_surfaces(p.model_type, 'models/DataParallel_2001211842.pt', 8)

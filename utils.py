@@ -5,7 +5,7 @@ from dataset import MiniStructures, read_ply
 from torch_geometric.transforms import FaceToEdge
 from glob import glob
 import torch.nn.functional as F
-
+import params as p
 
 
 def perf_measure(pred, labels):
@@ -31,17 +31,23 @@ def generate_weights(labels):
     '''
         Takes a label tensor, and generates scoring weights for binary_cross_entropy
     '''
-    example = MiniStructures()
-    n_nodes = float(len(example.data.y))
-    n_pos_nodes = example.data.y.sum().item()
-    n_neg_nodes = n_nodes - n_pos_nodes
-    ratio_neg = n_neg_nodes/n_nodes
-    ratio_pos = n_pos_nodes/n_nodes
+    if p.interface_weight is None:
+        example = MiniStructures()
+        n_nodes = float(len(example.data.y))
+        n_pos_nodes = example.data.y.sum().item()
+        n_neg_nodes = n_nodes - n_pos_nodes
+        ratio_neg = n_neg_nodes/n_nodes
+        ratio_pos = n_pos_nodes/n_nodes
+        weight_neg = ratio_pos
+        weight_pos = ratio_neg
+    else:
+        weight_neg = 1 - p.interface_weight
+        weight_pos = p.interface_weight - weight_neg
 
-    return (labels.clone().detach()*ratio_neg + ratio_pos)
+    return (labels.clone().detach()*weight_pos + weight_neg)
 
 
-def generate_example_surfaces(model_type, model_path, n_examples=5):
+def generate_example_surfaces(model_type, model_path, n_examples=5, use_structural_data=False):
     '''
         Save graph vertices in ply file format. Loads a model from path and runs n_example
         structures through the model, and saves the graph vertices with the predicted surface
@@ -51,7 +57,7 @@ def generate_example_surfaces(model_type, model_path, n_examples=5):
 
     paths = glob('./structures/*')[:n_examples]
     names = [path.split('/')[-1]for path in paths]
-    structures = [read_ply(path, use_structural_data=False) for path in paths]
+    structures = [read_ply(path, use_structural_data=use_structural_data) for path in paths]
 
     faces = [structure.face for structure in structures]
     structures = [converter(structure) for structure in structures]
@@ -138,3 +144,59 @@ def save_ply(
     pymesh.save_mesh(
         filename, mesh, *mesh.get_attribute_names(), use_float=True, ascii=True
     )
+
+
+def generate_surface(model_type, model_path, pdb_code, use_structural_data=False):
+    '''
+        Save the surface prediction for a particular structure.
+    '''
+    converter = FaceToEdge()
+    path = glob('./structures/{}.ply'.format(pdb_code))[0]
+    name = path.split('/')[-1]
+    structure = read_ply(path, use_structural_data=use_structural_data)
+
+    face = structure.face
+    structure = converter(structure)
+
+    device = torch.device('cpu')
+    structure.x.shape[1]
+    model = model_type(structure.x.shape[1])
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.eval()
+
+    prediction = model(structure)
+    rounded = prediction.round()
+
+    # ---- Make directory ---
+    dir = str(model_type).split('\'')[1].split('.')[1] + '_' + model_path.split('_')[1].split('.')[0]
+    full_path = os.path.expanduser('~/Desktop/Drawer/LPDI/masif-tools/surfaces/' + dir)
+    if not os.path.exists(full_path):
+        os.mkdir(full_path)
+
+    save_ply(
+        filename='./surfaces/{}/{}'.format(dir, name),
+        vertices=structure.pos.detach().numpy(),
+        normals=structure.norm.detach().numpy(),
+        faces=face.t().detach().numpy(),
+        charges=structure.x[:, 0].reshape(-1, 1).detach().numpy(),
+        hbond=structure.x[:, 1].reshape(-1, 1).detach().numpy(),
+        hphob=structure.x[:, 2].reshape(-1, 1).detach().numpy(),
+        iface=prediction.detach().numpy()
+    )
+
+    save_ply(
+        filename='./surfaces/{}/r_{}'.format(dir, name),
+        vertices=structure.pos.detach().numpy(),
+        normals=structure.norm.detach().numpy(),
+        faces=face.t().detach().numpy(),
+        charges=structure.x[:, 0].reshape(-1, 1).detach().numpy(),
+        hbond=structure.x[:, 1].reshape(-1, 1).detach().numpy(),
+        hphob=structure.x[:, 2].reshape(-1, 1).detach().numpy(),
+        iface=rounded.detach().numpy()
+    )
+
+
+def calculate_congruence(model_type, model_path):
+    '''
+        Calculate the congruence of all structures.
+    '''

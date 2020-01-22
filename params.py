@@ -18,3 +18,4 @@ version = '15a'
 suppress_warnings = True
 dataset = 'thous'
 model_type = SixConvResidual
+interface_weight = 0.8
