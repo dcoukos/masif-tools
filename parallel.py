@@ -51,7 +51,7 @@ n_features = dataset.get(0).x.shape[1]
 model = p.model_type(n_features, heads=1, dropout=p.dropout).to(device)
 model = DataParallel(model).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
-#scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
+# scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
 #                                                       factor=p.lr_decay,
 #                                                       patience=p.patience)
 
@@ -155,9 +155,3 @@ with open(path, 'a+'):
     torch.save(model.module.state_dict(), path)
 
 generate_example_surfaces(p.model_type, path, n_examples=8)
-
-import params as p
-from utils import generate_example_surfaces
-type(p.model_type)
-import models
-generate_example_surfaces(p.model_type, 'models/DataParallel_2001211842.pt', 8)

@@ -193,9 +193,3 @@ def generate_surface(model_type, model_path, pdb_code, use_structural_data=False
         hphob=structure.x[:, 2].reshape(-1, 1).detach().numpy(),
         iface=rounded.detach().numpy()
     )
-
-
-def calculate_congruence(model_type, model_path):
-    '''
-        Calculate the congruence of all structures.
-    '''
