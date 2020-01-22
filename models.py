@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
-from torch.nn import Linear, Dropout
-from torch_geometric.nn import GCNConv, FeaStConv, DynamicEdgeConv
+from torch.nn import Linear, Dropout, Sequential, ReLU
+from torch_geometric.nn import GCNConv, FeaStConv, MessagePassing, knn_graph
 # graclus, avg_pool_x
 
 
@@ -417,3 +417,39 @@ class ThreeConvGlobal(torch.nn.Module):
         x = torch.sigmoid(x)
 
         return x
+
+
+class EdgeConv(MessagePassing):
+    def __init__(self, in_channels, out_channels):
+        super(EdgeConv, self).__init__(aggr='max') #  "Max" aggregation.
+        self.mlp = Sequential(Linear(2 * in_channels, out_channels),
+                              ReLU(),
+                              Linear(out_channels, out_channels))
+
+    def forward(self, x, edge_index):
+        # x has shape [N, in_channels]
+        # edge_index has shape [2, E]
+
+        return self.propagate(edge_index, size=(x.size(0), x.size(0)), x=x)
+
+    def message(self, x_i, x_j):
+        # x_i has shape [E, in_channels]
+        # x_j has shape [E, in_channels]
+
+        tmp = torch.cat([x_i, x_j - x_i], dim=1)  # tmp has shape [E, 2 * in_channels]
+        return self.mlp(tmp)
+
+    def update(self, aggr_out):
+        # aggr_out has shape [N, out_channels]
+
+        return aggr_out
+
+
+class DynamicEdgeConv(EdgeConv):
+    def __init__(self, in_channels, out_channels, k=6):
+        super(DynamicEdgeConv, self).__init__(in_channels, out_channels)
+        self.k = k
+
+    def forward(self, x, batch=None):
+        edge_index = knn_graph(x, self.k, batch, loop=False, flow=self.flow)
+        return super(DynamicEdgeConv, self).forward(x, edge_index)
