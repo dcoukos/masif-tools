@@ -40,7 +40,8 @@ dataset = Structures(root='./datasets/{}/'.format(p.dataset),
                      pre_transform=FaceToEdge(), prefix=p.dataset)
 if p.twohop is True:
     converter = TwoHop()
-    dataset = converter(dataset)
+    for data in dataset:
+        data = converter(data)
     print("Added two-hop edges to data graphs")
 samples = len(dataset)
 if p.shuffle_dataset:
