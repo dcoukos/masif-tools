@@ -1,4 +1,6 @@
 # REMEMBER TO CHANGE VERSION NUMBER
+from models import ThreeConvGlobal, SixConv, SixConvPassThrough, SixConvPT_LFC, SixConvResidual
+
 batch_size = 80
 test_batch_size = 80
 validation_split = .2
@@ -15,3 +17,4 @@ epochs = 1000
 version = '15a'
 suppress_warnings = True
 dataset = 'thous'
+model_type = SixConvResidual

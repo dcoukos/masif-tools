@@ -1,14 +1,13 @@
 import torch
 import numpy as np
 from torch_geometric.data import DataListLoader
-from models import ThreeConvGlobal, SixConv, SixConvPassThrough, SixConvPT_LFC, SixConvResidual
 from torch_geometric.transforms import FaceToEdge, ToDense
 from torch_geometric.utils import precision, recall, f1_score
 from torch_geometric.nn import DataParallel
 from dataset import MiniStructures, Structures
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_auc_score
-from utils import generate_weights
+from utils import generate_weights, generate_example_surfaces
 import datetime
 import params as p
 from statistics import mean
@@ -46,7 +45,7 @@ if p.shuffle_dataset:
     dataset = dataset.shuffle()
 n_features = dataset.get(0).x.shape[1]
 
-model = ThreeConvGlobal(n_features, heads=1, dropout=p.dropout).to(device)
+model = p.model_type(n_features, heads=1, dropout=p.dropout).to(device)
 model = DataParallel(model).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
@@ -151,3 +150,11 @@ now = datetime.datetime.now().strftime('%y%m%d%H%M')
 path = 'models/{}_{}.pt'.format(str(model).split('(')[0], now)
 with open(path, 'a+'):
     torch.save(model.module.state_dict(), path)
+
+generate_example_surfaces(p.model_type, path, n_examples=8)
+
+import params as p
+from utils import generate_example_surfaces
+type(p.model_type)
+import models
+generate_example_surfaces(models.SixConvResidual, 'models/DataParallel_2001211840.pt', 8)

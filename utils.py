@@ -41,7 +41,7 @@ def generate_weights(labels):
     return (labels.clone().detach()*ratio_neg + ratio_pos)
 
 
-def generate_example_surfaces(model_type, path, n_examples=5):
+def generate_example_surfaces(model_type, model_path, n_examples=5):
     '''
         Save graph vertices in ply file format. Loads a model from path and runs n_example
         structures through the model, and saves the graph vertices with the predicted surface
@@ -57,8 +57,9 @@ def generate_example_surfaces(model_type, path, n_examples=5):
     structures = [converter(structure) for structure in structures]
 
     device = torch.device('cpu')
+    structures[0].x.shape[1]
     model = model_type(structures[0].x.shape[1])
-    model.load_state_dict(torch.load(path, map_location=device))
+    model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
     predictions = []
@@ -67,8 +68,8 @@ def generate_example_surfaces(model_type, path, n_examples=5):
         predictions.append(out)
 
     # ---- Make directory ---
-    dir = str(model_type).split('\'')[1].split('.')[1] + '_' + path.split('_')[1].split('.')[0]
-    full_path = os.path.expanduser('~/Desktop/Drawer/LPDI/masif-tools/surfaces/'+ dir)
+    dir = str(model_type).split('\'')[1].split('.')[1] + '_' + model_path.split('_')[1].split('.')[0]
+    full_path = os.path.expanduser('~/Desktop/Drawer/LPDI/masif-tools/surfaces/' + dir)
     if not os.path.exists(full_path):
         os.mkdir(full_path)
 
