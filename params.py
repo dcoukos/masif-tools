@@ -19,3 +19,4 @@ suppress_warnings = True
 dataset = 'thous'
 model_type = ThreeConvGlobal
 interface_weight = None
+twohop = False

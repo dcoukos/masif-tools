@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from torch_geometric.data import DataListLoader
-from torch_geometric.transforms import FaceToEdge
+from torch_geometric.transforms import FaceToEdge, TwoHop
 from torch_geometric.nn import DataParallel
 from dataset import Structures
 from torch.utils.tensorboard import SummaryWriter
@@ -38,7 +38,8 @@ else:
 
 dataset = Structures(root='./datasets/{}/'.format(p.dataset),
                      pre_transform=FaceToEdge(), prefix=p.dataset)
-# dataset = ToDense(dataset)
+if p.twohop is True:
+    dataset = TwoHop(dataset)
 samples = len(dataset)
 if p.shuffle_dataset:
     dataset = dataset.shuffle()
