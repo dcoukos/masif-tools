@@ -1,10 +1,11 @@
 import torch
 import os
-from sklearn.metrics import classification_report
 from dataset import MiniStructures, read_ply
-from torch_geometric.transforms import FaceToEdge
-from glob import glob
 import params as p
+from glob import glob
+from torch_geometric.transforms import FaceToEdge
+import datetime
+import pathlib
 
 
 def perf_measure(pred, labels):
@@ -23,7 +24,34 @@ def perf_measure(pred, labels):
 
 
 def stats(pred, labels):
+    from sklearn.metrics import classification_report
     return classification_report(labels.cpu().detach().numpy(), pred.cpu().detach().numpy())
+
+
+def split_datasets():
+    '''Need to call from inside masif-tools'''
+    wd = pathlib.Path().absolute()
+    os.mkdir('{}/structures/test'.format(wd))
+    test_paths = []
+    with open('./lists/testing.txt', 'r') as f:
+        for line in f:
+            line = line.split('\n')[0]
+            test_paths.append(line)
+    for name in test_paths:
+        if len(name.split('_')) == 3:
+            a, b, c = name.split('_')
+            name = a + '_' + b
+            structure2 = a + '_' + c
+            test_paths.append(structure2)
+        new_path = os.path.expanduser('~/Desktop/Drawer/LPDI/masif-tools/structures/test/') + name + \
+            '.ply'
+        path = os.path.expanduser('~/Desktop/Drawer/LPDI/masif-tools/structures/') + name + \
+            '.ply'
+        try:
+            os.replace(path, new_path)
+        except:
+            print('{} not found'.format(name))
+    # rest in command line
 
 
 def generate_weights(labels):
@@ -31,7 +59,7 @@ def generate_weights(labels):
         Takes a label tensor, and generates scoring weights for binary_cross_entropy
     '''
     if p.interface_weight is None:
-        example = MiniStructures()
+        example = MiniStructures()  # This must have made it slow.
         n_nodes = float(len(example.data.y))
         n_pos_nodes = example.data.y.sum().item()
         n_neg_nodes = n_nodes - n_pos_nodes
@@ -54,7 +82,7 @@ def generate_example_surfaces(model_type, model_path, n_examples=5, use_structur
     '''
     converter = FaceToEdge()
 
-    paths = glob('./structures/*')[:n_examples]
+    paths = glob('./structures/test/*')[:n_examples]
     names = [path.split('/')[-1]for path in paths]
     structures = [read_ply(path, use_structural_data=use_structural_data) for path in paths]
 
@@ -73,12 +101,13 @@ def generate_example_surfaces(model_type, model_path, n_examples=5, use_structur
         predictions.append(out)
 
     # ---- Make directory ---
-    dir = str(model_type).split('\'')[1].split('.')[1] + '_' + model_path.split('_')[1].split('.')[0]
+    dir = model_path
     full_path = os.path.expanduser('~/Desktop/Drawer/LPDI/masif-tools/surfaces/' + dir)
     if not os.path.exists(full_path):
         os.mkdir(full_path)
 
     for n, structure in enumerate(structures):
+        rounded = predictions[n].round()
         save_ply(
             filename='./surfaces/{}/{}'.format(dir, names[n]),
             vertices=structure.pos.detach().numpy(),
@@ -88,6 +117,17 @@ def generate_example_surfaces(model_type, model_path, n_examples=5, use_structur
             hbond=structure.x[:, 1].reshape(-1, 1).detach().numpy(),
             hphob=structure.x[:, 2].reshape(-1, 1).detach().numpy(),
             iface=predictions[n].detach().numpy()
+        )
+
+        save_ply(
+            filename='./surfaces/{}/r_{}'.format(dir, names[n]),
+            vertices=structure.pos.detach().numpy(),
+            normals=structure.norm.detach().numpy(),
+            faces=faces[n].t().detach().numpy(),
+            charges=structure.x[:, 0].reshape(-1, 1).detach().numpy(),
+            hbond=structure.x[:, 1].reshape(-1, 1).detach().numpy(),
+            hphob=structure.x[:, 2].reshape(-1, 1).detach().numpy(),
+            iface=rounded.detach().numpy()
         )
 
 
@@ -143,6 +183,16 @@ def save_ply(
     pymesh.save_mesh(
         filename, mesh, *mesh.get_attribute_names(), use_float=True, ascii=True
     )
+
+
+def make_model_directory():
+    ''' make directory to save models.
+    '''
+    now = datetime.datetime.now().strftime('%b%d_%H:%M')
+    modelpath = 'models/{}_{}'.format(now, str(p.version).split('(')[0])
+    wd = pathlib.Path().absolute()
+    os.mkdir('{}/{}'.format(wd, modelpath))
+    return modelpath
 
 
 def generate_surface(model_type, model_path, pdb_code, use_structural_data=False):

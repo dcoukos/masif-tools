@@ -1,13 +1,12 @@
 import torch
 import numpy as np
 from torch_geometric.data import DataListLoader
-from torch_geometric.transforms import FaceToEdge, TwoHop
+from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate
 from torch_geometric.nn import DataParallel
 from dataset import Structures
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_auc_score
-from utils import generate_weights, generate_example_surfaces
-import datetime
+from utils import generate_weights, generate_example_surfaces, make_model_directory
 import params as p
 from statistics import mean
 import torch.nn.functional as F
@@ -20,6 +19,7 @@ Then increase model complexity to accomodate the increase in data.
 Ignore test metrics for now.
 '''
 
+# --- Parameter setting -----
 if p.suppress_warnings:
     import warnings
     warnings.filterwarnings("ignore")
@@ -28,24 +28,30 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # reproducibility
 torch.manual_seed(p.random_seed)
 np.random.seed(p.random_seed)
-
 learn_rate = p.learn_rate
+modelpath = make_model_directory()
 
 if str(device) == 'cuda:0':
     epochs = p.epochs
 else:
     epochs = 20
 
-dataset = Structures(root='./datasets/{}/'.format(p.dataset),
+# ---- Importing and structuring Datasets and Model ----
+
+trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
+                      pre_transform=FaceToEdge(), prefix=p.dataset)
+testset = Structures(root='./datasets/{}_test/'.format(p.dataset),
                      pre_transform=FaceToEdge(), prefix=p.dataset)
 if p.twohop is True:
     converter = TwoHop()
-    for data in dataset:
+    for data in testset:
+        data = converter(data)
+    for data in trainset:
         data = converter(data)
     print("Added two-hop edges to data graphs")
-samples = len(dataset)
+# rotator = RandomRotate() Implement rotation for structural data
 if p.shuffle_dataset:
-    dataset = dataset.shuffle()
+    dataset = trainset.shuffle()
 n_features = dataset.get(0).x.shape[1]
 
 model = p.model_type(n_features, heads=1, dropout=p.dropout).to(device)
@@ -62,33 +68,16 @@ writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.f
                        p.shuffle_dataset,
                        p.random_seed))
 
-cutoff = int(np.floor(samples*(1-p.validation_split)))
-train_dataset = dataset[:cutoff]
-test_dataset = dataset[cutoff:]
 
+train_loader = DataListLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
+test_loader = DataListLoader(testset, shuffle=False, batch_size=p.test_batch_size)
 
-train_loader = DataListLoader(train_dataset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
-test_loader = DataListLoader(test_dataset, shuffle=False, batch_size=p.test_batch_size)
-
-intermediate_lr = p.intermediate_learn_rate
-prev_lr = learn_rate
-steps_down = 0
+# ---- Training ----
 
 for epoch in range(1, epochs+1):
     # rotate the structures between epochs
-
-    # Reboost the learning rate
-    learn_rate = optimizer.param_groups[0]['lr']
-    '''
-    if prev_lr > learn_rate:
-        steps_down += 1
-        prev_lr = learn_rate
-    if steps_down == 5:
-        for group in optimizer.param_groups:
-            group['lr'] = intermediate_lr
-            intermediate_lr *= p.lr_cap_decay
-        steps_down = 0
-    '''
+    learn_rate = optimizer.param_groups[0]['lr']  # for when it may be modified during run
+    # rotator()
     model.train()
     first_batch_labels = torch.Tensor()
     pred = torch.Tensor()
@@ -137,7 +126,7 @@ for epoch in range(1, epochs+1):
                                    'test': roc_auc_te}, epoch)
     writer.add_scalar('learning rate', learn_rate, epoch)
 
-    if epoch%20 == 0:
+    if epoch % 20 == 0:
         writer.add_histogram('Layer 1 weight gradients', model.module.conv1.weight.grad, epoch+1)
         writer.add_histogram('Layer 2 weight gradients', model.module.conv2.weight.grad, epoch+1)
         writer.add_histogram('Layer 3 weight gradients', model.module.conv3.weight.grad, epoch+1)
@@ -147,11 +136,15 @@ for epoch in range(1, epochs+1):
         writer.add_histogram('Layer 7 weight gradients', model.module.lin1.weight.grad, epoch+1)
         writer.add_histogram('Layer 8 weight gradients', model.module.lin2.weight.grad, epoch+1)
     # scheduler.step(loss)
+    if epoch % 200 == 0:
+        path = './{}/epoch_{}.pt'.format(modelpath, epoch)
+        with open(path, 'a+'):
+            torch.save(model.module.state_dict(), path)
 writer.close()
 
-now = datetime.datetime.now().strftime('%y%m%d%H%M')
-path = 'models/{}_{}.pt'.format(str(model).split('(')[0], now)
+path = './{}/final.pt'.format(modelpath)
 with open(path, 'a+'):
     torch.save(model.module.state_dict(), path)
 
+# modify to generate TEST surfaces.
 generate_example_surfaces(p.model_type, path, n_examples=8)
