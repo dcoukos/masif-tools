@@ -149,4 +149,4 @@ with open(path, 'a+'):
     torch.save(model.module.state_dict(), path)
 
 # modify to generate TEST surfaces.
-generate_example_surfaces(p.model_type, path, n_examples=8)
+# generate_example_surfaces(p.model_type, path, n_examples=8)
