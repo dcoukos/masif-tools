@@ -43,7 +43,7 @@ trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
 testset = Structures(root='./datasets/{}_test/'.format(p.dataset),
                      pre_transform=FaceToEdge(), prefix=p.dataset)
 if p.twohop is True:
-    print("Added two-hop edges to data graphs")
+    print("Adding two-hop edges to data graphs")
     converter = TwoHop()
     for data in testset:
         data = converter(data)
@@ -51,10 +51,11 @@ if p.twohop is True:
         data = converter(data)
     print('Done!')
 # rotator = RandomRotate() Implement rotation for structural data
+
 if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
-
+print('Setting up model...')
 model = p.model_type(n_features, heads=p.heads, dropout=p.dropout).to(device)
 model = DataParallel(model).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
@@ -74,7 +75,7 @@ train_loader = DataListLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.
 test_loader = DataListLoader(testset, shuffle=False, batch_size=p.test_batch_size)
 
 # ---- Training ----
-
+print('Training...')
 for epoch in range(1, epochs+1):
     # rotate the structures between epochs
     learn_rate = optimizer.param_groups[0]['lr']  # for when it may be modified during run
