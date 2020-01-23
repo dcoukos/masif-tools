@@ -80,6 +80,14 @@ def generate_example_surfaces(model_type, model_path, n_examples=5, use_structur
         structures through the model, and saves the graph vertices with the predicted surface
         interface labels.
     '''
+    import torch
+    import params as p
+    from torch_geometric.transforms import FaceToEdge
+    from glob import glob
+    from dataset import read_ply
+    model_type = p.model_type
+    model_path = './models/Jan23_13:53_15a/final.pt'
+
     converter = FaceToEdge()
 
     paths = glob('./structures/test/*')[:n_examples]
@@ -91,7 +99,10 @@ def generate_example_surfaces(model_type, model_path, n_examples=5, use_structur
 
     device = torch.device('cpu')
     structures[0].x.shape[1]
-    model = model_type(structures[0].x.shape[1])
+    if p.heads is not None:
+        model = model_type(structures[0].x.shape[1], heads=p.heads)
+    else:
+        model = model_type(structures[0].x.shape[1])
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
