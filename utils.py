@@ -104,7 +104,7 @@ def generate_example_surfaces(model_type, model_path, n_examples=5, use_structur
         predictions.append(out)
 
     # ---- Make directory ---
-    dir = model_path.split('/', 1)[1]
+    dir = model_path.split('models/', 1)[1]
     full_path = os.path.expanduser('~/Desktop/Drawer/LPDI/masif-tools/surfaces/' + dir)
     if not os.path.exists(full_path):
         os.mkdir(full_path)
@@ -193,8 +193,10 @@ def make_model_directory():
     '''
     now = datetime.datetime.now().strftime('%b%d_%H:%M')
     modelpath = 'models/{}_{}'.format(now, str(p.version).split('(')[0])
+    surfacepath = 'surfaces/{}_{}'.format(now, str(p.version).split('(')[0])
     wd = pathlib.Path().absolute()
     os.mkdir('{}/{}'.format(wd, modelpath))
+    os.mkdir('{}/{}'.format(wd, surfacepath))
     return modelpath
 
 
