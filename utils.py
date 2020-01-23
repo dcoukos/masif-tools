@@ -104,7 +104,7 @@ def generate_example_surfaces(model_type, model_path, n_examples=5, use_structur
         predictions.append(out)
 
     # ---- Make directory ---
-    dir = model_path
+    dir = model_path.split('/', 1)[1]
     full_path = os.path.expanduser('~/Desktop/Drawer/LPDI/masif-tools/surfaces/' + dir)
     if not os.path.exists(full_path):
         os.mkdir(full_path)
