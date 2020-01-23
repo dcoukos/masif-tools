@@ -206,7 +206,7 @@ def generate_surface(model_type, model_path, pdb_code, use_structural_data=False
         Save the surface prediction for a particular structure.
     '''
     converter = FaceToEdge()
-    path = glob('./structures/{}.ply'.format(pdb_code))[0]
+    path = glob('./structures/test/{}.ply'.format(pdb_code))[0]
     name = path.split('/')[-1]
     structure = read_ply(path, use_structural_data=use_structural_data)
 
@@ -215,7 +215,10 @@ def generate_surface(model_type, model_path, pdb_code, use_structural_data=False
 
     device = torch.device('cpu')
     structure.x.shape[1]
-    model = model_type(structure.x.shape[1])
+    if p.heads is not None:
+        model = model_type(structure.x.shape[1], heads=p.heads)
+    else:
+        model = model_type(structure.x.shape[1])
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
@@ -223,8 +226,11 @@ def generate_surface(model_type, model_path, pdb_code, use_structural_data=False
     rounded = prediction.round()
 
     # ---- Make directory ---
-    dir = str(model_type).split('\'')[1].split('.')[1] + '_' + model_path.split('_')[1].split('.')[0]
+    dir = model_path.split('models/', 1)[1].split('.')[0]
     full_path = os.path.expanduser('~/Desktop/Drawer/LPDI/masif-tools/surfaces/' + dir)
+    folder = full_path.rsplit('/', 1)[0]
+    if not os.path.exists(folder):
+        os.mkdir(folder)
     if not os.path.exists(full_path):
         os.mkdir(full_path)
 

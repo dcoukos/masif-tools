@@ -11,13 +11,23 @@ File to generate the dataset from the ply files.
 '''
 
 
-def convert_data(path_to_raw='./structures/'):
+def convert_data(path_to_raw='./structures/', use_shape_data=True):
     '''Generate raw unprocessed torch file to generate pyg datasets using all structures.
     '''
-    structures = [read_ply(path, use_shape_data=True) for path in tqdm(glob(path_to_raw + '*'),
-                  desc='Reading structures')]
-    print('Saving structures to file as pytorch object...')
-    torch.save(structures, 'datasets/full_pos/raw/structures.pt')
+    if use_shape_data is True:
+        prefix = 'full_pos'
+    else:
+        prefix = 'full'
+    path_to_output = './datasets/{}_test/raw/'.format(prefix)
+    test_structures = [read_ply(path, use_shape_data) for path in tqdm(glob(path_to_raw +
+                       '/test/*'), desc='Reading structures')]
+    print('Saving test structures to file as pytorch object ...')
+    torch.save(test_structures, path_to_output+'{}_structures.pt'.format(prefix))
+    path_to_output = './datasets/{}_train/raw/'.format(prefix)
+    train_structures = [read_ply(path, use_shape_data) for path in tqdm(glob(path_to_raw +
+                        '/train/*'), desc='Reading structures')]
+    print('Saving train structures to file as pytorch object ...')
+    torch.save(train_structures, path_to_output+'{}_structures.pt'.format(prefix))
     print('Done.')
 
 
@@ -36,7 +46,7 @@ def convert_mini_data(path_to_raw='./structures/', use_shape_data=True, n=200, p
     path_to_output = './datasets/{}_train/raw/'.format(prefix)
     train_structures = [read_ply(path, use_shape_data) for path in tqdm(glob(path_to_raw +
                         '/train/*')[:n], desc='Reading structures')]
-    print('Saving test structures to file as pytorch object ...')
+    print('Saving train structures to file as pytorch object ...')
     torch.save(train_structures, path_to_output+'{}_structures.pt'.format(prefix))
     print('Done.')
 
