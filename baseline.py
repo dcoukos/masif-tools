@@ -88,7 +88,7 @@ for epoch in range(1, epochs+1):
 
     #  --------------  REPORTING ------------------------------------
 
-    roc_auc = roc_auc_score(first_batch_labels.cpu(), pred.cpu(), sample_weight=tr_weights.cpu())
+    roc_auc = roc_auc_score(first_batch_labels.cpu(), pred.cpu())
 
     model.eval()
     cum_pred = torch.Tensor().to(device)
@@ -103,7 +103,7 @@ for epoch in range(1, epochs+1):
         cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
 
     te_weights = generate_weights(cum_labels)
-    roc_auc_te = roc_auc_score(cum_labels.cpu(), cum_pred.cpu(), sample_weight=te_weights.cpu())
+    roc_auc_te = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
 
     writer.add_scalars('Loss', {'train': tr_loss,
                                 'test': te_loss}, epoch)
