@@ -30,12 +30,12 @@ def convert_mini_data(path_to_raw='./structures/', use_shape_data=True, n=200, p
     path_to_output = './datasets/{}_test/raw/'.format(prefix)
     t = int(n/5)
     test_structures = [read_ply(path, use_shape_data) for path in tqdm(glob(path_to_raw +
-                       '/test/*')[:n], desc='Reading structures')]
+                       '/test/*')[:t], desc='Reading structures')]
     print('Saving test structures to file as pytorch object ...')
     torch.save(test_structures, path_to_output+'{}_structures.pt'.format(prefix))
     path_to_output = './datasets/{}_train/raw/'.format(prefix)
     train_structures = [read_ply(path, use_shape_data) for path in tqdm(glob(path_to_raw +
-                       '/train/*')[:n], desc='Reading structures')]
+                        '/train/*')[:n], desc='Reading structures')]
     print('Saving test structures to file as pytorch object ...')
     torch.save(train_structures, path_to_output+'{}_structures.pt'.format(prefix))
     print('Done.')
