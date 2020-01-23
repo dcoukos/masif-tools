@@ -28,6 +28,7 @@ def convert_mini_data(path_to_raw='./structures/', use_shape_data=True, n=200, p
     # Does this require a different dataset directory? Can try, just back up
     # structures.pt file.
     path_to_output = './datasets/{}_test/raw/'.format(prefix)
+    t = int(n/5)
     test_structures = [read_ply(path, use_shape_data) for path in tqdm(glob(path_to_raw +
                        '/test/*')[:n], desc='Reading structures')]
     print('Saving test structures to file as pytorch object ...')
