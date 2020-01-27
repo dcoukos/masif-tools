@@ -1,9 +1,9 @@
 from utils import generate_surface
 import params as p
 
-generate_surface(p.model_type, 'models/Jan23_16:03_15d/epoch_200.pt', '3BIK_A', True)
+generate_surface(p.model_type, 'models/Jan23_14:40_15b/final.pt', '3BIK_A', False)
 
-generate_surface(p.model_type, 'models/Jan23_16:03_15d/epoch_200.pt', '4ZQK_A', True)
+generate_surface(p.model_type, 'models/Jan23_14:40_15b/final.pt', '4ZQK_A', False)
 
 
 import os

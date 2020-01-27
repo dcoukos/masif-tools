@@ -1,9 +1,9 @@
 import torch
 import numpy as np
 from torch_geometric.data import DataListLoader
-from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate
+from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate, Compose, Center
 from torch_geometric.nn import DataParallel
-from dataset import Structures
+from dataset import Structures, remove_pos_data, add_pos_data
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_auc_score
 from utils import generate_weights, generate_example_surfaces, make_model_directory
@@ -37,20 +37,19 @@ else:
     epochs = 20
 
 # ---- Importing and structuring Datasets and Model ----
-
-trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
-                      pre_transform=FaceToEdge(), prefix=p.dataset)
-testset = Structures(root='./datasets/{}_test/'.format(p.dataset),
-                     pre_transform=FaceToEdge(), prefix=p.dataset)
 if p.twohop is True:
     print("Adding two-hop edges to data graphs")
     converter = TwoHop()
-    for data in testset:
-        data = converter(data)
-    for data in trainset:
-        data = converter(data)
-    print('Done!')
-# rotator = RandomRotate() Implement rotation for structural data
+else:
+    converter = None
+
+trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
+                      pre_transform=Compose(Center(), FaceToEdge()), transform=converter,
+                      prefix=p.dataset)
+samples = len(trainset)
+cutoff = int(np.floor(samples*(1-p.validation_split)))
+trainaset = trainset[:cutoff]
+validset = trainset[cutoff:]
 
 if p.shuffle_dataset:
     trainset = trainset.shuffle()
@@ -72,12 +71,22 @@ writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.f
 
 
 train_loader = DataListLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
-test_loader = DataListLoader(testset, shuffle=False, batch_size=p.test_batch_size)
+val_loader = DataListLoader(validset, shuffle=False, batch_size=p.test_batch_size)
+axes = [0, 1, 2]
+max_roc_auc = 0
 
 # ---- Training ----
 print('Training...')
 for epoch in range(1, epochs+1):
     # rotate the structures between epochs
+
+    if 'pos' in p.dataset:  # Is there positional data in the features?
+        remove_pos_data(train_loader)
+        rotation_axis = axes[epoch % 3]  # only for structural data.
+        rotator = RandomRotate(90, axis=rotation_axis)
+        train_loader = [rotator(data) for data in train_loader]
+        add_pos_data(train_loader)
+
     learn_rate = optimizer.param_groups[0]['lr']  # for when it may be modified during run
     # rotator()
     model.train()
@@ -111,7 +120,7 @@ for epoch in range(1, epochs+1):
     cum_pred = torch.Tensor().to(device)
     cum_labels = torch.Tensor().to(device)
     te_weights = torch.Tensor().to(device)
-    for batch_n, datalist in enumerate(test_loader):
+    for batch_n, datalist in enumerate(val_loader):
         out = model(datalist)
         labels = torch.cat([data.y for data in datalist]).to(out.device)
         weights = generate_weights(labels).to(out.device)
@@ -138,15 +147,17 @@ for epoch in range(1, epochs+1):
         writer.add_histogram('Layer 7 weight gradients', model.module.lin1.weight.grad, epoch+1)
         writer.add_histogram('Layer 8 weight gradients', model.module.lin2.weight.grad, epoch+1)
     # scheduler.step(loss)
+    if roc_auc_te > max_roc_auc:
+        max_roc_auc = roc_auc_te
+        path = './{}/best.pt'.format(modelpath)
+        with open(path, 'w+'):
+            torch.save(model.module.state_dict(), path)
     if epoch % 200 == 0:
         path = './{}/epoch_{}.pt'.format(modelpath, epoch)
         with open(path, 'a+'):
             torch.save(model.module.state_dict(), path)
 writer.close()
 
-path = './{}/final.pt'.format(modelpath)
-with open(path, 'a+'):
-    torch.save(model.module.state_dict(), path)
 
 # modify to generate TEST surfaces.
 # generate_example_surfaces(p.model_type, path, n_examples=8)

@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from torch_geometric.data import DataLoader
 from models import SixConvResidual, ThreeConvGlobal  #, MiniModel
-from torch_geometric.transforms import FaceToEdge
+from torch_geometric.transforms import FaceToEdge, RandomRotate
 from dataset import MiniStructures
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_auc_score
@@ -59,9 +59,12 @@ test_dataset = dataset[cutoff:]
 train_loader = DataLoader(train_dataset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
 test_loader = DataLoader(test_dataset, shuffle=False, batch_size=p.test_batch_size)
 
+rotator = RandomRotate(90)
+
 for epoch in range(1, epochs+1):
     # rotate the structures between epochs
-
+    train_loader = [rotator(data) for data in train_loader]
+    train_loader[0].x[0]
     model.train()
     first_batch_labels = torch.Tensor()
     pred = torch.Tensor()
