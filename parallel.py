@@ -70,7 +70,6 @@ writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.f
                        p.random_seed))
 
 
-train_loader = DataListLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
 val_loader = DataListLoader(validset, shuffle=False, batch_size=p.test_batch_size)
 axes = [0, 1, 2]
 max_roc_auc = 0
@@ -81,11 +80,11 @@ for epoch in range(1, epochs+1):
     # rotate the structures between epochs
 
     if 'pos' in p.dataset:  # Is there positional data in the features?
-        remove_pos_data(train_loader)
+        remove_pos_data(trainset)
         rotation_axis = axes[epoch % 3]  # only for structural data.
-        rotator = RandomRotate(90, axis=rotation_axis)
-        train_loader = [rotator(data) for data in train_loader]
-        add_pos_data(train_loader)
+        trainset.transform = RandomRotate(90, axis=rotation_axis)
+        add_pos_data(trainset)
+    train_loader = DataListLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
 
     learn_rate = optimizer.param_groups[0]['lr']  # for when it may be modified during run
     # rotator()
