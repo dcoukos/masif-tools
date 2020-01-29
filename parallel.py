@@ -44,7 +44,7 @@ else:
     converter = None
 
 trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
-                      pre_transform=Compose(Center(), FaceToEdge()), transform=converter,
+                      pre_transform=(Compose(Center(), FaceToEdge())), transform=converter,
                       prefix=p.dataset)
 samples = len(trainset)
 cutoff = int(np.floor(samples*(1-p.validation_split)))
