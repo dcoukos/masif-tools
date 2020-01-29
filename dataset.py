@@ -174,7 +174,7 @@ class MiniStructures(InMemoryDataset):
 
 
 class Structures(InMemoryDataset):
-    def __init__(self, root='./datasets/full_pos/', transform=None, pre_transform=None, prefix=''):
+    def __init__(self, root='./datasets/full_pos/', pre_transform=None, transform=None, prefix=''):
         self.prefix = prefix
         super(Structures, self).__init__(root, transform, pre_transform)
         self.data, self.slices = torch.load(self.processed_paths[0])
