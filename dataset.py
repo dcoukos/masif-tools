@@ -23,6 +23,10 @@ def add_pos_data(dataset):
         pos = data.pos
         norm = data.norm
         x = data.x
+        print(x.shape)
+        print(pos.shape)
+        print(norm.shape)
+
         x = torch.stack((x, pos, norm), dim=1)
         x = x.reshape(-1, 9)
         data.x = x
