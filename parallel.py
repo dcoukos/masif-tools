@@ -55,8 +55,7 @@ if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 print('Setting up model...')
-model = p.model_type(n_features, heads=p.heads, dropout=p.dropout,
-                     batchnorm=p.batchnorm).to(device)
+model = p.model_type(n_features, heads=p.heads).to(device)
 model = DataParallel(model).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
