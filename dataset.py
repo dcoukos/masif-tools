@@ -30,15 +30,21 @@ data
 '''
 
 
-def remove_pos_data(dataset):
-    for data in dataset:
+class RemovePositionalData(object):
+    ''''''
+    def __call__(self, data):
         x = data.x
         y = x.narrow(1, 6, 3).clone()
         data.x = y
+        return data
+
+    def __repr__(self):
+        return '{}()'.format(self.__class__.__name__)
 
 
-def add_pos_data(dataset):
-    for data in dataset:
+class AddPositionalData(object):
+    ''''''
+    def __call__(self, data):
         pos = data.pos
         norm = data.norm
         x = data.x
@@ -46,6 +52,10 @@ def add_pos_data(dataset):
         x = torch.stack((x, pos, norm), dim=1)
         x = x.reshape(-1, 9)
         data.x = x
+        return data
+
+    def __repr__(self):
+        return '{}()'.format(self.__class__.__name__)
 
 
 def convert_data(path_to_raw='./structures/', use_shape_data=True):
