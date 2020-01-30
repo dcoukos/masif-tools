@@ -42,6 +42,18 @@ class RemovePositionalData(object):
         return '{}()'.format(self.__class__.__name__)
 
 
+class RemoveXYZ(object):
+    ''''''
+    def __call__(self, data):
+        x = data.x
+        y = x.narrow(1, 3, 6).clone()
+        data.x = y
+        return data
+
+    def __repr__(self):
+        return '{}()'.format(self.__class__.__name__)
+
+
 class AddPositionalData(object):
     ''''''
     def __call__(self, data):

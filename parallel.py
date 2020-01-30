@@ -3,7 +3,7 @@ import numpy as np
 from torch_geometric.data import DataListLoader
 from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate, Compose, Center
 from torch_geometric.nn import DataParallel
-from dataset import Structures, RemovePositionalData, AddPositionalData
+from dataset import Structures, RemovePositionalData, AddPositionalData, RemoveXYZ
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_auc_score
 from utils import generate_weights, generate_example_surfaces, make_model_directory
@@ -80,10 +80,16 @@ for epoch in range(1, epochs+1):
     # rotate the structures between epochs
 
     if 'pos' in p.dataset:  # Is there positional data in the features?
-        rotation_axis = axes[epoch % 3]  # only for structural data.
-        trainset.transform = Compose((RemovePositionalData(),
-                                      RandomRotate(90, axis=rotation_axis),
-                                      AddPositionalData()))
+        if epoch > 200:
+            if epoch < 700:
+                degrees = 90/(epoch-200)
+            else:
+                degrees = 90
+            rotation_axis = axes[epoch % 3]  # only for structural data.
+            trainset.transform = Compose((RemovePositionalData(),
+                                          RandomRotate(degrees, axis=rotation_axis),
+                                          AddPositionalData(),
+                                          RemoveXYZ()))
     train_loader = DataListLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
 
     learn_rate = optimizer.param_groups[0]['lr']  # for when it may be modified during run
