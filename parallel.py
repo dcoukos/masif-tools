@@ -48,7 +48,7 @@ trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
                       prefix=p.dataset)
 samples = len(trainset)
 cutoff = int(np.floor(samples*(1-p.validation_split)))
-trainaset = trainset[:cutoff]
+trainset = trainset[:cutoff]
 validset = trainset[cutoff:]
 
 if p.shuffle_dataset:
@@ -70,7 +70,6 @@ writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.f
                        p.random_seed))
 
 
-val_loader = DataListLoader(validset, shuffle=False, batch_size=p.test_batch_size)
 axes = [0, 1, 2]
 max_roc_auc = 0
 
@@ -91,7 +90,9 @@ for epoch in range(1, epochs+1):
                                       RandomRotate(degrees, axis=rotation_axis),
                                       AddPositionalData(),
                                       RemoveXYZ()))
+        validset.transform = Compose(RemoveXYZ())
     train_loader = DataListLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
+    val_loader = DataListLoader(validset, shuffle=False, batch_size=p.test_batch_size)
 
     learn_rate = optimizer.param_groups[0]['lr']  # for when it may be modified during run
     # rotator()
