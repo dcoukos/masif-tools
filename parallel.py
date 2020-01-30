@@ -48,8 +48,9 @@ trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
                       prefix=p.dataset)
 samples = len(trainset)
 cutoff = int(np.floor(samples*(1-p.validation_split)))
-trainset = trainset[:cutoff]
 validset = trainset[cutoff:]
+trainset = trainset[:cutoff]
+
 
 if p.shuffle_dataset:
     trainset = trainset.shuffle()
