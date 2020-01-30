@@ -83,7 +83,7 @@ for epoch in range(1, epochs+1):
         degrees = 0
         if epoch > 200:
             if epoch < 700:
-                degrees = 90*(epoch/500)
+                degrees = 90*((epoch-200)/500)
             else:
                 degrees = 90
         rotation_axis = axes[epoch % 3]  # only for structural data.
