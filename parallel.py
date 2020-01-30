@@ -55,7 +55,7 @@ if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 print('Setting up model...')
-model = p.model_type(n_features, heads=p.heads).to(device)
+model = p.model_type(6, heads=p.heads).to(device)
 model = DataParallel(model).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
@@ -80,16 +80,17 @@ for epoch in range(1, epochs+1):
     # rotate the structures between epochs
 
     if 'pos' in p.dataset:  # Is there positional data in the features?
+        degrees = 0
         if epoch > 200:
             if epoch < 700:
-                degrees = 90/(epoch-200)
+                degrees = 90*(epoch/500)
             else:
                 degrees = 90
-            rotation_axis = axes[epoch % 3]  # only for structural data.
-            trainset.transform = Compose((RemovePositionalData(),
-                                          RandomRotate(degrees, axis=rotation_axis),
-                                          AddPositionalData(),
-                                          RemoveXYZ()))
+        rotation_axis = axes[epoch % 3]  # only for structural data.
+        trainset.transform = Compose((RemovePositionalData(),
+                                      RandomRotate(degrees, axis=rotation_axis),
+                                      AddPositionalData(),
+                                      RemoveXYZ()))
     train_loader = DataListLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
 
     learn_rate = optimizer.param_groups[0]['lr']  # for when it may be modified during run

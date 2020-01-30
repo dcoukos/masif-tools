@@ -1,13 +1,13 @@
 # REMEMBER TO CHANGE VERSION NUMBER
 from models import ThreeConvGlobal, SixConv, SixConvPassThrough, SixConvPT_LFC, SixConvResidual
 
-batch_size = 80
-test_batch_size = 80
+batch_size = 20
+test_batch_size = 20
 validation_split = .10
 shuffle_dataset = False
 random_seed = 37
-dropout = False  # too much dropout?
-batchnorm = True
+dropout = True  # too much dropout?
+batchnorm = False
 learn_rate = .0007
 intermediate_learn_rate = 0.002
 lr_decay = 0.3
