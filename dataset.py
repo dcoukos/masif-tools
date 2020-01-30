@@ -14,8 +14,7 @@ File to generate the dataset from the ply files.
 def remove_pos_data(dataset):
     for data in dataset:
         x = data.x
-        x = torch.ones((9,9))*torch.tensor([1,2,3,4,5,6,7,8,9])
-        y = x.narrow(1,6, 3).clone()
+        y = x.narrow(1, 6, 3).clone()
         data.x = y
 
 

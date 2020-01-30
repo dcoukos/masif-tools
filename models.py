@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch.nn import Linear, Dropout, Sequential, ReLU
-from torch_geometric.nn import GCNConv, FeaStConv, MessagePassing, knn_graph
+from torch_geometric.nn import GCNConv, FeaStConv, MessagePassing, knn_graph, BatchNorm
 # graclus, avg_pool_x
 
 
@@ -331,8 +331,10 @@ class SixConvResidual(torch.nn.Module):
         self.lin2 = Linear(256, 64)
         self.lin3 = Linear(64, 16)
         self.out = Linear(16, 1)
+        self.batch1 = BatchNorm(16+n_features)
+        self.batch2 = BatchNorm(80+n_features)
+        self.batch3 = BatchNorm(208+n_features)
         self.drop_bool = dropout
-        self.dropout = Dropout(p=0.5)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, data):
@@ -355,14 +357,12 @@ class SixConvResidual(torch.nn.Module):
         x6 = self.conv6(cat4, edge_index)
         z = torch.cat((cat4, x6), dim=1)
         z = z.relu()
+
         z = self.lin1(z)
-        z = self.dropout(z) if self.drop_bool else z
         z = z.relu()
         z = self.lin2(z)
-        z = self.dropout(z) if self.drop_bool else z
         z = z.relu()
         z = self.lin3(z)
-        z = self.dropout(z) if self.drop_bool else z
         z = z.relu()
         z = self.out(z)
         z = torch.sigmoid(z)
