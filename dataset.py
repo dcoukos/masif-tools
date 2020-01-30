@@ -8,6 +8,25 @@ from itertools import product
 
 '''
 File to generate the dataset from the ply files.
+
+from torch_geometric.data import Data
+from torch_geometric.transforms import RandomRotate
+import torch
+x = torch.ones(9,9)*torch.tensor([1,2,3,4,5,6,7,8,9])
+y = torch.tensor([1,2,3,4,5,6,7,8,9]).t()
+y
+pos = torch.ones(9,3)*torch.tensor([1,2,3])
+norm = pos
+data = Data(x=x,y=y, pos=pos, norm=norm)
+
+remove_pos_data([data])
+data
+data.transform = RandomRotate(90)
+data
+add_pos_data([data])
+
+data
+
 '''
 
 
@@ -15,16 +34,14 @@ def remove_pos_data(dataset):
     for data in dataset:
         x = data.x
         y = x.narrow(1, 6, 3).clone()
-        data.__setitem__('x', y)
+        data.x = y
+
 
 def add_pos_data(dataset):
     for data in dataset:
         pos = data.pos
         norm = data.norm
         x = data.x
-        print(x.shape)
-        print(pos.shape)
-        print(norm.shape)
 
         x = torch.stack((x, pos, norm), dim=1)
         x = x.reshape(-1, 9)
