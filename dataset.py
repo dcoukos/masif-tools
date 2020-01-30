@@ -11,20 +11,22 @@ File to generate the dataset from the ply files.
 '''
 
 
-def remove_pos_data(data):
-    x = data.x
-    x = torch.ones((9,9))*torch.tensor([1,2,3,4,5,6,7,8,9])
-    y = x.narrow(1,6, 3).clone()
-    data.x = y
+def remove_pos_data(dataset):
+    for data in dataset:
+        x = data.x
+        x = torch.ones((9,9))*torch.tensor([1,2,3,4,5,6,7,8,9])
+        y = x.narrow(1,6, 3).clone()
+        data.x = y
 
 
-def add_pos_data(data):
-    pos = data.pos
-    norm = data.norm
-    x = data.x
-    x = torch.stack((x, pos, norm), dim=1)
-    x = x.reshape(-1, 9)
-    data.x = x
+def add_pos_data(dataset):
+    for data in dataset:
+        pos = data.pos
+        norm = data.norm
+        x = data.x
+        x = torch.stack((x, pos, norm), dim=1)
+        x = x.reshape(-1, 9)
+        data.x = x
 
 
 def convert_data(path_to_raw='./structures/', use_shape_data=True):
