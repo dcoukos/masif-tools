@@ -80,7 +80,7 @@ for epoch in range(1, epochs+1):
     # rotate the structures between epochs
 
     if 'pos' in p.dataset:  # Is there positional data in the features?
-        trainset = remove_pos_data(trainset)
+        remove_pos_data(trainset)
         rotation_axis = axes[epoch % 3]  # only for structural data.
         trainset.transform = RandomRotate(90, axis=rotation_axis)
         add_pos_data(trainset)
