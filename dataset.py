@@ -12,11 +12,14 @@ File to generate the dataset from the ply files.
 
 
 def remove_pos_data(dataset):
-    for data in dataset:
+    new_dataset = dataset
+    for data in new_dataset:
         x = data.x
         y = x.narrow(1, 6, 3).clone()
         data.x = y
-
+        print(y.shape)
+        print(data.x.shape)
+    return new_dataset
 
 def add_pos_data(dataset):
     for data in dataset:
