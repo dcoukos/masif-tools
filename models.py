@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch.nn import Linear, Dropout, Sequential, ReLU
 from torch_geometric.nn import GCNConv, FeaStConv, MessagePassing, knn_graph, BatchNorm
+import params as p
 # graclus, avg_pool_x
 
 
@@ -331,7 +332,9 @@ class SixConvResidual(torch.nn.Module):
         self.lin2 = Linear(256, 64)
         self.lin3 = Linear(64, 16)
         self.out = Linear(16, 1)
-        self.drop_bool = dropout
+        self.batch1 = BatchNorm(16+n_features)
+        self.batch2 = BatchNorm(80+n_features)
+        self.batch3 = BatchNorm(208+n_features)
         self.dropout = Dropout(p=0.5)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -341,12 +344,14 @@ class SixConvResidual(torch.nn.Module):
         x1 = x1.relu()
         cat0 = torch.cat((x1, in_), dim=1)
         x2 = self.conv2(cat0, edge_index)
+        x2 = self.batch1(x2) if p.batchnorm else x2
         x2 = x2.relu()
         cat1 = torch.cat((cat0, x2), dim=1)
         x3 = self.conv3(cat1, edge_index)
         x3 = x3.relu()
         cat2 = torch.cat((cat1, x3), dim=1)
         x4 = self.conv4(cat2, edge_index)
+        x4 = self.batch2(x4) if p.batchnorm else x4
         x4 = x4.relu()
         cat3 = torch.cat((cat2, x4), dim=1)
         x5 = self.conv5(cat3, edge_index)
@@ -354,15 +359,16 @@ class SixConvResidual(torch.nn.Module):
         cat4 = torch.cat((cat3, x5), dim=1)
         x6 = self.conv6(cat4, edge_index)
         z = torch.cat((cat4, x6), dim=1)
+        z = self.batch3(z) if p.batchnorm else z
         z = z.relu()
         z = self.lin1(z)
-        z = self.dropout(z) if self.drop_bool else z
+        z = self.dropout(z) if p.dropout else z
         z = z.relu()
         z = self.lin2(z)
-        z = self.dropout(z) if self.drop_bool else z
+        z = self.dropout(z) if p.dropout else z
         z = z.relu()
         z = self.lin3(z)
-        z = self.dropout(z) if self.drop_bool else z
+        z = self.dropout(z) if p.dropout else z
         z = z.relu()
         z = self.out(z)
         z = torch.sigmoid(z)
