@@ -91,7 +91,7 @@ for epoch in range(1, epochs+1):
                                       RandomRotate(degrees, axis=rotation_axis),
                                       AddPositionalData(),
                                       RemoveXYZ()))
-        validset.transform = Compose(RemoveXYZ())
+        validset.transform = RemoveXYZ()
     train_loader = DataListLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
     val_loader = DataListLoader(validset, shuffle=False, batch_size=p.test_batch_size)
 
