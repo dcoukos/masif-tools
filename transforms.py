@@ -134,7 +134,6 @@ class NodeCurvature(object):
 
         data.shape_index = s
         if self.remove:
-            data.face = None
             data.face_curvature = None
             data.face_weights = None
             data.face_normals = None
