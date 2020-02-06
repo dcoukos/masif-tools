@@ -30,46 +30,6 @@ data
 '''
 
 
-class RemovePositionalData(object):
-    ''''''
-    def __call__(self, data):
-        x = data.x
-        y = x.narrow(1, 6, 3).clone()
-        data.x = y
-        return data
-
-    def __repr__(self):
-        return '{}()'.format(self.__class__.__name__)
-
-
-class RemoveXYZ(object):
-    ''''''
-    def __call__(self, data):
-        x = data.x
-        y = x.narrow(1, 3, 6).clone()
-        data.x = y
-        return data
-
-    def __repr__(self):
-        return '{}()'.format(self.__class__.__name__)
-
-
-class AddPositionalData(object):
-    ''''''
-    def __call__(self, data):
-        pos = data.pos
-        norm = data.norm
-        x = data.x
-
-        x = torch.stack((x, pos, norm), dim=1)
-        x = x.reshape(-1, 9)
-        data.x = x
-        return data
-
-    def __repr__(self):
-        return '{}()'.format(self.__class__.__name__)
-
-
 def convert_data(path_to_raw='./structures/', use_shape_data=True):
     '''Generate raw unprocessed torch file to generate pyg datasets using all structures.
     '''

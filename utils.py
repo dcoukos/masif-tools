@@ -255,3 +255,18 @@ def generate_surface(model_type, model_path, pdb_code, use_structural_data=False
         hphob=structure.x[:, 2].reshape(-1, 1).detach().numpy(),
         iface=rounded.detach().numpy()
     )
+
+
+def calculate_shape_index(gauss_curv, mean_curv):
+    '''
+        gauss_curv = k1*k2
+        mean_curv = (k1 + k2)/2
+        mean_curv*2 - k2 = k1
+        gauss_curv = (mean_curv*2 -k2)*k2
+        0 = gauss_curv - 2*mean_curv*k2 + k2**2
+        k2 = (2*mean_curv +_ np.sqrt(4*mean_curv**2 - 4*gauss_curv))2  |select pos?
+        k1 = mean_curv*2 - k2
+    '''
+    k2_a = (2*mean_curv + np.sqrt(4*mean_curv**2 - 4*gauss_curv))/2
+    k2_b = (2*mean_curv - np.sqrt(4*mean_curv**2 - 4*gauss_curv))/2
+    
