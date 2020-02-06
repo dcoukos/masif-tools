@@ -24,7 +24,7 @@ if p.suppress_warnings:
     import warnings
     warnings.filterwarnings("ignore")
 
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:0')
 # reproducibility
 torch.manual_seed(p.random_seed)
 np.random.seed(p.random_seed)
@@ -43,6 +43,7 @@ if p.twohop is True:
 else:
     converter = None
 
+print('Importing structures.')
 trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
                       pre_transform=Compose((Center(), FaceAttributes(),
                                              NodeCurvature(), FaceToEdge())),

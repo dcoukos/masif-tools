@@ -9,12 +9,17 @@ class FaceAttributes(object):
     '''
     Add curvature attributes and weights to each face.
     '''
+    def __init__(self):
+        print('Calculating Shape Indices')
+
 
     def __call__(self, data):
         assert data.face is not None
         assert data.pos is not None
         assert data.norm is not None
-        device = torch.device('cuda:0')
+
+        #device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        device = torch.device('cpu')
 
         faces = data.pos[data.face].to(device)  # checked.
         norms = data.norm[data.face].to(device)  # checked.
@@ -84,7 +89,8 @@ class NodeCurvature(object):
         assert data.face_weight is not None
 
         # Prepare the initial local coordinate system
-        device = torch.device('cuda:0')
+        #device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        device = torch.device('cpu')
         norms = data.norm.to(device)
         positions = data.pos.to(device)
         faces = data.face.to(device)
@@ -109,7 +115,7 @@ class NodeCurvature(object):
 
         weights = data.face_weight  # checked
         f_curv = data.face_curvature  # checked
-        weights = weights.view(-1,1)*sparse_faces  # checked On older pytorch have to cast to float
+        weights = weights.view(-1,1)*sparse_faces.to(torch.float)  # checked On older pytorch have to cast to float
         node_curv = f_curv.t()@weights  # checked
         sum_weights_per_node = weights.sum(0)  # checked
         node_curv = node_curv/sum_weights_per_node  # checked
