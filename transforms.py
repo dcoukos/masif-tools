@@ -14,9 +14,10 @@ class FaceAttributes(object):
         assert data.face is not None
         assert data.pos is not None
         assert data.norm is not None
+        device = torch.device('cuda:0')
 
-        faces = data.pos[data.face]  # checked.
-        norms = data.norm[data.face]  # checked.
+        faces = data.pos[data.face].to(device)  # checked.
+        norms = data.norm[data.face].to(device)  # checked.
 
         e0 = faces[2,:,:] - faces[1,:,:]  # checked
         e1 = faces[0,:,:] - faces[2,:,:]  # checked
@@ -83,9 +84,10 @@ class NodeCurvature(object):
         assert data.face_weight is not None
 
         # Prepare the initial local coordinate system
-        norms = data.norm
-        positions = data.pos
-        faces = data.face
+        device = torch.device('cuda:0')
+        norms = data.norm.to(device)
+        positions = data.pos.to(device)
+        faces = data.face.to(device)
 
         face_id = torch.tensor(list(range(len(faces.t()))))  # checked
         face0 = faces[0]  # checked
@@ -107,7 +109,7 @@ class NodeCurvature(object):
 
         weights = data.face_weight  # checked
         f_curv = data.face_curvature  # checked
-        weights = weights.view(-1,1)*sparse_faces  # checked
+        weights = weights.view(-1,1)*sparse_faces  # checked On older pytorch have to cast to float
         node_curv = f_curv.t()@weights  # checked
         sum_weights_per_node = weights.sum(0)  # checked
         node_curv = node_curv/sum_weights_per_node  # checked
