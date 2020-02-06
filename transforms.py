@@ -57,14 +57,14 @@ class FaceAttributes(object):
 
         b = torch.stack((b_0, b_1, b_2), dim=1).view(-1, 3, 1)
         print((torch.transpose(A, 1, 2)@A).shape)
-        Dn_u = torch.inverse(torch.transpose(A, 1, 2)@A)@torch.transpose(A, 1, 2)@b
+        Dn_u = torch.pinverse(torch.transpose(A, 1, 2)@A)@torch.transpose(A, 1, 2)@b
 
         b_0 = ((n2 - n1)*v).sum(-1)
         b_1 = ((n0 - n2)*v).sum(-1)
         b_2 = ((n1 - n0)*v).sum(-1)
 
         b = torch.stack((b_0, b_1, b_2), dim=1).view(-1, 3, 1)
-        Dn_v = torch.inverse(torch.transpose(A, 1, 2)@A)@torch.transpose(A, 1, 2)@b
+        Dn_v = torch.pinverse(torch.transpose(A, 1, 2)@A)@torch.transpose(A, 1, 2)@b
 
         data.face_curvature = torch.cat((Dn_u, Dn_v), dim=1).squeeze()
         s = 0.5 * (e0.norm(dim=1) + e1.norm(dim=1) + e2.norm(dim=1))

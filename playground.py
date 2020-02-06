@@ -84,9 +84,23 @@ delta_p = p_i - p_j
 k_ij = (delta_n*delta_p)/delta_p.norm()**2
 k_ij
 dataset
+from dataset import Structures
+import params as p
+from transforms import *
+from torch_geometric.transforms import Center, Compose, FaceToEdge, TwoHop
+import torch
+
+converter = TwoHop()
+trainset = Structures(root='./datasets/{}/'.format(p.dataset),
+                      pre_transform=Compose((Center(), FaceAttributes(),
+                                             NodeCurvature(), FaceToEdge())),
+                      transform=converter, prefix=p.dataset)
 
 
-# For normal projections.
+
+
+
+ # For normal projections.
 '''    NOT DOING PROJECTION INTO THE PLANE OF THE NORMAL.
 rand = torch.zeros(norms.shape).random_()
 rand_norm = rand.norm(dim=1).view(-1, 1)
