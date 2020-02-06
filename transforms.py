@@ -1,10 +1,7 @@
 import torch
 from torch_geometric.nn.conv.ppf_conv import point_pair_features
 import math
-import pandas as pd
-from tqdm import tqdm
 import numpy as np
-from torch_geometric.transforms import Compose
 from torch.sparse import LongTensor
 
 

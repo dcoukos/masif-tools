@@ -3,7 +3,8 @@ import numpy as np
 from torch_geometric.data import DataListLoader
 from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate, Compose, Center
 from torch_geometric.nn import DataParallel
-from dataset import Structures, RemovePositionalData, AddPositionalData, RemoveXYZ
+from dataset import Structures
+from transforms import *
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_auc_score
 from utils import generate_weights, generate_example_surfaces, make_model_directory
@@ -11,12 +12,11 @@ import params as p
 from statistics import mean
 import torch.nn.functional as F
 '''
-baseline.py implements a baseline model. Experiment using pytorch-geometric
-    and FeaStNet.
+!! Parallel.py requires GPU !!
 
-Focus on just 1 conv small conv layer first! Learn on 1 structure, then 10 structures.
-Then increase model complexity to accomodate the increase in data.
-Ignore test metrics for now.
+Implementing Model 16a: (Model 15b + Shape index data):
+    - Comment out rotations.
+    - Replace transforms with those that allow adding of shape_index data.
 '''
 
 # --- Parameter setting -----
@@ -44,8 +44,9 @@ else:
     converter = None
 
 trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
-                      pre_transform=Compose((Center(), FaceToEdge())), transform=converter,
-                      prefix=p.dataset)
+                      pre_transform=Compose((Center(), FaceAttributes(),
+                                             NodeCurvature(), FaceToEdge())),
+                      transform=converter, prefix=p.dataset)
 samples = len(trainset)
 cutoff = int(np.floor(samples*(1-p.validation_split)))
 validset = trainset[cutoff:]
@@ -71,7 +72,7 @@ writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.f
                        p.random_seed))
 
 
-axes = [0, 1, 2]
+# axes = [0, 1, 2]
 max_roc_auc = 0
 
 # ---- Training ----
@@ -92,6 +93,10 @@ for epoch in range(1, epochs+1):
                                       AddPositionalData(),
                                       RemoveXYZ()))
         validset.transform = RemoveXYZ()
+
+    # Using shape index data:
+    trainset.transform = AddShapeIndex()
+    validset.transform = AddShapeIndex()
     train_loader = DataListLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
     val_loader = DataListLoader(validset, shuffle=False, batch_size=p.test_batch_size)
 
