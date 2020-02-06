@@ -52,6 +52,7 @@ class FaceAttributes(object):
 
         b = torch.stack((b_0, b_1, b_2), dim=1).view(-1, 3, 1)
         # Need to check this math.
+        print((torch.transpose(A, 1, 2)@A)).shape
         Dn_u = torch.pinverse(torch.transpose(A, 1, 2)@A)@torch.transpose(A, 1, 2)@b
 
         b_0 = ((n2 - n1)*v).sum(-1)
