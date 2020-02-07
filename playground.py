@@ -84,24 +84,36 @@ delta_p = p_i - p_j
 k_ij = (delta_n*delta_p)/delta_p.norm()**2
 k_ij
 dataset
-from dataset import Structures
-import params as p
-from transforms import *
-from torch_geometric.transforms import Center, Compose, FaceToEdge, TwoHop
+
+# Applying pretransformation once and saving datasets!
+from utils import apply_pretransforms
+
+apply_pretransforms()
+
+# Checking why my transformations keep crashing...
 import torch
+from torch_geometric.transforms import Compose, FaceToEdge, TwoHop, Center
+from transforms import *
+import params as p
+from dataset import Structures
 
-converter = TwoHop()
-trainset = Structures(root='./datasets/{}/'.format(p.dataset),
-                      pre_transform=Compose((Center(), FaceAttributes(),
-                                             NodeCurvature(), FaceToEdge())),
-                      transform=converter, prefix=p.dataset)
-
-
+dataset = Structures(pre_transform = Compose((Center(), FaceAttributes(), NodeCurvature(), FaceToEdge(), TwoHop())))
 
 
+data1 = dataset[233]
+data2 = dataset[234]
+data1
 
- # For normal projections.
-'''    NOT DOING PROJECTION INTO THE PLANE OF THE NORMAL.
+
+converter = Compose((Center(), FaceAttributes(), NodeCurvature(), FaceToEdge(), TwoHop()))
+data1 = converter(data1)
+data2 = converter(data2)
+
+data2
+# For normal projections.
+
+"""
+NOT DOING PROJECTION INTO THE PLANE OF THE NORMAL.
 rand = torch.zeros(norms.shape).random_()
 rand_norm = rand.norm(dim=1).view(-1, 1)
 rand = torch.div(rand, rand_norm)
@@ -118,4 +130,4 @@ e1 = torch.cross(norms, e0, dim=1)
 e0 = e0.div(e0.norm(dim=1).view(-1,1))
 e1 = e1.div(e1.norm(dim=1).view(-1,1))
 # Collect the (indices) of the faces adjacent to the node
-'''
+"""

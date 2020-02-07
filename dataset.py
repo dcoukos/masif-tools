@@ -4,6 +4,8 @@ import torch
 from plyfile import PlyData
 from torch_geometric.data import Data, InMemoryDataset
 from itertools import product
+from tqdm import tqdm
+import params as p
 
 
 '''
@@ -177,8 +179,8 @@ class MiniStructures(InMemoryDataset):
 
 
 class Structures(InMemoryDataset):
-    def __init__(self, root='./datasets/full_pos/', pre_transform=None, transform=None, prefix=''):
-        self.prefix = prefix
+    def __init__(self, root='./datasets/{}/'.format(p.dataset), pre_transform=None, transform=None):
+        self.prefix = p.dataset
         super(Structures, self).__init__(root, transform, pre_transform)
         self.data, self.slices = torch.load(self.processed_paths[0])
 
@@ -201,7 +203,7 @@ class Structures(InMemoryDataset):
             data_list = [data for data in data_list if self.pre_filter(data)]
 
         if self.pre_transform is not None:
-            data_list = [self.pre_transform(data) for data in data_list]
+            data_list = [self.pre_transform(data) for data in tqdm(data_list)]
 
         data, slices = self.collate(data_list)
         torch.save((data, slices), self.processed_paths[0])
