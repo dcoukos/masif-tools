@@ -86,6 +86,11 @@ k_ij
 dataset
 
 # Applying pretransformation once and saving datasets!
+# New strategy... load the data first, without pretransforms,
+# then load into a dataloader and batch apply the transforms.
+
+
+# Why is it not using gpu?
 from utils import apply_pretransforms
 
 apply_pretransforms()

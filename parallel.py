@@ -45,9 +45,7 @@ else:
 
 print('Importing structures.')
 trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
-                      pre_transform=Compose((Center(), FaceAttributes(),
-                                             NodeCurvature(), FaceToEdge())),
-                      transform=converter, prefix=p.dataset)
+                      prefix=p.dataset)
 samples = len(trainset)
 cutoff = int(np.floor(samples*(1-p.validation_split)))
 validset = trainset[cutoff:]
@@ -96,8 +94,12 @@ for epoch in range(1, epochs+1):
         validset.transform = RemoveXYZ()
 
     # Using shape index data:
-    trainset.transform = AddShapeIndex()
-    validset.transform = AddShapeIndex()
+    trainset.transform = Compose((Center(), FaceAttributes(),
+                                  NodeCurvature(), FaceToEdge(),
+                                  TwoHop()), AddShapeIndex())
+    validset.transform = Compose((Center(), FaceAttributes(),
+                                  NodeCurvature(), FaceToEdge(),
+                                  TwoHop()), AddShapeIndex())
     train_loader = DataListLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
     val_loader = DataListLoader(validset, shuffle=False, batch_size=p.test_batch_size)
 
