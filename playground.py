@@ -92,6 +92,22 @@ dataset
 
 # Why is it not using gpu?
 from utils import apply_pretransforms
+from dataset import Structures_SI_mem, Structures
+from torch_geometric.transforms import *
+from transforms import *
+
+dataset = Structures_SI(root='./datasets/thous_train/', pre_transform=Compose((Center(), FaceAttributes(),
+                                               NodeCurvature(), FaceToEdge(),
+                                               TwoHop(), AddShapeIndex())))
+dataset = Structures_SI_mem(root='./datasets/thous_train/',
+                        pre_transform=Compose((Center(), FaceAttributes(),
+                                               NodeCurvature(), FaceToEdge(),
+                                               TwoHop(), AddShapeIndex())))
+
+dataset[0]
+
+
+dataset[0]
 
 apply_pretransforms()
 
@@ -102,37 +118,91 @@ from transforms import *
 import params as p
 from dataset import Structures
 
-dataset = Structures(pre_transform = Compose((Center(), FaceAttributes(), NodeCurvature(), FaceToEdge(), TwoHop())))
+dataset = Structures(pre_transform=Compose((Center(), FaceAttributes(), NodeCurvature(), FaceToEdge(), TwoHop())))
 
-
+data = Structures(root='./datasets/thous/')[234]
+pre_transform = Compose((Center(), FaceAttributes(), NodeCurvature(), FaceToEdge(), TwoHop()))
 data1 = dataset[233]
 data2 = dataset[234]
-data1
+data3 = dataset[235]
+data2
 
 
-converter = Compose((Center(), FaceAttributes(), NodeCurvature(), FaceToEdge(), TwoHop()))
-data1 = converter(data1)
-data2 = converter(data2)
+data1 = pre_transform(data1)
+data2 = pre_transform(data2)
+data3 = pre_transform(data3)
 
 data2
 # For normal projections.
 
-"""
-NOT DOING PROJECTION INTO THE PLANE OF THE NORMAL.
-rand = torch.zeros(norms.shape).random_()
-rand_norm = rand.norm(dim=1).view(-1, 1)
-rand = torch.div(rand, rand_norm)
 
-# PROBLEM W/ DEFINITION
-# project to normals
-projected = ((rand*norms).sum(-1)/(norms*norms).sum(-1)).view(-1,1)*norms
-# take the difference.
-e0 = rand - projected
-e0 = e0.div(e0.norm(dim=1).view(-1,1))
-# take the crossproduct of the two vectors.
-e1 = torch.cross(norms, e0, dim=1)
-# normalize.
-e0 = e0.div(e0.norm(dim=1).view(-1,1))
-e1 = e1.div(e1.norm(dim=1).view(-1,1))
-# Collect the (indices) of the faces adjacent to the node
-"""
+# Visualize shape data:
+structure = Structures(root='./datasets/thous_train', pre_transform=Compose((Center(), FaceAttributes(), NodeCurvature(), FaceToEdge(), TwoHop())))[234]
+set = Structures(root='./datasets/thous/')
+converter = Compose((Center(), FaceAttributes(), NodeCurvature(), FaceToEdge(remove_faces=False), TwoHop()))
+structure = converter(set[234])
+structure.y
+save_ply(
+    filename='example_curvature.ply',
+    vertices=structure.pos.detach().numpy(),
+    normals=structure.norm.detach().numpy(),
+    faces=structure.face.t().detach().numpy(),
+    charges=structure.x[:, 0].reshape(-1, 1).detach().numpy(),
+    hbond=structure.shape_index.reshape(-1, 1).detach().numpy(),
+    hphob=structure.x[:, 1].reshape(-1, 1).detach().numpy(),
+    iface=structure.y.detach().numpy()
+)
+
+
+def save_ply(
+    filename,
+    vertices,
+    faces=[],
+    normals=None,
+    charges=None,
+    vertex_cb=None,
+    hbond=None,
+    hphob=None,
+    iface=None,
+    normalize_charges=False,
+):
+    """ Pablo Gainza - LPDI STI EPFL 2019
+        Released under an Apache License 2.0
+
+        Save vertices, mesh in ply format.
+        vertices: coordinates of vertices
+        faces: mesh
+    """
+    import pymesh  # No pymesh on gpu cluster
+    mesh = pymesh.form_mesh(vertices, faces)
+    if normals is not None:
+        n1 = normals[:, 0]
+        n2 = normals[:, 1]
+        n3 = normals[:, 2]
+        mesh.add_attribute("vertex_nx")
+        mesh.set_attribute("vertex_nx", n1)
+        mesh.add_attribute("vertex_ny")
+        mesh.set_attribute("vertex_ny", n2)
+        mesh.add_attribute("vertex_nz")
+        mesh.set_attribute("vertex_nz", n3)
+    if charges is not None:
+        mesh.add_attribute("charge")
+        if normalize_charges:
+            charges = charges / 10
+        mesh.set_attribute("charge", charges)
+    if hbond is not None:
+        mesh.add_attribute("hbond")
+        mesh.set_attribute("hbond", hbond)
+    if vertex_cb is not None:
+        mesh.add_attribute("vertex_cb")
+        mesh.set_attribute("vertex_cb", vertex_cb)
+    if hphob is not None:
+        mesh.add_attribute("vertex_hphob")
+        mesh.set_attribute("vertex_hphob", hphob)
+    if iface is not None:
+        mesh.add_attribute("vertex_iface")
+        mesh.set_attribute("vertex_iface", iface)
+
+    pymesh.save_mesh(
+        filename, mesh, *mesh.get_attribute_names(), use_float=True, ascii=True
+    )

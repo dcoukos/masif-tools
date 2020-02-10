@@ -2,35 +2,18 @@ from glob import glob
 from tqdm import tqdm
 import torch
 from plyfile import PlyData
-from torch_geometric.data import Data, InMemoryDataset
+from torch_geometric.data import Data, InMemoryDataset, Dataset
 from itertools import product
 from tqdm import tqdm
 import params as p
+import os.path as osp
+from multiprocessing import Pool, cpu_count
 
 
 '''
 File to generate the dataset from the ply files.
 
-from torch_geometric.data import Data
-from torch_geometric.transforms import RandomRotate
-import torch
-x = torch.ones(9,9)*torch.tensor([1,2,3,4,5,6,7,8,9])
-y = torch.tensor([1,2,3,4,5,6,7,8,9]).t()
-y
-pos = torch.ones(9,3)*torch.tensor([1,2,3])
-norm = pos
-data = Data(x=x,y=y, pos=pos, norm=norm)
-
-remove_pos_data([data])
-data
-data.transform = RandomRotate(90)
-data
-add_pos_data([data])
-
-data
-
 '''
-
 
 def convert_data(path_to_raw='./structures/', use_shape_data=True):
     '''Generate raw unprocessed torch file to generate pyg datasets using all structures.
@@ -207,3 +190,94 @@ class Structures(InMemoryDataset):
 
         data, slices = self.collate(data_list)
         torch.save((data, slices), self.processed_paths[0])
+
+
+class Structures_SI_mem(Dataset):
+    '''
+        This class is specifially for loading data with the Shape Index-related
+        transformations. This transform is memory intensive, and can lead to crashing.
+
+        This version specifically tries to circumvent cpu-linked max memory limits by distributing
+        work to all cpus.
+    '''
+    def __init__(self, root='./datasets/{}/'.format(p.dataset), pre_transform=None, transform=None):
+        self.prefix = p.dataset
+        super(Structures_SI_mem, self).__init__(root, transform, pre_transform)
+        self.root = root
+
+    @property
+    def raw_file_names(self):
+        print('Read raw file paths.')
+        return ['{}_structures.pt'.format(self.prefix)]
+
+    @property
+    def processed_file_names(self):
+        return ['{}_structures.pt'.format(self.prefix)]
+
+    def download(self):
+        pass
+
+    def process(self):
+        # Read data into huge `Data` list.
+        i = 0
+        print("Processing dataset...")
+        data_list = torch.load(self.raw_paths[0])
+        sublists = []
+        n_proc = cpu_count()
+        p = Pool(n_proc)
+        results = p.map(self.process_sublist, data_list) # does this need to be split into 4 sublists?
+        p.close()
+        p.join()
+
+        data, slices = self.collate(results)
+        torch.save((data, slices), self.processed_paths[0])
+
+    def process_sublist(self, data):
+        #for data in tqdm(data_list):
+            # Read data from `raw_path`
+        if self.pre_transform is not None:
+            data = self.pre_transform(data)
+        return data
+
+
+class Structures_SI(Dataset):
+    '''
+        This class is specifially for loading data with the Shape Index-related
+        transformations. This transform is memory intensive, and can lead to crashing.
+    '''
+    def __init__(self, root='./datasets/{}/'.format(p.dataset), pre_transform=None, transform=None):
+        self.prefix = p.dataset
+        super(Structures_SI, self).__init__(root, transform, pre_transform)
+        self.root = root
+
+    @property
+    def raw_file_names(self):
+        print('Read raw file paths.')
+        return ['{}_structures.pt'.format(self.prefix)]
+
+    @property
+    def processed_file_names(self):
+        return ['Does_not_exist.pt']
+
+    def download(self):
+        pass
+
+    def process(self):
+        # Read data into huge `Data` list.
+        i = 0
+        print("Processing dataset...")
+        data_list = torch.load(self.raw_paths[0])
+        for data in tqdm(data_list):
+            # Read data from `raw_path`
+            if self.pre_transform is not None:
+                data = self.pre_transform(data)
+
+            torch.save(data, osp.join(self.processed_dir, 'data_{}.pt'.format(i)))
+            i += 1
+
+    def len(self):
+        return len(self.processed_file_names)
+
+    def get(self, idx):
+        data = torch.load(osp.join(self.processed_dir, 'data_{}.pt'.format(idx)))
+        return data

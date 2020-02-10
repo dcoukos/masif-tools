@@ -1,88 +1,119 @@
 import torch
 import numpy as np
-from torch_geometric.data import DataLoader
-from models import SixConvResidual, ThreeConvGlobal  #, MiniModel
-from torch_geometric.transforms import FaceToEdge, RandomRotate
-from dataset import MiniStructures
+from torch_geometric.data import DataListLoader
+from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate, Compose, Center
+from torch_geometric.nn import DataParallel
+from dataset import Structures
+from transforms import *
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_auc_score
-from utils import generate_weights
-import datetime
+from utils import generate_weights, generate_example_surfaces, make_model_directory
 import params as p
 from statistics import mean
+import torch.nn.functional as F
 '''
-baseline.py implements a baseline model. Experiment using pytorch-geometric
-    and FeaStNet.
-Focus on just 1 conv small conv layer first! Learn on 1 structure, then 10 structures.
-Then increase model complexity to accomodate the increase in data.
-Ignore test metrics for now.
+!! Parallel.py requires GPU !!
+
+Implementing Model 16a: (Model 15b + Shape index data):
+    - Comment out rotations.
+    - Replace transforms with those that allow adding of shape_index data.
 '''
 
+# --- Parameter setting -----
 if p.suppress_warnings:
     import warnings
     warnings.filterwarnings("ignore")
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:0')
 # reproducibility
 torch.manual_seed(p.random_seed)
 np.random.seed(p.random_seed)
-
 learn_rate = p.learn_rate
+modelpath = make_model_directory()
 
-if str(device) == 'cuda':
+if str(device) == 'cuda:0':
     epochs = p.epochs
 else:
     epochs = 20
 
-dataset = MiniStructures(root='./datasets/mini/', pre_transform=FaceToEdge())
-samples = len(dataset)
-if p.shuffle_dataset:
-    dataset = dataset.shuffle()
-n_features = dataset.get(0).x.shape[1]
+# ---- Importing and structuring Datasets and Model ----
+if p.twohop is True:
+    print("Adding two-hop edges to data graphs")
+    converter = TwoHop()
+else:
+    converter = None
 
-model = SixConvResidual(n_features, heads=1, dropout=p.dropout).to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
-                                                       factor=p.lr_decay,
-                                                       patience=p.patience)
-
-writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}'.format(
-                       p.version,
-                       learn_rate,
-                       p.lr_decay))
+print('Importing structures.')
+trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
+                      pre_transform=Compose((Center(), FaceAttributes(),
+                                             NodeCurvature(), FaceToEdge(),
+                                             TwoHop())))
+samples = len(trainset)
 
 cutoff = int(np.floor(samples*(1-p.validation_split)))
-train_dataset = dataset[:cutoff]
-test_dataset = dataset[cutoff:]
+validset = trainset[cutoff:]
+trainset = trainset[:cutoff]
 
 
-train_loader = DataLoader(train_dataset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
-test_loader = DataLoader(test_dataset, shuffle=False, batch_size=p.test_batch_size)
+if p.shuffle_dataset:
+    trainset = trainset.shuffle()
+n_features = trainset.get(0).x.shape[1]
+print('Setting up model...')
+model = p.model_type(6, heads=p.heads).to(device)
+model = DataParallel(model).to(device)
+optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
+# scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
+#                                                       factor=p.lr_decay,
+#                                                       patience=p.patience)
 
-rotator = RandomRotate(90)
+writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.format(
+                       p.version,
+                       learn_rate,
+                       p.lr_decay,
+                       p.shuffle_dataset,
+                       p.random_seed))
 
+
+# axes = [0, 1, 2]
+max_roc_auc = 0
+
+# ---- Training ----
+print('Training...')
 for epoch in range(1, epochs+1):
-    # rotate the structures between epochs
-    train_loader = [rotator(data) for data in train_loader]
-    train_loader[0].x[0]
+    # rotate the structures between epochs, when using pos data.
+
+    if 'pos' in p.dataset:  # Is there positional data in the features?
+        degrees = 15
+        rotation_axis = axes[epoch % 3]  # only for structural data.
+        trainset.transform = Compose((RemovePositionalData(),
+                                      RandomRotate(degrees, axis=rotation_axis),
+                                      AddPositionalData()))
+
+    # Using shape index data:
+    trainset.transform = AddShapeIndex()
+    validset.transform = AddShapeIndex()
+    train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
+    val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
+
+    learn_rate = optimizer.param_groups[0]['lr']  # for when it may be modified during run
     model.train()
     first_batch_labels = torch.Tensor()
     pred = torch.Tensor()
     tr_weights = torch.Tensor()
     loss = []
 
-    for batch_n, data in enumerate(train_loader):
+    for batch_n, datalist in enumerate(train_loader):
         optimizer.zero_grad()
-        x, edge_index = data.x.to(device), data.edge_index.to(device)
-        labels = data.y.to(device)
-        weights = generate_weights(labels)
-        tr_loss, out = model(x, edge_index, labels, weights)
+        out = model(datalist)
+        labels = torch.cat([data.y for data in datalist]).to(out.device)
+        weights = generate_weights(labels).to(out.device)
+        tr_loss = F.binary_cross_entropy(out, target=labels, weight=weights)
         loss.append(tr_loss.detach().item())
         tr_loss.backward()
         optimizer.step()
         if batch_n == 0:
             tr_weights = weights
-            first_batch_labels = data.y.clone().detach().to(device)
+            first_batch_labels = labels.clone().detach().to(device)
             pred = out.clone().detach().round().to(device)
 
     loss = mean(loss)
@@ -90,33 +121,46 @@ for epoch in range(1, epochs+1):
           .format(epoch, loss, learn_rate))
 
     #  --------------  REPORTING ------------------------------------
-
     roc_auc = roc_auc_score(first_batch_labels.cpu(), pred.cpu())
 
     model.eval()
     cum_pred = torch.Tensor().to(device)
     cum_labels = torch.Tensor().to(device)
-    for batch_n, data in enumerate(test_loader):
-        x, edge_index = data.x.to(device), data.edge_index.to(device)
-        labels = data.y.to(device)
-        te_weights = generate_weights(labels)
-        te_loss, out = model(x, edge_index, labels, te_weights)
+    te_weights = torch.Tensor().to(device)
+    for batch_n, datalist in enumerate(val_loader):
+        out = model(datalist)
+        labels = torch.cat([data.y for data in datalist]).to(out.device)
+        weights = generate_weights(labels).to(out.device)
+        te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
         pred = out.detach().round().to(device)
         cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
         cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
+        te_weights = torch.cat((te_weights, weights.clone().detach()), dim=0)
 
-    te_weights = generate_weights(cum_labels)
     roc_auc_te = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
-
     writer.add_scalars('Loss', {'train': tr_loss,
                                 'test': te_loss}, epoch)
     writer.add_scalars('ROC AUC', {'train': roc_auc,
                                    'test': roc_auc_te}, epoch)
     writer.add_scalar('learning rate', learn_rate, epoch)
 
+    if epoch % 20 == 0:
+        writer.add_histogram('Layer 1 weight gradients', model.module.conv1.weight.grad, epoch+1)
+        writer.add_histogram('Layer 2 weight gradients', model.module.conv2.weight.grad, epoch+1)
+        writer.add_histogram('Layer 3 weight gradients', model.module.conv3.weight.grad, epoch+1)
+        writer.add_histogram('Layer 4 weight gradients', model.module.conv4.weight.grad, epoch+1)
+        writer.add_histogram('Layer 5 weight gradients', model.module.conv5.weight.grad, epoch+1)
+        writer.add_histogram('Layer 6 weight gradients', model.module.conv6.weight.grad, epoch+1)
+        writer.add_histogram('Layer 7 weight gradients', model.module.lin1.weight.grad, epoch+1)
+        writer.add_histogram('Layer 8 weight gradients', model.module.lin2.weight.grad, epoch+1)
+    # scheduler.step(loss)
+    if roc_auc_te > max_roc_auc:
+        max_roc_auc = roc_auc_te
+        path = './{}/best.pt'.format(modelpath)
+        with open(path, 'w+'):
+            torch.save(model.module.state_dict(), path)
+    if epoch % 200 == 0:
+        path = './{}/epoch_{}.pt'.format(modelpath, epoch)
+        with open(path, 'a+'):
+            torch.save(model.module.state_dict(), path)
 writer.close()
-
-now = datetime.datetime.now().strftime('%y%m%d%H%M')
-path = 'models/{}_{}.pt'.format(str(model).split('(')[0], now)
-with open(path, 'a+'):
-    torch.save(model.state_dict(), path)

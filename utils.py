@@ -1,6 +1,6 @@
 import torch
 import os
-from dataset import MiniStructures, Structures, read_ply
+from dataset import MiniStructures, Structures, read_ply, Structures_SI
 import params as p
 from glob import glob
 from torch_geometric.transforms import Compose, FaceToEdge, TwoHop, Center
@@ -13,16 +13,17 @@ def apply_pretransforms(pre_transforms=None):
     # Structures should check already whether these pre_transforms have been computed
     if pre_transforms is None:
         trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
-                              pre_transform=Compose((Center(), FaceAttributes(),
-                                                     NodeCurvature(), FaceToEdge(), TwoHop())))
-        trainset = Structures(root='./datasets/{}_test/'.format(p.dataset),
-                              pre_transform=Compose((Center(), FaceAttributes(),
-                                                     NodeCurvature(), FaceToEdge(), TwoHop())))
+                                 pre_transform=Compose((Center(), FaceAttributes(),
+                                                        NodeCurvature(), FaceToEdge(), TwoHop())))
+        testset = Structures(root='./datasets/{}_test/'.format(p.dataset),
+                                pre_transform=Compose((Center(), FaceAttributes(),
+                                                       NodeCurvature(), FaceToEdge(), TwoHop())))
     else:
         trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
-                              pre_transform=pre_transforms)
-        trainset = Structures(root='./datasets/{}_test/'.format(p.dataset),
-                              pre_transform=pre_transforms)
+                                 pre_transform=pre_transforms)
+        testset = Structures(root='./datasets/{}_test/'.format(p.dataset),
+                                pre_transform=pre_transforms)
+    return trainset, testset
 
 
 def perf_measure(pred, labels):

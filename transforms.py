@@ -2,24 +2,25 @@ import torch
 from torch_geometric.nn.conv.ppf_conv import point_pair_features
 import math
 import numpy as np
-from torch.sparse import LongTensor
+import torch.sparse as tsp
 
 
 class FaceAttributes(object):
     '''
     Add curvature attributes and weights to each face.
+
+    Not tested on GPU.
     '''
     def __init__(self):
         print('Calculating Shape Indices')
-
 
     def __call__(self, data):
         assert data.face is not None
         assert data.pos is not None
         assert data.norm is not None
 
-        #device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        device = torch.device('cpu')
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        # device = torch.device('cpu')
 
         faces = data.pos[data.face].to(device)  # checked.
         norms = data.norm[data.face].to(device)  # checked.
@@ -77,7 +78,9 @@ class FaceAttributes(object):
 
 class NodeCurvature(object):
     '''
-        Computes the shape index for each node
+        Computes the shape index for each node.
+
+        Not tested on GPU.
     '''
     def __init__(self, remove_face_data=True):
         self.remove = remove_face_data
@@ -88,47 +91,49 @@ class NodeCurvature(object):
         assert data.face_weight is not None
 
         # Prepare the initial local coordinate system
-        #device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        device = torch.device('cpu')
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        # device = torch.device('cpu')
         norms = data.norm.to(device)
         positions = data.pos.to(device)
         faces = data.face.to(device)
 
-        face_id = torch.tensor(list(range(len(faces.t()))))  # checked
+        face_id = torch.tensor(list(range(len(faces.t())))).to(device)  # checked
         face0 = faces[0]  # checked
         face1 = faces[1]  # checked
         face2 = faces[2]  # checked
 
+        weights = data.face_weight  # checked
+        f_curv = data.face_curvature
+
         face0 = torch.stack((face_id, face0), dim=0).t()  # checked
         face1 = torch.stack((face_id, face1), dim=0).t()  # checked
         face2 = torch.stack((face_id, face2), dim=0).t()  # checked
-        ones = torch.ones(len(face0), dtype=torch.long)
-        sparse_idx = torch.LongTensor(face0)  # checked
+        weights = data.face_weight*torch.ones(len(face0), dtype=torch.long).to(device)
         sparse_size = torch.Size((faces.shape[1], len(positions)))  # checked
 
-        sparse_face0 = LongTensor(torch.LongTensor(face0).t(), ones, sparse_size).to_dense()  # checked
-        sparse_face1 = LongTensor(torch.LongTensor(face1).t(), ones, sparse_size).to_dense()  # checked
-        sparse_face2 = LongTensor(torch.LongTensor(face2).t(), ones, sparse_size).to_dense()  # checked
+        sparse_face0 = tsp.FloatTensor(torch.LongTensor(face0).t(), weights, sparse_size).to(device)  # .to_dense()  # checked
+        sparse_face1 = tsp.FloatTensor(torch.LongTensor(face1).t(), weights, sparse_size).to(device) # .to_dense()  # checked
+        sparse_face2 = tsp.FloatTensor(torch.LongTensor(face2).t(), weights, sparse_size).to(device)  # .to_dense()  # checked
 
-        sparse_faces = sparse_face0 + sparse_face1 + sparse_face2  # checked
+        weighted_faces = sparse_face0 + sparse_face1 + sparse_face2  # checked
+        weighted_faces = weighted_faces.coalesce()
 
-        weights = data.face_weight  # checked
-        f_curv = data.face_curvature  # checked
-        weights = weights.view(-1,1)*sparse_faces.to(torch.float)  # checked On older pytorch have to cast to float
-        node_curv = f_curv.t()@weights  # checked
-        sum_weights_per_node = weights.sum(0)  # checked
-        node_curv = node_curv/sum_weights_per_node  # checked
-        node_curv = node_curv.t()  # checked.
+        # checked On older pytorch have to cast to float
+        weighted_faces = weighted_faces.t()
+        node_curv = tsp.mm(weighted_faces, f_curv)
+        sum_weights_per_node = tsp.sum(weighted_faces, dim=1).to_dense()  # checked
+        node_curv = node_curv.t()/sum_weights_per_node  # checked
+        node_curv = node_curv.t()
         eigs = []
         for i in node_curv:  # checked
-            eig = torch.eig(i.reshape(2,2))
+            eig = torch.eig(i.reshape(2,2)).to(device)
             principal_curvatures = eig.eigenvalues[:,0].sort(descending=True).values
             eigs.append(principal_curvatures)
         eigs = torch.stack(eigs, dim=0)
         s_s = eigs[:,0] + eigs[:,1]
         s_p = eigs[:,0] - eigs[:,1]
         s = s_s.div(s_p)
-        pi = math.pi*torch.ones(len(positions))
+        pi = math.pi*torch.ones(len(positions)).to(device)
         s = (2/pi)*torch.atan(s)
 
         data.shape_index = s
@@ -143,12 +148,13 @@ class NodeCurvature(object):
 
 
 class AddShapeIndex(object):
-    def __call__(self):
+    def __call__(self, data):
         assert data.shape_index is not None
         s = data.shape_index
         x = data.x
+        s = s.view(-1, 1)
 
-        x = torch.stack((x, s), dim=1)
+        x = torch.cat((x, s), dim=1)
         x = x.reshape(-1, 4)
         data.x = x
         return data
@@ -189,7 +195,7 @@ class AddPositionalData(object):
         x = data.x
         n_features = x.shape[1]
 
-        x = torch.stack((x, pos, norm), dim=1)
+        x = torch.stack((x, pos, norm), dim=1)  # Potential error here!!
         x = x.reshape(-1, n_features+6)
         data.x = x
         return data
