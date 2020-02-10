@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from torch_geometric.data import DataListLoader
+from torch_geometric.data import DataLoader
 from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate, Compose, Center
 from torch_geometric.nn import DataParallel
 from dataset import Structures
