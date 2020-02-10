@@ -37,12 +37,6 @@ else:
     epochs = 20
 
 # ---- Importing and structuring Datasets and Model ----
-if p.twohop is True:
-    print("Adding two-hop edges to data graphs")
-    converter = TwoHop()
-else:
-    converter = None
-
 print('Importing structures.')
 trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
                       pre_transform=Compose((Center(), FaceAttributes(),
@@ -59,7 +53,7 @@ if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 print('Setting up model...')
-model = p.model_type(6, heads=p.heads).to(device)
+model = p.model_type(4, heads=p.heads).to(device)
 model = DataParallel(model).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
