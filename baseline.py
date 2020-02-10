@@ -24,7 +24,7 @@ if p.suppress_warnings:
     import warnings
     warnings.filterwarnings("ignore")
 
-device = torch.device('cuda:0')
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # reproducibility
 torch.manual_seed(p.random_seed)
 np.random.seed(p.random_seed)
@@ -96,11 +96,11 @@ for epoch in range(1, epochs+1):
     tr_weights = torch.Tensor()
     loss = []
 
-    for batch_n, datalist in enumerate(train_loader):
+    for batch_n, batch in enumerate(train_loader):
         optimizer.zero_grad()
-        out = model(datalist)
-        labels = torch.cat([data.y for data in datalist]).to(out.device)
-        weights = generate_weights(labels).to(out.device)
+        out = model(batch)
+        labels = batch.y.to(device)
+        weights = generate_weights(labels).to(device)
         tr_loss = F.binary_cross_entropy(out, target=labels, weight=weights)
         loss.append(tr_loss.detach().item())
         tr_loss.backward()
@@ -121,10 +121,10 @@ for epoch in range(1, epochs+1):
     cum_pred = torch.Tensor().to(device)
     cum_labels = torch.Tensor().to(device)
     te_weights = torch.Tensor().to(device)
-    for batch_n, datalist in enumerate(val_loader):
+    for batch_n, batch in enumerate(val_loader):
         out = model(datalist)
-        labels = torch.cat([data.y for data in datalist]).to(out.device)
-        weights = generate_weights(labels).to(out.device)
+        labels = batch.y.to(device)
+        weights = generate_weights(labels).to(device)
         te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
         pred = out.detach().round().to(device)
         cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
