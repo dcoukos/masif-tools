@@ -336,7 +336,6 @@ class SixConvResidual(torch.nn.Module):
         self.batch2 = BatchNorm(32)
         self.batch3 = BatchNorm(208+n_features)
         self.dropout = Dropout(p=0.5)
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, data):
         in_, edge_index = data.x, data.edge_index
@@ -375,86 +374,61 @@ class SixConvResidual(torch.nn.Module):
         return z
 
 
-class ThreeConvGlobal(torch.nn.Module):
-    '''
-    '''
+class TwentyConv(torch.nn.Module):
 
-    def __init__(self, n_features, heads=1, dropout=True):
-        super(ThreeConvGlobal, self).__init__()
+    def __init__(self, n_features, heads=4):
+        super(TwentyConv, self).__init__()
+        self.block1 = FourConvBlock(n_features, 16, heads=heads)
+        self.block2 = FourConvBlock(16, 16, heads=heads)
+        self.block3 = FourConvBlock(32, 16, heads=heads)
+        self.block4 = FourConvBlock(48, 16, heads=heads)
+        self.block5 = FourConvBlock(64, 16, heads=heads)
+        self.lin1 = Linear(80, 256)
+        self.lin2 = Linear(256, 64)
+        self.lin3 = Linear(64, 16)
+        self.out = Linear(16, 1)
+
+    def forward(data):
+        # Should edge_index get updated?
+        x1, edge_index = data.x, data.edge_index
+        x1 = self.block1(x1, edge_index)
+        x2 = self.block2(x1, edge_index)
+        cummu = torch.cat((x1, x2), dim=1)
+        x2 = self.block3(cummu, edge_index)
+        cummu = torch.cat((cummu, x2), dim=1)
+        x2 = self.block4(cummu, edge_index)
+        cummu = torch.cat((cummu, x2), dim=1)
+        x2 = self.block5(cummu, edge_index)
+        cummu = torch.cat((cummu, x2), dim=1)
+        x2 = self.lin1(cummu)
+        x2 = x2.relu()
+        x2 = self.lin2(cummu)
+        x2 = x2.relu()
+        x2 = self.lin3(cummu)
+        x2 = x2.relu()
+        x2 = self.out(x2)
+        x2 = torch.sigmoid(x2)
+
+        return x2
+
+
+class FourConvBlock(torch.nn.Module):
+    def __init__(self, n_features, heads=4):
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
-        self.conv2 = FeaStConv(16, 32, heads=heads)
-        self.conv3 = FeaStConv(64, 64, heads=heads)
-        self.edge1 = DynamicEdgeConv(16, 32)
-        self.edge2 = DynamicEdgeConv(16, 32)
-        self.lin1 = Linear(96, 96)
-        self.lin2 = Linear(96, 32)
-        self.lin3 = Linear(32, 8)
-        self.out = Linear(8, 1)
-        self.drop_bool = dropout
-        self.dropout = Dropout(p=0.4)
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.conv2 = FeaStConv(16, 16, heads=heads)
+        self.conv3 = FeaStConv(16, 16, heads=heads)
+        self.conv4 = FeaStConv(16, 16, heads=heads)
+        self.batch = BatchNorm(16)
 
-    def forward(self, data):
-        in_, edge_index = data.x, data.edge_index
-        x = self.conv1(in_, edge_index)
+    def forward(x, edge_index):
+        x = self.conv1(x, edge_index)
         x = x.relu()
-        y = self.edge1(x)
-        y = y.relu()
-        cat0 = torch.cat((x, y), dim=1)
         x = self.conv2(x, edge_index)
         x = x.relu()
-        y = self.edge2(y)
-        y = y.relu()
-        x = self.conv3(cat0, edge_index)
+        x = self.conv3(x, edge_index)
         x = x.relu()
-        cat1 = torch.cat((x, y), dim=1)
-        x = self.lin1(cat1)
-        x = self.dropout(x) if self.drop_bool else x
+        x = self.conv4(x, edge_index)
         x = x.relu()
-        x = self.lin2(x)
-        x = self.dropout(x) if self.drop_bool else x
-        x = x.relu()
-        x = self.lin3(x)
-        x = self.dropout(x) if self.drop_bool else x
-        x = x.relu()
-        x = x.relu()
-        x = self.out(x)
-        x = torch.sigmoid(x)
+        x = self.batch(x)
 
         return x
-
-
-class EdgeConv(MessagePassing):
-    def __init__(self, in_channels, out_channels):
-        super(EdgeConv, self).__init__(aggr='max') #  "Max" aggregation.
-        self.mlp = Sequential(Linear(2 * in_channels, out_channels),
-                              ReLU(),
-                              Linear(out_channels, out_channels))
-
-    def forward(self, x, edge_index):
-        # x has shape [N, in_channels]
-        # edge_index has shape [2, E]
-
-        return self.propagate(edge_index, size=(x.size(0), x.size(0)), x=x)
-
-    def message(self, x_i, x_j):
-        # x_i has shape [E, in_channels]
-        # x_j has shape [E, in_channels]
-
-        tmp = torch.cat([x_i, x_j - x_i], dim=1)  # tmp has shape [E, 2 * in_channels]
-        return self.mlp(tmp)
-
-    def update(self, aggr_out):
-        # aggr_out has shape [N, out_channels]
-
-        return aggr_out
-
-
-class DynamicEdgeConv(EdgeConv):
-    def __init__(self, in_channels, out_channels, k=6):
-        super(DynamicEdgeConv, self).__init__(in_channels, out_channels)
-        self.k = k
-
-    def forward(self, x, batch=None):
-        edge_index = knn_graph(x, self.k, batch, loop=False, flow=self.flow)
-        return super(DynamicEdgeConv, self).forward(x, edge_index)
