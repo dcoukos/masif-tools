@@ -326,7 +326,7 @@ class TwentyConv(torch.nn.Module):
         self.lin3 = Linear(64, 16)
         self.out = Linear(16, 1)
 
-    def forward(data):
+    def forward(self, data):
         # Should edge_index get updated?
         x1, edge_index = data.x, data.edge_index
         x1 = self.block1(x1, edge_index)
@@ -340,9 +340,9 @@ class TwentyConv(torch.nn.Module):
         cummu = torch.cat((cummu, x2), dim=1)
         x2 = self.lin1(cummu)
         x2 = x2.relu()
-        x2 = self.lin2(cummu)
+        x2 = self.lin2(x2)
         x2 = x2.relu()
-        x2 = self.lin3(cummu)
+        x2 = self.lin3(x2)
         x2 = x2.relu()
         x2 = self.out(x2)
         x2 = torch.sigmoid(x2)
@@ -351,14 +351,15 @@ class TwentyConv(torch.nn.Module):
 
 
 class FourConvBlock(torch.nn.Module):
-    def __init__(self, n_features, heads=4):
-        self.conv1 = FeaStConv(n_features, 16, heads=heads)
+    def __init__(self, in_features, out_features, heads=4):
+        super(FourConvBlock, self).__init__()
+        self.conv1 = FeaStConv(in_features, 16, heads=heads)
         self.conv2 = FeaStConv(16, 16, heads=heads)
         self.conv3 = FeaStConv(16, 16, heads=heads)
-        self.conv4 = FeaStConv(16, 16, heads=heads)
-        self.batch = BatchNorm(16)
+        self.conv4 = FeaStConv(16, out_features, heads=heads)
+        self.batch = BatchNorm(out_features)
 
-    def forward(x, edge_index):
+    def forward(self, x, edge_index):
         x = self.conv1(x, edge_index)
         x = x.relu()
         x = self.conv2(x, edge_index)
