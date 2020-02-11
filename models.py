@@ -104,19 +104,17 @@ class ThreeConv(torch.nn.Module):
 
     # TODO: confirm that linear layers defined below are functionally equivalent to 1x1 conv
 
-    def __init__(self, n_features, heads=1, dropout=True):
+    def __init__(self, n_features, heads=4, dropout=True):
         super(ThreeConv, self).__init__()
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
         self.conv2 = FeaStConv(16, 32, heads=heads)
         self.conv3 = FeaStConv(32, 64, heads=heads)
+        self.batch = BatchNorm(64)
         self.lin1 = Linear(64, 32)
         self.lin2 = Linear(32, 16)
         self.lin3 = Linear(16, 8)
         self.lin4 = Linear(8, 4)
         self.out = Linear(4, 1)
-        self.drop_bool = dropout
-        self.dropout = Dropout(p=0.3)
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, data):
         in_, edge_index = data.x, data.edge_index
@@ -126,6 +124,7 @@ class ThreeConv(torch.nn.Module):
         x = x.relu()
         x = self.conv3(x, edge_index)
         x = x.relu()
+        x = self.batch(x)
         x = self.lin1(x)
         x = self.dropout(x) if self.drop_bool else x
         x = x.relu()
@@ -202,110 +201,52 @@ class SixConvPassThrough(torch.nn.Module):
 
     # TODO: confirm that linear layers defined below are functionally equivalent to 1x1 conv
 
-    def __init__(self, n_features, heads=1, dropout=True):
+    def __init__(self, n_features, heads=4, dropout=True):
         super(SixConvPassThrough, self).__init__()
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
-        torch.nn.init.xavier_uniform(self.conv1.weight)
-        self.conv2 = FeaStConv(16, 16, heads=heads)
-        torch.nn.init.xavier_uniform(self.conv2.weight)
-        self.conv3 = FeaStConv(16, 16, heads=heads)
-        torch.nn.init.xavier_uniform(self.conv3.weight)
-        self.conv4 = FeaStConv(16, 16)
-        torch.nn.init.xavier_uniform(self.conv4.weight)
-        self.conv5 = FeaStConv(16, 32)
-        torch.nn.init.xavier_uniform(self.conv5.weight)
-        self.conv6 = FeaStConv(32, 64)
-        torch.nn.init.xavier_uniform(self.conv6.weight)
-        self.lin1 = Linear(96, 16)
-        self.lin2 = Linear(16, 4)
-        self.out = Linear(4, 1)
-        self.drop_bool = dropout
-        self.dropout = Dropout(p=0.3)
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    def forward(self, data):
-        in_, edge_index = data.x, data.edge_index
-        x1 = self.conv1(in_, edge_index)
-        x1 = x1.relu()
-        x2 = self.conv2(x1, edge_index)
-        x2 = x2.relu()
-        x2 = self.conv3(x2, edge_index)
-        x2 = x2.relu()
-        x3 = self.conv4(x2, edge_index)
-        x3 = x3.relu()
-        x3 = self.conv5(x3, edge_index)
-        x3 = x3.relu()
-        x3 = self.conv6(x3, edge_index)
-        x4 = torch.cat((x1, x2, x3), dim=1)
-        x4 = x4.relu()
-        x4 = self.lin1(x4)
-        x5 = self.dropout(x4) if self.drop_bool else x4
-        x5 = x5.relu()
-        x5 = self.lin2(x5)
-        x6 = self.dropout(x5) if self.drop_bool else x5
-        x6 = x6.relu()
-        x6 = self.out(x6)
-        x6 = torch.sigmoid(x6)
-
-        return x6
-
-
-class SixConvPT_LFC(torch.nn.Module):
-    # Seems underpowered, but less epoch-to-epoch variance in prediction compared to BasicNet
-    # Quick Setup: back to back with max pool and pass through?
-
-    # TODO: confirm that linear layers defined below are functionally equivalent to 1x1 conv
-
-    def __init__(self, n_features, heads=1, dropout=True):
-        super(SixConvPT_LFC, self).__init__()
-        self.conv1 = FeaStConv(n_features, 16, heads=heads)
-        torch.nn.init.xavier_uniform(self.conv1.weight)
-        self.conv2 = FeaStConv(16, 16, heads=heads)
-        torch.nn.init.xavier_uniform(self.conv2.weight)
-        self.conv3 = FeaStConv(16, 16, heads=heads)
-        torch.nn.init.xavier_uniform(self.conv3.weight)
-        self.conv4 = FeaStConv(16, 16)
-        torch.nn.init.xavier_uniform(self.conv4.weight)
-        self.conv5 = FeaStConv(16, 32)
-        torch.nn.init.xavier_uniform(self.conv5.weight)
-        self.conv6 = FeaStConv(32, 64)
-        torch.nn.init.xavier_uniform(self.conv6.weight)
-        self.lin1 = Linear(96, 256)
+        self.conv2 = FeaStConv(16, 32, heads=heads)
+        self.conv3 = FeaStConv(32, 32, heads=heads)
+        self.conv4 = FeaStConv(32, 32, heads=heads)
+        self.conv5 = FeaStConv(32, 32, heads=heads)
+        self.conv6 = FeaStConv(32, 64, heads=heads)
+        self.lin1 = Linear(128, 256)
         self.lin2 = Linear(256, 64)
         self.lin3 = Linear(64, 16)
         self.out = Linear(16, 1)
-        self.drop_bool = dropout
-        self.dropout = Dropout(p=0.5)
+        self.batch1 = BatchNorm(32)
+        self.batch2 = BatchNorm(32)
+        self.batch3 = BatchNorm(64)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, data):
         in_, edge_index = data.x, data.edge_index
         x1 = self.conv1(in_, edge_index)
         x1 = x1.relu()
-        x2 = self.conv2(x1, edge_index)
-        x2 = x2.relu()
+        x1 = self.conv2(x1, edge_index)
+        x1 = x1.relu()
+        x1 = self.batch1(x1)
         x2 = self.conv3(x2, edge_index)
         x2 = x2.relu()
-        x3 = self.conv4(x2, edge_index)
-        x3 = x3.relu()
-        x3 = self.conv5(x3, edge_index)
+        x2 = self.conv4(x2, edge_index)
+        x2 = x2.relu()
+        x2 = self.batch2(x2)
+        x3 = self.conv5(x2, edge_index)
         x3 = x3.relu()
         x3 = self.conv6(x3, edge_index)
-        x4 = torch.cat((x1, x2, x3), dim=1)
-        x4 = x4.relu()
-        x4 = self.lin1(x4)
-        x4 = self.dropout(x4) if self.drop_bool else x4
-        x4 = x4.relu()
-        x4 = self.lin2(x4)
-        x4 = self.dropout(x4) if self.drop_bool else x4
-        x4 = x4.relu()
-        x4 = self.lin3(x4)
-        x4 = self.dropout(x4) if self.drop_bool else x4
-        x4 = x4.relu()
-        x4 = self.out(x4)
-        x4 = torch.sigmoid(x4)
+        x3 = x3.relu()
+        x3 = self.batch3(x3)
+        z = torch.cat((x1, x2, x3), dim=1)
+        z = z.relu()
+        z = self.lin1(z)
+        z = z.relu()
+        z = self.lin2(z)
+        z = z.relu()
+        z = self.lin3(z)
+        z = z.relu()
+        z = self.out(z)
+        z = torch.sigmoid(z)
 
-        return x4
+        return z
 
 
 class SixConvResidual(torch.nn.Module):
@@ -314,7 +255,7 @@ class SixConvResidual(torch.nn.Module):
 
     # TODO: confirm that linear layers defined below are functionally equivalent to 1x1 conv
 
-    def __init__(self, n_features, heads=1):
+    def __init__(self, n_features, heads=4):
         super(SixConvResidual, self).__init__()
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
         torch.nn.init.xavier_uniform(self.conv1.weight)
@@ -371,7 +312,7 @@ class SixConvResidual(torch.nn.Module):
         z = z.relu()
         z = self.out(z)
         z = torch.sigmoid(z)
-        
+
         return z
 
 
