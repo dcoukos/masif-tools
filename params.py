@@ -1,5 +1,5 @@
 # REMEMBER TO CHANGE VERSION NUMBER
-from models import ThreeConv, SixConv, SixConvPassThrough, SixConvPT_LFC, SixConvResidual
+from models import ThreeConv, SixConv, SixConvResidual, TwentyConv
 
 batch_size = 2
 test_batch_size = 2
@@ -15,10 +15,10 @@ lr_cap_decay = 0.7
 patience = 10
 weight_decay = 0
 epochs = 500
-version = '9c'
+version = '17a'
 suppress_warnings = True
 dataset = 'thous'
-model_type = ThreeConv
+model_type = TwentyConv
 interface_weight = .8
 twohop = True
 heads = 4

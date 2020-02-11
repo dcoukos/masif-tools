@@ -126,16 +126,12 @@ class ThreeConv(torch.nn.Module):
         x = x.relu()
         x = self.batch(x)
         x = self.lin1(x)
-        x = self.dropout(x) if self.drop_bool else x
         x = x.relu()
         x = self.lin2(x)
-        x = self.dropout(x) if self.drop_bool else x
         x = x.relu()
         x = self.lin3(x)
-        x = self.dropout(x) if self.drop_bool else x
         x = x.relu()
         x = self.lin4(x)
-        x = self.dropout(x) if self.drop_bool else x
         x = x.relu()
         x = self.out(x)
         x = torch.sigmoid(x)
