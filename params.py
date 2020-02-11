@@ -1,8 +1,8 @@
 # REMEMBER TO CHANGE VERSION NUMBER
-from models import ThreeConv, SixConv, SixConvResidual, TwentyConv
+from models import TwoConv, ThreeConv, SixConv, SixConvResidual, TwentyConv
 
-batch_size = 2
-test_batch_size = 2
+batch_size = 20
+test_batch_size = 20
 validation_split = .10
 shuffle_dataset = False
 random_seed = 37
@@ -15,10 +15,10 @@ lr_cap_decay = 0.7
 patience = 10
 weight_decay = 0
 epochs = 500
-version = '17a'
+version = '4a'
 suppress_warnings = True
 dataset = 'thous'
-model_type = TwentyConv
+model_type = TwoConv
 interface_weight = .8
 twohop = True
 heads = 4
