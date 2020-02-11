@@ -102,7 +102,11 @@ for epoch in range(1, epochs+1):
         out = model(batch)
         labels = batch.y.to(device)
         weights = generate_weights(labels).to(device)
-        tr_loss = F.binary_cross_entropy(out, target=labels, weight=weights)
+        try:
+            tr_loss = F.binary_cross_entropy(out, target=labels, weight=weights)
+        except:
+            print(tr_loss.detach().to(torch.device('cpu')).numpy().describe())
+            raise(ValueError)
         loss.append(tr_loss.detach().item())
         tr_loss.backward()
         optimizer.step()

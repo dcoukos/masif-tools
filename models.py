@@ -372,7 +372,7 @@ class SixConvResidual(torch.nn.Module):
         z = z.relu()
         z = self.out(z)
         z = torch.sigmoid(z)
-
+        print(max(z))
         return z
 
 
