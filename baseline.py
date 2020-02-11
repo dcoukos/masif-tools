@@ -101,11 +101,7 @@ for epoch in range(1, epochs+1):
         out = model(batch)
         labels = batch.y.to(device)
         weights = generate_weights(labels).to(device)
-        try:
-            tr_loss = F.binary_cross_entropy(out, target=labels, weight=weights)
-        except:
-            print(out.detach().to(torch.device('cpu')).numpy().describe())
-            raise(ValueError)
+        tr_loss = F.binary_cross_entropy_with_logits(out, target=labels, weight=weights)
         loss.append(tr_loss.detach().item())
         tr_loss.backward()
         optimizer.step()
@@ -126,10 +122,11 @@ for epoch in range(1, epochs+1):
     cum_labels = torch.Tensor().to(device)
     te_weights = torch.Tensor().to(device)
     for batch_n, batch in enumerate(val_loader):
-        out = model(datalist)
+        batch = batch.to(device)
+        out = model(batch)
         labels = batch.y.to(device)
         weights = generate_weights(labels).to(device)
-        te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
+        te_loss = F.binary_cross_entropy_with_logits(out, target=labels, weight=generate_weights(labels))
         pred = out.detach().round().to(device)
         cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
         cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
