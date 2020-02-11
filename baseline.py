@@ -86,8 +86,8 @@ for epoch in range(1, epochs+1):
     # Using shape index data:
     trainset.transform = AddShapeIndex()
     validset.transform = AddShapeIndex()
-    train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size).to(device)
-    val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size).to(device)
+    train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
+    val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
 
     learn_rate = optimizer.param_groups[0]['lr']  # for when it may be modified during run
     model.train()
@@ -97,7 +97,7 @@ for epoch in range(1, epochs+1):
     loss = []
 
     for batch_n, batch in enumerate(train_loader):
-        batch_n, batch = next(enumerate(train_loader))
+        batch = batch.to(device)
         optimizer.zero_grad()
         out = model(batch)
         labels = batch.y.to(device)
