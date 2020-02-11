@@ -1,8 +1,8 @@
 # REMEMBER TO CHANGE VERSION NUMBER
 from models import ThreeConv, SixConv, SixConvPassThrough, SixConvPT_LFC, SixConvResidual
 
-batch_size = 10
-test_batch_size = 10
+batch_size = 2
+test_batch_size = 2
 validation_split = .10
 shuffle_dataset = False
 random_seed = 37
