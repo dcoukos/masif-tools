@@ -1,6 +1,5 @@
 import torch
 import os
-from dataset import MiniStructures, Structures, read_ply
 import params as p
 from glob import glob
 from torch_geometric.transforms import Compose, FaceToEdge, TwoHop, Center
@@ -11,6 +10,7 @@ from tqdm import tqdm
 
 
 def apply_pretransforms(pre_transforms=None):
+    from dataset import Structures
     # Structures should check already whether these pre_transforms have been computed
     if pre_transforms is None:
         trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
@@ -224,6 +224,7 @@ def generate_surface(model_type, model_path, pdb_code, use_structural_data=False
     '''
         Save the surface prediction for a particular structure.
     '''
+    from dataset import read_ply
     converter = FaceToEdge()
     path = glob('./structures/test/{}.ply'.format(pdb_code))[0]
     name = path.split('/')[-1]
