@@ -7,7 +7,7 @@ from dataset import Structures
 from transforms import *
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_auc_score
-from utils import generate_weights, generate_example_surfaces, make_model_directory
+from utils import has_nan, generate_weights, generate_example_surfaces, make_model_directory
 import params as p
 from statistics import mean
 import torch.nn.functional as F
@@ -51,9 +51,9 @@ validset = trainset[cutoff:]
 trainset = trainset[:cutoff]
 
 
-if p.shuffle_dataset:
-    trainset = trainset.shuffle()
-n_features = trainset.get(0).x.shape[1]
+#if p.shuffle_dataset:
+#    trainset = trainset.shuffle()
+#n_features = trainset.get(0).x.shape[1]
 print('Setting up model...')
 model = p.model_type(4, heads=p.heads).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
