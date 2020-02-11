@@ -137,10 +137,11 @@ data2
 
 
 # Visualize shape data:
-structure = Structures(root='./datasets/thous_train', pre_transform=Compose((Center(), FaceAttributes(), NodeCurvature(), FaceToEdge(), TwoHop())))[234]
+structure = Structures(root='./datasets/thous_train', pre_transform=Compose((Center(), FaceAttributes(), NodeCurvature(), FaceToEdge(), TwoHop())))[457]
 set = Structures(root='./datasets/thous/')
 converter = Compose((Center(), FaceAttributes(), NodeCurvature(), FaceToEdge(remove_faces=False), TwoHop()))
-structure = converter(set[234])
+structure = converter(set[457])
+
 structure.y
 save_ply(
     filename='example_curvature.ply',
@@ -152,7 +153,13 @@ save_ply(
     hphob=structure.x[:, 1].reshape(-1, 1).detach().numpy(),
     iface=structure.y.detach().numpy()
 )
+from dataset import Structures
+from utils import has_nan
 
+datalist = Structures('./datasets/thous_train/')
+_, idx = has_nan(datalist)
+datalist = [datalist[i] for i in range(0, len(datalist)) if i not in idx]
+len(datalist)
 
 def save_ply(
     filename,

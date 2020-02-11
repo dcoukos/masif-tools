@@ -42,6 +42,8 @@ trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
                       pre_transform=Compose((Center(), FaceAttributes(),
                                              NodeCurvature(), FaceToEdge(),
                                              TwoHop())))
+_, idx = has_nan(trainset)
+trainset = [trainset[i] for i in range(0, len(trainset)) if i not in idx]
 samples = len(trainset)
 
 cutoff = int(np.floor(samples*(1-p.validation_split)))

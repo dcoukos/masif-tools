@@ -126,7 +126,7 @@ class NodeCurvature(object):
         node_curv = node_curv.t()
         eigs = []
         for i in node_curv:  # checked
-            eig = torch.eig(i.reshape(2,2)).to(device)
+            eig = torch.eig(i.reshape(2,2))
             principal_curvatures = eig.eigenvalues[:,0].sort(descending=True).values
             eigs.append(principal_curvatures)
         eigs = torch.stack(eigs, dim=0)

@@ -1,12 +1,13 @@
 import torch
 import os
-from dataset import MiniStructures, Structures, read_ply, Structures_SI
+from dataset import MiniStructures, Structures, read_ply
 import params as p
 from glob import glob
 from torch_geometric.transforms import Compose, FaceToEdge, TwoHop, Center
 from transforms import *
 import datetime
 import pathlib
+from tqdm import tqdm
 
 
 def apply_pretransforms(pre_transforms=None):
@@ -273,3 +274,17 @@ def generate_surface(model_type, model_path, pdb_code, use_structural_data=False
         hphob=structure.x[:, 2].reshape(-1, 1).detach().numpy(),
         iface=rounded.detach().numpy()
     )
+
+
+def has_nan(dataset):
+    assert dataset[0].shape_index is not None
+    max_ = 0
+    idx = []
+    for i, data in tqdm(enumerate(dataset)):
+        has_nan = max(torch.isnan(data.shape_index))
+        if has_nan:
+            idx.append(i)
+        max_ = max(has_nan, max_)
+    idx
+    max_
+    return max_, idx
