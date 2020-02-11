@@ -352,6 +352,7 @@ class TwentyConv(torch.nn.Module):
 
 class FourConvBlock(torch.nn.Module):
     def __init__(self, n_features, heads_=4):
+        super(FourConvBlock, self).__init__()
         self.conv1 = FeaStConv(n_features, 16, heads=heads_)
         self.conv2 = FeaStConv(16, 16, heads=heads_)
         self.conv3 = FeaStConv(16, 16, heads=heads_)

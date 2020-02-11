@@ -139,15 +139,6 @@ for epoch in range(1, epochs+1):
                                    'test': roc_auc_te}, epoch)
     writer.add_scalar('learning rate', learn_rate, epoch)
 
-    if epoch % 20 == 0:
-        writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
-        writer.add_histogram('Layer 2 weight gradients', model.conv2.weight.grad, epoch+1)
-        writer.add_histogram('Layer 3 weight gradients', model.conv3.weight.grad, epoch+1)
-        writer.add_histogram('Layer 4 weight gradients', model.conv4.weight.grad, epoch+1)
-        writer.add_histogram('Layer 5 weight gradients', model.conv5.weight.grad, epoch+1)
-        writer.add_histogram('Layer 6 weight gradients', model.conv6.weight.grad, epoch+1)
-        writer.add_histogram('Layer 7 weight gradients', model.lin1.weight.grad, epoch+1)
-        writer.add_histogram('Layer 8 weight gradients', model.lin2.weight.grad, epoch+1)
     # scheduler.step(loss)
     if roc_auc_te > max_roc_auc:
         max_roc_auc = roc_auc_te
