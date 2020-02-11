@@ -11,10 +11,9 @@ from utils import generate_weights, generate_example_surfaces, make_model_direct
 import params as p
 from statistics import mean
 import torch.nn.functional as F
+from tqdm import tqdm
 
 '''
-!! Parallel.py requires GPU !!
-
 Implementing Model 16a: (Model 15b + Shape index data):
     - Comment out rotations.
     - Replace transforms with those that allow adding of shape_index data.
@@ -105,7 +104,7 @@ for epoch in range(1, epochs+1):
         try:
             tr_loss = F.binary_cross_entropy(out, target=labels, weight=weights)
         except:
-            print(tr_loss.detach().to(torch.device('cpu')).numpy().describe())
+            print(out.detach().to(torch.device('cpu')).numpy().describe())
             raise(ValueError)
         loss.append(tr_loss.detach().item())
         tr_loss.backward()
