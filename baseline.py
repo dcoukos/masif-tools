@@ -101,7 +101,7 @@ for epoch in range(1, epochs+1):
         out = model(batch)
         labels = batch.y.to(device)
         weights = generate_weights(labels).to(device)
-        tr_loss = F.binary_cross_entropy_with_logits(out, target=labels, weight=weights)
+        tr_loss = F.binary_cross_entropy(out, target=labels, weight=weights)
         loss.append(tr_loss.detach().item())
         tr_loss.backward()
         optimizer.step()
@@ -126,7 +126,7 @@ for epoch in range(1, epochs+1):
         out = model(batch)
         labels = batch.y.to(device)
         weights = generate_weights(labels).to(device)
-        te_loss = F.binary_cross_entropy_with_logits(out, target=labels, weight=generate_weights(labels))
+        te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
         pred = out.detach().round().to(device)
         cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
         cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
@@ -140,22 +140,22 @@ for epoch in range(1, epochs+1):
     writer.add_scalar('learning rate', learn_rate, epoch)
 
     if epoch % 20 == 0:
-        writer.add_histogram('Layer 1 weight gradients', model.module.conv1.weight.grad, epoch+1)
-        writer.add_histogram('Layer 2 weight gradients', model.module.conv2.weight.grad, epoch+1)
-        writer.add_histogram('Layer 3 weight gradients', model.module.conv3.weight.grad, epoch+1)
-        writer.add_histogram('Layer 4 weight gradients', model.module.conv4.weight.grad, epoch+1)
-        writer.add_histogram('Layer 5 weight gradients', model.module.conv5.weight.grad, epoch+1)
-        writer.add_histogram('Layer 6 weight gradients', model.module.conv6.weight.grad, epoch+1)
-        writer.add_histogram('Layer 7 weight gradients', model.module.lin1.weight.grad, epoch+1)
-        writer.add_histogram('Layer 8 weight gradients', model.module.lin2.weight.grad, epoch+1)
+        writer.add_histogram('Layer 1 weight gradients', model.conv1.weight.grad, epoch+1)
+        writer.add_histogram('Layer 2 weight gradients', model.conv2.weight.grad, epoch+1)
+        writer.add_histogram('Layer 3 weight gradients', model.conv3.weight.grad, epoch+1)
+        writer.add_histogram('Layer 4 weight gradients', model.conv4.weight.grad, epoch+1)
+        writer.add_histogram('Layer 5 weight gradients', model.conv5.weight.grad, epoch+1)
+        writer.add_histogram('Layer 6 weight gradients', model.conv6.weight.grad, epoch+1)
+        writer.add_histogram('Layer 7 weight gradients', model.lin1.weight.grad, epoch+1)
+        writer.add_histogram('Layer 8 weight gradients', model.lin2.weight.grad, epoch+1)
     # scheduler.step(loss)
     if roc_auc_te > max_roc_auc:
         max_roc_auc = roc_auc_te
         path = './{}/best.pt'.format(modelpath)
         with open(path, 'w+'):
-            torch.save(model.module.state_dict(), path)
+            torch.save(model.state_dict(), path)
     if epoch % 200 == 0:
         path = './{}/epoch_{}.pt'.format(modelpath, epoch)
         with open(path, 'a+'):
-            torch.save(model.module.state_dict(), path)
+            torch.save(model.state_dict(), path)
 writer.close()

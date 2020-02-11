@@ -370,7 +370,8 @@ class SixConvResidual(torch.nn.Module):
         z = self.dropout(z) if p.dropout else z
         z = z.relu()
         z = self.out(z)
-
+        z = torch.sigmoid(z)
+        
         return z
 
 
