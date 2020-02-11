@@ -372,8 +372,8 @@ class SixConvResidual(torch.nn.Module):
         z = z.relu()
         z = self.out(z)
         z = torch.sigmoid(z)
-        print(max(z))
-        return z
+
+        return torch.clamp(z, 0, 1)
 
 
 class ThreeConvGlobal(torch.nn.Module):
