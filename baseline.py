@@ -54,7 +54,6 @@ if p.shuffle_dataset:
 n_features = trainset.get(0).x.shape[1]
 print('Setting up model...')
 model = p.model_type(4, heads=p.heads).to(device)
-model = DataParallel(model).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
 #                                                       factor=p.lr_decay,
@@ -97,6 +96,7 @@ for epoch in range(1, epochs+1):
     loss = []
 
     for batch_n, batch in enumerate(train_loader):
+        batch_n, batch = next(enumerate(train_loader))
         optimizer.zero_grad()
         out = model(batch)
         labels = batch.y.to(device)
