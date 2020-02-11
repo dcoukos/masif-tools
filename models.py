@@ -314,13 +314,13 @@ class SixConvResidual(torch.nn.Module):
 
 class TwentyConv(torch.nn.Module):
 
-    def __init__(self, n_features, heads=4):
+    def __init__(self, n_features, heads_=4):
         super(TwentyConv, self).__init__()
-        self.block1 = FourConvBlock(n_features, 16, heads=heads)
-        self.block2 = FourConvBlock(16, 16, heads=heads)
-        self.block3 = FourConvBlock(32, 16, heads=heads)
-        self.block4 = FourConvBlock(48, 16, heads=heads)
-        self.block5 = FourConvBlock(64, 16, heads=heads)
+        self.block1 = FourConvBlock(n_features, 16, heads=heads_)
+        self.block2 = FourConvBlock(16, 16, heads=heads_)
+        self.block3 = FourConvBlock(32, 16, heads=heads_)
+        self.block4 = FourConvBlock(48, 16, heads=heads_)
+        self.block5 = FourConvBlock(64, 16, heads=heads_)
         self.lin1 = Linear(80, 256)
         self.lin2 = Linear(256, 64)
         self.lin3 = Linear(64, 16)
@@ -351,11 +351,11 @@ class TwentyConv(torch.nn.Module):
 
 
 class FourConvBlock(torch.nn.Module):
-    def __init__(self, n_features, heads=4):
-        self.conv1 = FeaStConv(n_features, 16, heads=heads)
-        self.conv2 = FeaStConv(16, 16, heads=heads)
-        self.conv3 = FeaStConv(16, 16, heads=heads)
-        self.conv4 = FeaStConv(16, 16, heads=heads)
+    def __init__(self, n_features, heads_=4):
+        self.conv1 = FeaStConv(n_features, 16, heads=heads_)
+        self.conv2 = FeaStConv(16, 16, heads=heads_)
+        self.conv3 = FeaStConv(16, 16, heads=heads_)
+        self.conv4 = FeaStConv(16, 16, heads=heads_)
         self.batch = BatchNorm(16)
 
     def forward(x, edge_index):
