@@ -36,6 +36,25 @@ train_structures = []
 test_structures = []
 
 for path in tqdm(paths):
+    try:
+        train_bool, structure = get_neighbors(path, device)
+    except RunTimeError as e:
+        if 'memory' in str(e):
+            train_bool, structure = get_neighbors(path, torch.device('cpu'))
+            print('Large structure. Running this structure on cpu.')
+        else:
+            raise e
+
+    if train_bool is True:
+        train_structures.append(structure)
+    else:
+        test_structures.append(structure)
+
+torch.save(train_structures, './datasets/res_train/raw/res_structures.pt')
+torch.save(test_structures, './datasets/res_test/raw/res_structures.pt')
+
+
+def get_neighbors(path, device):
     ppdb.read_pdb(path=path)
     # Load through read_ply function.
 
@@ -75,9 +94,6 @@ for path in tqdm(paths):
     structure.residues = amino_acids
 
     if train is True:
-        train_structures.append(structure)
+        return train, structure
     else:
-        test_structures.append(structure)
-
-torch.save(train_structures, './datasets/res_train/raw/res_structures.pt')
-torch.save(test_structures, './datasets/res_test/raw/res_structures.pt')
+        return train, structure
