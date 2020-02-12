@@ -189,6 +189,8 @@ class SixConv(torch.nn.Module):
         x = x.relu()
         x = self.lin2(x)
         x = x.relu()
+        x = self.lin3(x)
+        x = x.relu()
         x = self.out(x)
         x = torch.sigmoid(x)
 
