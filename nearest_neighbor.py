@@ -52,8 +52,6 @@ while not le_defined:
 train_structures = []
 test_structures = []
 
-paths = paths[:100]
-
 for path in tqdm(paths):
     ppdb.read_pdb(path=path)
     # Load through read_ply function.
