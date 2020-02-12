@@ -15,7 +15,7 @@ le = preprocessing.LabelEncoder()
 paths = glob('../masif_site_masif_search_pdbs_and_ply_files/01-benchmark_pdbs/*')
 
 cpu = torch.device('cpu')
-gpu = device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+gpu = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 path = paths[2]
 mol_name = path.rsplit('/', 1)[1].split('.')[0]
@@ -48,12 +48,12 @@ for path in tqdm(paths):
         structure = read_ply('./structures/test/{}.ply'.format(mol_name))
         train = False
 
-    nodes = structure.pos.to(gpu)
+    nodes = structure.pos.to(gpu).float()
     n_nodes = nodes.shape[0]
 
     pos = ['x_coord', 'y_coord', 'z_coord']
 
-    atoms = torch.tensor(ppdb.df['ATOM'][pos].values).to(gpu)
+    atoms = torch.tensor(ppdb.df['ATOM'][pos].values).to(gpu).float()
 
     atom_shape = atoms.shape
     atoms = atoms.view(-1, 1, 3).expand(-1, n_nodes, 3)
