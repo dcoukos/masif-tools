@@ -321,13 +321,13 @@ class TwentyConv(torch.nn.Module):
 
     def __init__(self, n_features, heads=4):
         super(TwentyConv, self).__init__()
-        self.block1 = FourConvBlock(n_features, 16, heads=heads)
-        self.block2 = FourConvBlock(16, 16, heads=heads)
-        self.block3 = FourConvBlock(32, 16, heads=heads)
-        self.block4 = FourConvBlock(48, 16, heads=heads)
-        self.block5 = FourConvBlock(64, 16, heads=heads)
-        self.lin1 = Linear(80, 256)
-        self.lin2 = Linear(256, 64)
+        self.block1 = FourConvBlock(n_features, 4, heads=heads)
+        self.block2 = FourConvBlock(4, 4, heads=heads)
+        self.block3 = FourConvBlock(4, 4, heads=heads)
+        self.block4 = FourConvBlock(4, 4, heads=heads)
+        self.block5 = FourConvBlock(4, 4, heads=heads)
+        self.lin1 = Linear(4, 64)
+        self.lin2 = Linear(64, 64)
         self.lin3 = Linear(64, 16)
         self.out = Linear(16, 1)
 
@@ -336,32 +336,32 @@ class TwentyConv(torch.nn.Module):
         x1, edge_index = data.x, data.edge_index
         x1 = self.block1(x1, edge_index)
         x2 = self.block2(x1, edge_index)
-        cummu = torch.cat((x1, x2), dim=1)
-        x2 = self.block3(cummu, edge_index)
-        cummu = torch.cat((cummu, x2), dim=1)
-        x2 = self.block4(cummu, edge_index)
-        cummu = torch.cat((cummu, x2), dim=1)
-        x2 = self.block5(cummu, edge_index)
-        cummu = torch.cat((cummu, x2), dim=1)
-        x2 = self.lin1(cummu)
-        x2 = x2.relu()
-        x2 = self.lin2(x2)
-        x2 = x2.relu()
-        x2 = self.lin3(x2)
-        x2 = x2.relu()
-        x2 = self.out(x2)
-        x2 = torch.sigmoid(x2)
+        x2 = x1 + x2
+        x3 = self.block3(x2, edge_index)
+        x3 = x2 + x3
+        x4 = self.block4(x3, edge_index)
+        x4 = x3 + x4
+        x5 = self.block5(x4, edge_index)
+        x5 = x4 + x5
+        z = self.lin1(x5)
+        z = z.relu()
+        z = self.lin2(z)
+        z = z.relu()
+        z = self.lin3(z)
+        z = z.relu()
+        z = self.out(z)
+        z = torch.sigmoid(z)
 
-        return x2
+        return z
 
 
 class FourConvBlock(torch.nn.Module):
     def __init__(self, in_features, out_features, heads=4):
         super(FourConvBlock, self).__init__()
-        self.conv1 = FeaStConv(in_features, 16, heads=heads)
-        self.conv2 = FeaStConv(16, 16, heads=heads)
-        self.conv3 = FeaStConv(16, 16, heads=heads)
-        self.conv4 = FeaStConv(16, out_features, heads=heads)
+        self.conv1 = FeaStConv(in_features, 4, heads=heads)
+        self.conv2 = FeaStConv(4, 4, heads=heads)
+        self.conv3 = FeaStConv(4, 4, heads=heads)
+        self.conv4 = FeaStConv(4, out_features, heads=heads)
         self.batch = BatchNorm(out_features)
 
     def forward(self, x, edge_index):
