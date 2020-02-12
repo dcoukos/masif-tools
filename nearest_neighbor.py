@@ -38,7 +38,7 @@ test_structures = []
 for path in tqdm(paths):
     try:
         train_bool, structure = get_neighbors(path, device)
-    except RunTimeError as e:
+    except RuntimeError as e:
         if 'memory' in str(e):
             train_bool, structure = get_neighbors(path, torch.device('cpu'))
             print('Large structure. Running this structure on cpu.')
