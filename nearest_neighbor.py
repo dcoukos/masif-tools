@@ -10,49 +10,6 @@ from sklearn import preprocessing
 import numpy as np
 
 # Define the LabelEncoder
-ppdb = PandasPdb()
-le = preprocessing.LabelEncoder()
-paths = glob('../masif_site_masif_search_pdbs_and_ply_files/01-benchmark_pdbs/*')
-
-cpu = torch.device('cpu')
-gpu = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-path = paths[2]
-mol_name = path.rsplit('/', 1)[1].split('.')[0]
-structure = None
-te_structure = None
-le_defined = False
-
-iter_paths = iter(paths)
-
-residue_names = np.array(['LYS', 'GLU', 'ASP', 'SER', 'PHE', 'CYS', 'VAL', 'ILE', 'MET',
-       'HIS', 'GLY', 'LEU', 'TYR', 'THR', 'PRO', 'ARG', 'TRP', 'ALA',
-       'GLN', 'ASN', 'SEC'], dtype=object)
-
-le.fit(residue_names)
-
-# load from file... map with sklearn. Save to file as pt. Save all structures.
-train_structures = []
-test_structures = []
-
-for path in tqdm(paths):
-    try:
-        train_bool, structure = get_neighbors(path, device)
-    except RuntimeError as e:
-        if 'memory' in str(e):
-            train_bool, structure = get_neighbors(path, torch.device('cpu'))
-            print('Large structure. Running this structure on cpu.')
-        else:
-            raise e
-
-    if train_bool is True:
-        train_structures.append(structure)
-    else:
-        test_structures.append(structure)
-
-torch.save(train_structures, './datasets/res_train/raw/res_structures.pt')
-torch.save(test_structures, './datasets/res_test/raw/res_structures.pt')
-
 
 def get_neighbors(path, device):
     ppdb.read_pdb(path=path)
@@ -97,3 +54,47 @@ def get_neighbors(path, device):
         return train, structure
     else:
         return train, structure
+
+        
+ppdb = PandasPdb()
+le = preprocessing.LabelEncoder()
+paths = glob('../masif_site_masif_search_pdbs_and_ply_files/01-benchmark_pdbs/*')
+
+cpu = torch.device('cpu')
+gpu = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+path = paths[2]
+mol_name = path.rsplit('/', 1)[1].split('.')[0]
+structure = None
+te_structure = None
+le_defined = False
+
+iter_paths = iter(paths)
+
+residue_names = np.array(['LYS', 'GLU', 'ASP', 'SER', 'PHE', 'CYS', 'VAL', 'ILE', 'MET',
+       'HIS', 'GLY', 'LEU', 'TYR', 'THR', 'PRO', 'ARG', 'TRP', 'ALA',
+       'GLN', 'ASN', 'SEC'], dtype=object)
+
+le.fit(residue_names)
+
+# load from file... map with sklearn. Save to file as pt. Save all structures.
+train_structures = []
+test_structures = []
+
+for path in tqdm(paths):
+    try:
+        train_bool, structure = get_neighbors(path, device)
+    except RuntimeError as e:
+        if 'memory' in str(e):
+            train_bool, structure = get_neighbors(path, torch.device('cpu'))
+            print('Large structure. Running this structure on cpu.')
+        else:
+            raise e
+
+    if train_bool is True:
+        train_structures.append(structure)
+    else:
+        test_structures.append(structure)
+
+torch.save(train_structures, './datasets/res_train/raw/res_structures.pt')
+torch.save(test_structures, './datasets/res_test/raw/res_structures.pt')
