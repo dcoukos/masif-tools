@@ -14,10 +14,10 @@ def apply_pretransforms(pre_transforms=None):
     # Structures should check already whether these pre_transforms have been computed
     if pre_transforms is None:
         trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
-                                 pre_transform=Compose((Center(), FaceAttributes(),
+                                 pre_transform=Compose((FaceAttributes(),
                                                         NodeCurvature(), FaceToEdge(), TwoHop())))
         testset = Structures(root='./datasets/{}_test/'.format(p.dataset),
-                                pre_transform=Compose((Center(), FaceAttributes(),
+                                pre_transform=Compose((FaceAttributes(),
                                                        NodeCurvature(), FaceToEdge(), TwoHop())))
     else:
         trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
@@ -225,7 +225,9 @@ def generate_surface(model_type, model_path, pdb_code, use_structural_data=False
         Save the surface prediction for a particular structure.
     '''
     from dataset import read_ply
-    converter = FaceToEdge()
+    converter = Compose((Center(), FaceAttributes(),
+                        NodeCurvature(), FaceToEdge(),
+                        TwoHop(), AddShapeIndex()))
     path = glob('./structures/test/{}.ply'.format(pdb_code))[0]
     name = path.split('/')[-1]
     structure = read_ply(path, use_structural_data=use_structural_data)

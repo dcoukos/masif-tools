@@ -189,9 +189,12 @@ class Structures(InMemoryDataset):
         if self.pre_transform is not None:
             data_list = [self.pre_transform(data) for data in tqdm(data_list)]
 
-        if data_list[0].shape_index is not None:
-            _, idx = has_nan(data_list)
-            data_list = [data_list[i] for i in range(0, len(data_list)) if i not in idx]
+        try:
+            if data_list[0].shape_index is not None:
+                _, idx = has_nan(data_list)
+                data_list = [data_list[i] for i in range(0, len(data_list)) if i not in idx]
+        except AttributeError:
+            pass
 
         data, slices = self.collate(data_list)
         torch.save((data, slices), self.processed_paths[0])
