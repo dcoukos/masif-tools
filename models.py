@@ -145,7 +145,7 @@ class SixConv(torch.nn.Module):
 
     # TODO: confirm that linear layers defined below are functionally equivalent to 1x1 conv
 
-    def __init__(self, n_features, heads=1, dropout=True):
+    def __init__(self, n_features, heads=4, dropout=True):
         super(SixConv, self).__init__()
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
         torch.nn.init.xavier_uniform(self.conv1.weight)
@@ -155,35 +155,38 @@ class SixConv(torch.nn.Module):
         torch.nn.init.xavier_uniform(self.conv3.weight)
         self.conv4 = FeaStConv(16, 16)
         torch.nn.init.xavier_uniform(self.conv4.weight)
-        self.conv5 = FeaStConv(16, 32)
+        self.conv5 = FeaStConv(16, 16)
         torch.nn.init.xavier_uniform(self.conv5.weight)
-        self.conv6 = FeaStConv(32, 64)
+        self.conv6 = FeaStConv(16, 16)
         torch.nn.init.xavier_uniform(self.conv6.weight)
-        self.lin1 = Linear(64, 16)
-        self.lin2 = Linear(16, 4)
-        self.out = Linear(4, 1)
-        self.drop_bool = dropout
-        self.dropout = Dropout(p=0.3)
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.lin1 = Linear(16, 64)
+        self.lin2 = Linear(64, 64)
+        self.lin3 = Linear(64, 16)
+        self.out = Linear(16, 1)
+        self.batch1 = BatchNorm(16)
+        self.batch2 = BatchNorm(16)
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
         x = x.relu()
         x = self.conv2(x, edge_index)
+        x2 = x
         x = x.relu()
         x = self.conv3(x, edge_index)
+        x = self.batch1(x)
         x = x.relu()
         x = self.conv4(x, edge_index)
         x = x.relu()
+        x4 = x
         x = self.conv5(x, edge_index)
         x = x.relu()
         x = self.conv6(x, edge_index)
+        x = self.batch2(x)
         x = x.relu()
+        x = x + x2 + x4
         x = self.lin1(x)
-        x = self.dropout(x) if self.drop_bool else x
         x = x.relu()
         x = self.lin2(x)
-        x = self.dropout(x) if self.drop_bool else x
         x = x.relu()
         x = self.out(x)
         x = torch.sigmoid(x)
@@ -272,7 +275,6 @@ class SixConvResidual(torch.nn.Module):
         self.batch1 = BatchNorm(32)
         self.batch2 = BatchNorm(32)
         self.batch3 = BatchNorm(208+n_features)
-        self.dropout = Dropout(p=0.5)
 
     def forward(self, data):
         in_, edge_index = data.x, data.edge_index
