@@ -7,6 +7,7 @@ from biopandas.pdb import PandasPdb
 from dataset import read_ply
 from tqdm import tqdm
 from sklearn import preprocessing
+import numpy as np
 
 # Define the LabelEncoder
 ppdb = PandasPdb()
@@ -24,29 +25,11 @@ le_defined = False
 
 iter_paths = iter(paths)
 
-# Fit Label Encoder!
-while not le_defined:
-    try:
-        print('looping...')
-        structure = None
-        te_structure = None
-        path = next(iter_paths)
-        mol_name = path.rsplit('/', 1)[1].split('.')[0]
+residue_names = np.array(['LYS', 'GLU', 'ASP', 'SER', 'PHE', 'CYS', 'VAL', 'ILE', 'MET',
+       'HIS', 'GLY', 'LEU', 'TYR', 'THR', 'PRO', 'ARG', 'TRP', 'ALA',
+       'GLN', 'ASN', 'SEC'], dtype=object)
 
-        structure = read_ply('./structures/train/{}.ply'.format(mol_name))
-        ppdb.read_pdb(path=path)
-        residue_names = ppdb.df['ATOM']['residue_name'].unique()
-        if len(residue_names) == 20:
-            print(True)
-            le.fit(residue_names)
-            le_defined = True
-        else:
-            print('Only {} AAs!'.format(len(residue_names)))
-            continue
-
-    except FileNotFoundError:
-        te_structure = read_ply('./structures/test/{}.ply'.format(mol_name))
-        print('In test set..')
+le.fit(residue_names)
 
 # load from file... map with sklearn. Save to file as pt. Save all structures.
 train_structures = []
