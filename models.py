@@ -373,15 +373,15 @@ class FourConvBlock(torch.nn.Module):
         return x
 
 
-class TwentyConvPool(torch.nn.Module):
+class TwentyPoolConv(torch.nn.Module):
 
     def __init__(self, n_features, heads=4):
         super(TwentyConv, self).__init__()
-        self.block1 = FourConvBlock(n_features, 16, heads=heads)
-        self.block2 = FourConvBlock(16, 16, heads=heads)
-        self.block3 = FourConvBlock(16, 16, heads=heads)
-        self.block4 = FourConvBlock(16, 16, heads=heads)
-        self.block5 = FourConvBlock(16, 16, heads=heads)
+        self.block1 = FourConvPoolBlock(n_features, 16, heads=heads)
+        self.block2 = FourConvPoolBlock(16, 16, heads=heads)
+        self.block3 = FourConvPoolBlock(16, 16, heads=heads)
+        self.block4 = FourConvPoolBlock(16, 16, heads=heads)
+        self.block5 = FourConvPoolBlock(16, 16, heads=heads)
         self.lin1 = Linear(16, 64)
         self.lin2 = Linear(64, 64)
         self.lin3 = Linear(64, 16)
