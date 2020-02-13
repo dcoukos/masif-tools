@@ -475,7 +475,7 @@ class FourConv(torch.nn.Module):
         self.out = Linear(16, 1)
 
     def forward(self, data):
-        x1, edge_index = data.x, data.edge_index
+        z, edge_index = data.x, data.edge_index
         z = self.block1(z, edge_index)
         z = self.lin1(z)
         z = z.relu()
@@ -501,7 +501,7 @@ class EightConv(torch.nn.Module):
         self.out = Linear(16, 1)
 
     def forward(self, data):
-        x1, edge_index = data.x, data.edge_index
+        z, edge_index = data.x, data.edge_index
         z = self.block1(z, edge_index)
         z = self.block2(z, edge_index)
         z = self.lin1(z)
