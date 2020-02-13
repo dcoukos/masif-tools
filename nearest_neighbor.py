@@ -85,8 +85,8 @@ for path in tqdm(paths):
     try:
         train_bool, structure = get_neighbors(path, gpu)
     except RuntimeError:
-            train_bool, structure = get_neighbors(path, torch.device('cpu'))
-            print('Large structure. Running this structure on cpu.')
+        print('Large structure exhausted CUDA memory. Running this structure on cpu.')
+        train_bool, structure = get_neighbors(path, torch.device('cpu'))
 
     if train_bool is True:
         train_structures.append(structure)
