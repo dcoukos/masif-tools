@@ -1,12 +1,11 @@
 from utils import generate_surface
 import params as p
 
-generate_surface(p.model_type, 'models/Feb11_17:02_4a/best.pt', '3BIK_A', False)
+generate_surface(p.model_type, 'models/Feb12_16:08_17b/best.pt', '3BIK_A', False)
 
-generate_surface(p.model_type, 'models/Feb11_17:02_4a/best.pt', '4ZQK_A', False)
+generate_surface(p.model_type, 'models/Feb12_16:08_17b/best.pt', '4ZQK_A', False)
 
 
-import os
 
 import glob
 paths = glob.glob(os.path.expanduser('~/Desktop/Drawer/LPDI/masif-tools/structures/*'))

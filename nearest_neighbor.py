@@ -24,12 +24,12 @@ def get_neighbors(path, device):
         structure = read_ply('./structures/test/{}.ply'.format(mol_name))
         train = False
 
-    nodes = structure.pos.to(gpu).float()
+    nodes = structure.pos.to(device).float()
     n_nodes = nodes.shape[0]
 
     pos = ['x_coord', 'y_coord', 'z_coord']
 
-    atoms = torch.tensor(ppdb.df['ATOM'][pos].values).to(gpu).float()
+    atoms = torch.tensor(ppdb.df['ATOM'][pos].values).to(device).float()
 
     atom_shape = atoms.shape
     atoms = atoms.view(-1, 1, 3).expand(-1, n_nodes, 3)
@@ -38,14 +38,14 @@ def get_neighbors(path, device):
 
     structure_residues = ppdb.df['ATOM'][['atom_number', 'residue_name']]
     n_atoms = structure_residues.shape[0]
-    idx_translation = torch.LongTensor(le.transform(structure_residues.residue_name) + 1).to(gpu)
+    idx_translation = torch.LongTensor(le.transform(structure_residues.residue_name) + 1).to(device)
 
-    node_idx = torch.tensor(range(0, n_nodes)).to(gpu)
+    node_idx = torch.tensor(range(0, n_nodes)).to(device)
     node_idx = torch.stack((node_idx, closest_atom)).t()
 
     closest_atom_sparse = torch.sparse.LongTensor(node_idx.t(),
-                                                  torch.ones(n_nodes, dtype=torch.long).to(gpu),
-                                                  torch.Size([n_nodes, n_atoms])).to(gpu)
+                                                  torch.ones(n_nodes, dtype=torch.long).to(device),
+                                                  torch.Size([n_nodes, n_atoms])).to(device)
     amino_acids = (closest_atom_sparse.to_dense() *
                    idx_translation.view(-1, 1).t()).to_sparse().values().to(cpu)
     structure.residues = amino_acids
@@ -55,7 +55,7 @@ def get_neighbors(path, device):
     else:
         return train, structure
 
-        
+
 ppdb = PandasPdb()
 le = preprocessing.LabelEncoder()
 paths = glob('../masif_site_masif_search_pdbs_and_ply_files/01-benchmark_pdbs/*')
