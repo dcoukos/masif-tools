@@ -390,14 +390,14 @@ class TwentyPoolConv(torch.nn.Module):
     def forward(self, data):
         # Should edge_index get updated?
         x1, edge_index = data.x, data.edge_index
-        x1 = self.block1(x1, edge_index)
-        x2 = self.block2(x1, edge_index)
+        x1, edge_index = self.block1(x1, edge_index)
+        x2, edge_index = self.block2(x1, edge_index)
         x2 = x1 + x2
-        x3 = self.block3(x2, edge_index)
+        x3, edge_index = self.block3(x2, edge_index)
         x3 = x2 + x3
-        x4 = self.block4(x3, edge_index)
+        x4, edge_index = self.block4(x3, edge_index)
         x4 = x3 + x4
-        x5 = self.block5(x4, edge_index)
+        x5, edge_index = self.block5(x4, edge_index)
         x5 = x4 + x5
         z = self.lin1(x5)
         z = z.relu()
@@ -431,3 +431,5 @@ class FourConvPoolBlock(torch.nn.Module):
         x = self.conv4(x, edge_index)
         x = x.relu()
         x = self.batch(x)
+
+        return x, edge_index
