@@ -1,10 +1,9 @@
 from utils import generate_surface
 import params as p
 
-generate_surface(p.model_type, 'models/Feb12_16:08_17b/best.pt', '3BIK_A', False)
+generate_surface(p.model_type, './models/Feb13_13:38_16b_no_centering/best.pt', '3BIK_A', False)
 
-generate_surface(p.model_type, 'models/Feb12_16:08_17b/best.pt', '4ZQK_A', False)
-
+generate_surface(p.model_type, './models/Feb13_13:38_16b_no_centering/best.pt', '4ZQK_A', False)
 
 
 import glob

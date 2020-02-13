@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch.nn import Linear, Dropout, Sequential, ReLU
-from torch_geometric.nn import GCNConv, FeaStConv, MessagePassing, knn_graph, BatchNorm
+from torch_geometric.nn import GCNConv, FeaStConv, MessagePassing, knn_graph, BatchNorm, TopKPooling
 import params as p
 # graclus, avg_pool_x
 
@@ -252,11 +252,6 @@ class SixConvPassThrough(torch.nn.Module):
 
 
 class SixConvResidual(torch.nn.Module):
-    # Seems underpowered, but less epoch-to-epoch variance in prediction compared to BasicNet
-    # Quick Setup: back to back with max pool and pass through?
-
-    # TODO: confirm that linear layers defined below are functionally equivalent to 1x1 conv
-
     def __init__(self, n_features, heads=4):
         super(SixConvResidual, self).__init__()
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
@@ -376,3 +371,63 @@ class FourConvBlock(torch.nn.Module):
         x = self.batch(x)
 
         return x
+
+
+class TwentyConvPool(torch.nn.Module):
+
+    def __init__(self, n_features, heads=4):
+        super(TwentyConv, self).__init__()
+        self.block1 = FourConvBlock(n_features, 16, heads=heads)
+        self.block2 = FourConvBlock(16, 16, heads=heads)
+        self.block3 = FourConvBlock(16, 16, heads=heads)
+        self.block4 = FourConvBlock(16, 16, heads=heads)
+        self.block5 = FourConvBlock(16, 16, heads=heads)
+        self.lin1 = Linear(16, 64)
+        self.lin2 = Linear(64, 64)
+        self.lin3 = Linear(64, 16)
+        self.out = Linear(16, 1)
+
+    def forward(self, data):
+        # Should edge_index get updated?
+        x1, edge_index = data.x, data.edge_index
+        x1 = self.block1(x1, edge_index)
+        x2 = self.block2(x1, edge_index)
+        x2 = x1 + x2
+        x3 = self.block3(x2, edge_index)
+        x3 = x2 + x3
+        x4 = self.block4(x3, edge_index)
+        x4 = x3 + x4
+        x5 = self.block5(x4, edge_index)
+        x5 = x4 + x5
+        z = self.lin1(x5)
+        z = z.relu()
+        z = self.lin2(z)
+        z = z.relu()
+        z = self.lin3(z)
+        z = z.relu()
+        z = self.out(z)
+        z = torch.sigmoid(z)
+
+        return z
+
+
+class FourConvPoolBlock(torch.nn.Module):
+    def __init__(self, in_features, out_features, heads=4):
+        super(FourConvBlock, self).__init__()
+        self.conv1 = FeaStConv(in_features, 16, heads=heads)
+        self.conv2 = FeaStConv(16, 16, heads=heads)
+        self.conv3 = FeaStConv(16, 16, heads=heads)
+        self.conv4 = FeaStConv(16, out_features, heads=heads)
+        self.batch = BatchNorm(out_features)
+        self.pool = TopKPooling(16)
+
+    def forward(self, x, edge_index):
+        x = self.conv1(x, edge_index)
+        x = x.relu()
+        x = self.conv2(x, edge_index)
+        x = x.relu()
+        x = self.conv3(x, edge_index)
+        x = self.pool(x)
+        x = self.conv4(x, edge_index)
+        x = x.relu()
+        x = self.batch(x)
