@@ -84,12 +84,9 @@ test_structures = []
 for path in tqdm(paths):
     try:
         train_bool, structure = get_neighbors(path, gpu)
-    except RuntimeError as e:
-        if 'memory' in str(e):
+    except RuntimeError:
             train_bool, structure = get_neighbors(path, torch.device('cpu'))
             print('Large structure. Running this structure on cpu.')
-        else:
-            raise e
 
     if train_bool is True:
         train_structures.append(structure)
