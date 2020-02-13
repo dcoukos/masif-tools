@@ -397,7 +397,7 @@ class TwentyPoolConv(torch.nn.Module):
         x3 = x2 + x3
         x4, edge_index = self.block4(x3, edge_index)
         x4 = x3 + x4
-        x5, edge_index = self.block5(x4, edge_index)
+        x5, edge_ = self.block5(x4, edge_index)
         x5 = x4 + x5
         z = self.lin1(x5)
         z = z.relu()
@@ -433,3 +433,71 @@ class FourConvPoolBlock(torch.nn.Module):
         x = self.batch(x)
 
         return x, edge_index
+
+
+class TwentyConvPool(torch.nn.Module):
+
+    def __init__(self, n_features, heads=4):
+        super(TwentyConvPool, self).__init__()
+        self.block1 = FourConvPoolBlock(n_features, 4, heads=heads)
+        self.block2 = FourConvPoolBlock(4, 4, heads=heads)
+        self.block3 = FourConvPoolBlock(4, 4, heads=heads)
+        self.block4 = FourConvBlock(4, 4, heads=heads)
+        self.block5 = FourConvBlock(4, 4, heads=heads)
+        self.lin1 = Linear(4, 64)
+        self.lin2 = Linear(64, 64)
+        self.lin3 = Linear(64, 16)
+        self.out = Linear(16, 1)
+
+    def forward(self, data):
+        # Should edge_index get updated?
+        x1, edge_index = data.x, data.edge_index
+        x1 = self.block1(x1, edge_index)
+        x2 = self.block2(x1, edge_index)
+        x3 = self.block3(x2, edge_index)
+        x4 = self.block4(x3, edge_index)
+        x5 = self.block5(x4, edge_index)
+        z = self.lin1(x5)
+        z = z.relu()
+        z = self.lin2(z)
+        z = z.relu()
+        z = self.lin3(z)
+        z = z.relu()
+        z = self.out(z)
+        z = torch.sigmoid(z)
+
+        return z
+
+
+class TwentyConvNoRes(torch.nn.Module):
+
+    def __init__(self, n_features, heads=4):
+        super(TwentyConvNoRes, self).__init__()
+        self.block1 = FourConvBlock(n_features, 4, heads=heads)
+        self.block2 = FourConvBlock(4, 4, heads=heads)
+        self.block3 = FourConvBlock(4, 4, heads=heads)
+        self.block4 = FourConvBlock(4, 4, heads=heads)
+        self.block5 = FourConvBlock(4, 4, heads=heads)
+        self.lin1 = Linear(4, 64)
+        self.lin2 = Linear(64, 64)
+        self.lin3 = Linear(64, 16)
+        self.out = Linear(16, 1)
+
+    def forward(self, data):
+        # Should edge_index get updated?
+        x1, edge_index = data.x, data.edge_index
+        x1 = self.block1(x1, edge_index)
+        x2 = self.block2(x1, edge_index)
+        x3 = self.block3(x2, edge_index)
+        x4 = self.block4(x3, edge_index)
+        x5 = self.block5(x4, edge_index)
+        z = self.lin1(x5)
+        z = z.relu()
+        z = self.lin2(z)
+        z = z.relu()
+        z = self.lin3(z)
+        z = z.relu()
+        z = self.out(z)
+        z = torch.sigmoid(z)
+
+        return z
