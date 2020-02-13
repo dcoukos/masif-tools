@@ -7,12 +7,12 @@ import Bio.PDB as pdb
 from biopandas.pdb import PandasPdb
 from dataset import read_ply
 from tqdm import tqdm
-from sklearn import preprocessing
 import numpy as np
 
 # Define the LabelEncoder
 
-def get_neighbors(path, device):
+def get_neighbors(path, device, label_encoder):
+    path = paths[1]
     ppdb.read_pdb(path=path)
     # Load through read_ply function.
 
@@ -24,7 +24,6 @@ def get_neighbors(path, device):
     except FileNotFoundError:
         structure = read_ply('./structures/test/{}.ply'.format(mol_name))
         train = False
-
     nodes = structure.pos.to(device).float()
     n_nodes = nodes.shape[0]
 
@@ -39,7 +38,9 @@ def get_neighbors(path, device):
 
     structure_residues = ppdb.df['ATOM'][['atom_number', 'residue_name']]
     n_atoms = structure_residues.shape[0]
-    idx_translation = torch.LongTensor(le.transform(structure_residues.residue_name) + 1).to(device)
+    label_encoder = le
+    idx_translation = torch.LongTensor(structure_residues.residue_name.
+                                       replace(res_encoder)).to(device)
 
     node_idx = torch.tensor(range(0, n_nodes)).to(device)
     node_idx = torch.stack((node_idx, closest_atom)).t()
@@ -72,11 +73,12 @@ le_defined = False
 
 iter_paths = iter(paths)
 
-residue_names = np.array(['LYS', 'GLU', 'ASP', 'SER', 'PHE', 'CYS', 'VAL', 'ILE', 'MET',
-       'HIS', 'GLY', 'LEU', 'TYR', 'THR', 'PRO', 'ARG', 'TRP', 'ALA',
-       'GLN', 'ASN', 'SEC', 'UNK'], dtype=object)
-
-le.fit(residue_names)
+res_encoder = {'LYS': 1, 'GLU': 2, 'ASP': 3, 'SER': 4, 'PHE': 5,
+                'CYS': 6, 'VAL': 7, 'ILE': 8, 'MET': 9, 'HIS': 10,
+                'GLY': 11, 'LEU': 12, 'TYR': 13, 'THR': 14, 'PRO': 15,
+                'ARG': 16, 'TRP': 17, 'ALA': 18, 'GLN': 19, 'ASN': 20,
+                'SEC': 21, 'UNK': 21, 'ASX': 21, 'GLX': 21, 'XLE': 21,
+                'PYL': 21}
 
 # load from file... map with sklearn. Save to file as pt. Save all structures.
 train_structures = []
@@ -84,12 +86,12 @@ test_structures = []
 
 for path in tqdm(paths):
     try:
-        train_bool, structure = get_neighbors(path, gpu)
+        train_bool, structure = get_neighbors(path, gpu, le)
     except RuntimeError:
         print('Large structure exhausted CUDA memory. Running this structure on cpu.\t', end='')
-        tic = time.perf_counter()
-        train_bool, structure = get_neighbors(path, torch.device('cpu'))
-        toc = time.perf_counter()
+        tic = time.time()
+        train_bool, structure = get_neighbors(path, torch.device('cpu'), res_encoder)
+        toc = time.time()
         print('Time elapsed: {}'.format(toc-tic))
 
     if train_bool is True:
