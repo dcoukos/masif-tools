@@ -12,7 +12,6 @@ import numpy as np
 # Define the LabelEncoder
 
 def get_neighbors(path, device, label_encoder):
-    path = paths[1]
     ppdb.read_pdb(path=path)
     # Load through read_ply function.
 
@@ -38,7 +37,6 @@ def get_neighbors(path, device, label_encoder):
 
     structure_residues = ppdb.df['ATOM'][['atom_number', 'residue_name']]
     n_atoms = structure_residues.shape[0]
-    label_encoder = le
     idx_translation = torch.LongTensor(structure_residues.residue_name.
                                        replace(res_encoder)).to(device)
 
@@ -48,8 +46,8 @@ def get_neighbors(path, device, label_encoder):
     closest_atom_sparse = torch.sparse.LongTensor(node_idx.t(),
                                                   torch.ones(n_nodes, dtype=torch.long).to(device),
                                                   torch.Size([n_nodes, n_atoms])).to(device)
-    amino_acids = (closest_atom_sparse.to_dense() *
-                   idx_translation.view(-1, 1).t()).to_sparse().values().to(cpu)
+
+    amino_acids = (closest_atom_sparse.to_dense() * idx_translation.view(-1, 1).t()).to_sparse().values().to(cpu)
     structure.residues = amino_acids
 
     if train is True:
@@ -59,7 +57,6 @@ def get_neighbors(path, device, label_encoder):
 
 
 ppdb = PandasPdb()
-le = preprocessing.LabelEncoder()
 paths = glob('../masif_site_masif_search_pdbs_and_ply_files/01-benchmark_pdbs/*')
 
 cpu = torch.device('cpu')
@@ -86,7 +83,7 @@ test_structures = []
 
 for path in tqdm(paths):
     try:
-        train_bool, structure = get_neighbors(path, gpu, le)
+        train_bool, structure = get_neighbors(path, gpu, res_encoder)
     except RuntimeError:
         print('Large structure exhausted CUDA memory. Running this structure on cpu.\t', end='')
         tic = time.time()
