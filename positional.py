@@ -43,8 +43,8 @@ print('Importing structures.')
 trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
                       pre_transform=Compose((FaceAttributes(),
                                              NodeCurvature(), FaceToEdge(),
-                                             TwoHop())))
-
+                                             TwoHop())),
+                      transform=Compose((Center(),RandomRotate(90))))
 samples = len(trainset)
 
 cutoff = int(np.floor(samples*(1-p.validation_split)))
