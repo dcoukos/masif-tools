@@ -376,7 +376,7 @@ class FourConvBlock(torch.nn.Module):
 class TwentyPoolConv(torch.nn.Module):
 
     def __init__(self, n_features, heads=4):
-        super(TwentyConv, self).__init__()
+        super(TwentyPoolConv, self).__init__()
         self.block1 = FourConvPoolBlock(n_features, 16, heads=heads)
         self.block2 = FourConvPoolBlock(16, 16, heads=heads)
         self.block3 = FourConvPoolBlock(16, 16, heads=heads)
@@ -413,7 +413,7 @@ class TwentyPoolConv(torch.nn.Module):
 
 class FourConvPoolBlock(torch.nn.Module):
     def __init__(self, in_features, out_features, heads=4):
-        super(FourConvBlock, self).__init__()
+        super(FourConvPoolBlock, self).__init__()
         self.conv1 = FeaStConv(in_features, 16, heads=heads)
         self.conv2 = FeaStConv(16, 16, heads=heads)
         self.conv3 = FeaStConv(16, 16, heads=heads)
