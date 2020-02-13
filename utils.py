@@ -225,9 +225,14 @@ def generate_surface(model_type, model_path, pdb_code, use_structural_data=False
         Save the surface prediction for a particular structure.
     '''
     from dataset import read_ply
+    '''
     converter = Compose((Center(), FaceAttributes(),
                         NodeCurvature(), FaceToEdge(),
                         TwoHop(), AddShapeIndex()))
+    '''
+    converter = Compose((Center(), FaceAttributes(),
+                        NodeCurvature(), FaceToEdge(),
+                        TwoHop(), AddPositionalData()))
     path = glob('./structures/test/{}.ply'.format(pdb_code))[0]
     name = path.split('/')[-1]
     structure = read_ply(path, use_structural_data=use_structural_data)

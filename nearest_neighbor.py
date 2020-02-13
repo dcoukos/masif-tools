@@ -1,3 +1,4 @@
+import time
 import torch
 import Bio.SeqUtils
 import torch_geometric
@@ -85,8 +86,11 @@ for path in tqdm(paths):
     try:
         train_bool, structure = get_neighbors(path, gpu)
     except RuntimeError:
-        print('Large structure exhausted CUDA memory. Running this structure on cpu.')
+        print('Large structure exhausted CUDA memory. Running this structure on cpu.\t', end='')
+        tic = time.perf_counter()
         train_bool, structure = get_neighbors(path, torch.device('cpu'))
+        toc = time.perf_counter()
+        print('Time elapsed: {}'.format(toc-tic))
 
     if train_bool is True:
         train_structures.append(structure)
