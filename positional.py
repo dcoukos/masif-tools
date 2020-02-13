@@ -38,10 +38,13 @@ else:
 
 # ---- Importing and structuring Datasets and Model ----
 print('Importing structures.')
+# Remember!!! Shape Index can only be computed on local. Add other transforms after
+# Pre_tranform step to not contaminate the data.
 trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
                       pre_transform=Compose((FaceAttributes(),
                                              NodeCurvature(), FaceToEdge(),
                                              TwoHop())))
+
 samples = len(trainset)
 
 cutoff = int(np.floor(samples*(1-p.validation_split)))
