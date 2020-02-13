@@ -62,7 +62,6 @@ paths = glob('../masif_site_masif_search_pdbs_and_ply_files/01-benchmark_pdbs/*'
 cpu = torch.device('cpu')
 gpu = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-path = paths[2]
 mol_name = path.rsplit('/', 1)[1].split('.')[0]
 structure = None
 te_structure = None
@@ -87,7 +86,7 @@ for path in tqdm(paths):
     except RuntimeError:
         print('Large structure exhausted CUDA memory. Running this structure on cpu.\t', end='')
         tic = time.time()
-        train_bool, structure = get_neighbors(path, torch.device('cpu'), res_encoder)
+        train_bool, structure = get_neighbors(path, cpu, res_encoder)
         toc = time.time()
         print('Time elapsed: {}'.format(toc-tic))
 
