@@ -138,7 +138,7 @@ for epoch in range(1, epochs+1):
                                    'test': roc_auc_te}, epoch)
     writer.add_scalar('learning rate', learn_rate, epoch)
 
-    print("---- Round {}: tr_loss={:.4f} te_roc_auc:{:.4f}lr:{:.6f}"
+    print("---- Round {}: tr_loss={:.4f} te_roc_auc:{:.4f} lr:{:.6f}"
           .format(epoch, loss, roc_auc_te, learn_rate))
     # scheduler.step(loss)
     if roc_auc_te > max_roc_auc:
