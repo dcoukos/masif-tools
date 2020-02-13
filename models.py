@@ -464,6 +464,58 @@ class TwentyConvPool(torch.nn.Module):
         return z
 
 
+class FourConv(torch.nn.Module):
+
+    def __init__(self, n_features, heads=4):
+        super(FourConv, self).__init__()
+        self.block1 = FourConvBlock(4, 4)
+        self.lin1 = Linear(4, 64)
+        self.lin2 = Linear(64, 64)
+        self.lin3 = Linear(64, 16)
+        self.out = Linear(16, 1)
+
+    def forward(self, data):
+        x1, edge_index = data.x, data.edge_index
+        z = self.block1(z, edge_index)
+        z = self.lin1(z)
+        z = z.relu()
+        z = self.lin2(z)
+        z = z.relu()
+        z = self.lin3(z)
+        z = z.relu()
+        z = self.out(z)
+        z = torch.sigmoid(z)
+
+        return z
+
+
+class EightConv(torch.nn.Module):
+
+    def __init__(self, n_features, heads=4):
+        super(EightConv, self).__init__()
+        self.block1 = FourConvBlock(4, 4)
+        self.block2 = FourConvBlock(4, 4)
+        self.lin1 = Linear(4, 64)
+        self.lin2 = Linear(64, 64)
+        self.lin3 = Linear(64, 16)
+        self.out = Linear(16, 1)
+
+    def forward(self, data):
+        x1, edge_index = data.x, data.edge_index
+        z = self.block1(z, edge_index)
+        z = self.block2(z, edge_index)
+        z = self.lin1(z)
+        z = z.relu()
+        z = self.lin2(z)
+        z = z.relu()
+        z = self.lin3(z)
+        z = z.relu()
+        z = self.out(z)
+        z = torch.sigmoid(z)
+
+        return z
+
+
 class TwentyConvNoRes(torch.nn.Module):
 
     def __init__(self, n_features, heads=4):
