@@ -74,7 +74,7 @@ iter_paths = iter(paths)
 
 residue_names = np.array(['LYS', 'GLU', 'ASP', 'SER', 'PHE', 'CYS', 'VAL', 'ILE', 'MET',
        'HIS', 'GLY', 'LEU', 'TYR', 'THR', 'PRO', 'ARG', 'TRP', 'ALA',
-       'GLN', 'ASN', 'SEC'], dtype=object)
+       'GLN', 'ASN', 'SEC', 'UNK'], dtype=object)
 
 le.fit(residue_names)
 
