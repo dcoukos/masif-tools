@@ -427,7 +427,7 @@ class FourConvPoolBlock(torch.nn.Module):
         x = self.conv2(x, edge_index)
         x = x.relu()
         x = self.conv3(x, edge_index)
-        x = self.pool(x)
+        x = self.pool(x, edge_index)
         x = self.conv4(x, edge_index)
         x = x.relu()
         x = self.batch(x)
