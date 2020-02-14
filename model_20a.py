@@ -58,8 +58,6 @@ validset = dataset[cutoff:]
 maskedset = validset[:int(len(validset)/2)]
 validset = validset[int(len(validset)/2):]
 
-del dataset
-
 
 if p.shuffle_dataset:
     trainset = trainset.shuffle()
@@ -173,12 +171,16 @@ for model_n, model in enumerate(models):
         model.load_state_dict(torch.load('./masked_model.pt', map_location=device))
         model.eval()
 
+        train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
+        val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
+        masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
+
         next_data = []
-        for data in trainset:
-            data = data.to(device)
-            _, inter = model(data)
-            data.y = inter
-            next_data.append(data.to(cpu))
+        for batch in train_loader:
+            batch = batch.to(device)
+            _, inter = model(batch)
+            batch.y = inter
+            next_data += batch.to(cpu).to_data_list()
         trainset = next_data
 
         next_data = []
