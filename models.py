@@ -98,6 +98,35 @@ class TwoConv(torch.nn.Module):
         return x
 
 
+class ThreeConvBlock(torch.nn.Module):
+    # Too many parameters?
+    def __init__(self, n_features, lin2=4, heads=4):
+        super(ThreeConvBlock, self).__init__()
+        self.conv1 = FeaStConv(n_features, 16, heads=heads)
+        self.conv2 = FeaStConv(16, 16, heads=heads)
+        self.conv3 = FeaStConv(16, 16, heads=heads)
+        self.lin1 = Linear(16, 32)
+        self.lin2 = Linear(32, lin2)
+        self.out = Linear(lin2, 1)
+
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
+        x = self.conv1(x, edge_index)
+        x = x.relu()
+        x = self.conv2(x, edge_index)
+        x = x.relu()
+        x = self.conv3(x, edge_index)
+        x = x.relu()
+        x = self.lin1(x)
+        x = x.relu()
+        inter = self.lin2(x)
+        x = inter.relu()
+        x = self.out(x)
+        x = torch.sigmoid(x)
+
+        return x, inter.sigmoid()
+
+
 class ThreeConv(torch.nn.Module):
     # Seems underpowered, but less epoch-to-epoch variance in prediction compared to BasicNet
     # Quick Setup: back to back with max pool and pass through?

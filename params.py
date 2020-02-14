@@ -1,5 +1,5 @@
 # REMEMBER TO CHANGE VERSION NUMBER
-from models import TwoConv, ThreeConv, FourConv, SixConv, EightConv, SixConvResidual, TwentyConv, TwentyConvPool, TwentyConvNoRes
+from models import ThreeConvBlock
 
 batch_size = 2
 test_batch_size = 2
@@ -18,7 +18,7 @@ epochs = 200
 version = '18'
 suppress_warnings = True
 dataset = 'thous'
-model_type = SixConv
+model_type = None
 interface_weight = .8
 twohop = True
 heads = 4
