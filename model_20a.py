@@ -63,9 +63,9 @@ if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 print('Setting up model...')
-models = [ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(device),
-          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(device),
-          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(device)]
+models = [ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu),
+          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu),
+          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu)]
 
 # setting up reporting
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.format(
@@ -80,6 +80,7 @@ max_roc_masked = 0
 
 # ---- Training ----
 for model_n, model in enumerate(models):
+    model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 
 # ------------ TRAINING NEW BLOCK --------------------------
