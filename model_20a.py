@@ -59,9 +59,9 @@ if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 print('Setting up model...')
-models = [ThreeConvBlock(features=4, lin2=4, heads=p.heads).to(device),
-          ThreeConvBlock(features=4, lin2=4, heads=p.heads).to(device),
-          ThreeConvBlock(features=4, lin2=4, heads=p.heads).to(device)]
+models = [ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(device),
+          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(device),
+          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(device)]
 
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 
