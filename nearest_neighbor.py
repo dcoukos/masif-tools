@@ -86,3 +86,6 @@ for path in tqdm(paths):
     else:
         torch.save(structure, './datasets/res_test/raw/res_structures_{}.pt'.format(test_idx))
         test_idx += 1
+
+    try:
+        gpu.empty_cache()
