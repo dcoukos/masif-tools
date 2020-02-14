@@ -63,8 +63,7 @@ models = [ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(device),
           ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(device),
           ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(device)]
 
-optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
-
+# setting up reporting
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.format(
                        p.version,
                        learn_rate,
@@ -77,15 +76,46 @@ max_roc_masked = 0
 
 # ---- Training ----
 for model_n, model in enumerate(models):
-    print('Training model {}'.format(model_n))
+    optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
+
+
+# ----------- Loading features from best version of previous block -------------
     if model_n > 0:
-        trainset = next_train_data
-        validset = next_test_data
-        maskedset = next_masked_data
+        print('Preparing the best version of this model for next model input.')
+        previous_model = models[model_n-1]
+        previous_model.load_state_dict(torch.load('./masked_model.pt', map_location=device))
+        previous_model.eval()
+        train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
+        val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
+        masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
+
+        next_data = []
+        for batch in train_loader:
+            batch = batch.to(device)
+            out, inter = previous_model(batch)
+            inter_data = (inter.to(cpu)).to_data_list()
+            next_data += inter_data
+        trainset = next_data
+
+        next_data = []
+        for batch in val_loader:
+            batch = batch.to(device)
+            out, inter = previous_model(batch)
+            inter_data = (inter.to(cpu)).to_data_list()
+            next_data += inter_data
+        validset = next_data
+
+        next_data = []
+        for batch in masked_loader:
+            batch = batch.to(device)
+            out, inter = previous_model(batch)
+            inter_data = (inter.to(cpu)).to_data_list()
+            next_data += inter_data
+        maskedset = next_data
     if model_n < len(models)-1:
-        next_train_data = []
-        next_test_data = []
-        next_masked_data = []
+
+# ------------ TRAINING NEW BLOCK --------------------------
+    print('Training block {}'.format(model_n))
     for epoch in range(1, epochs+1):
         train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
         val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
@@ -116,7 +146,7 @@ for model_n, model in enumerate(models):
 
         loss = mean(loss)
 
-        #  --------------  REPORTING ------------------------------------
+#  --------------  EVALUATION & REPORTING ------------------------------------
         roc_auc = roc_auc_score(first_batch_labels.cpu(), pred.cpu())
 
         model.eval()
@@ -161,9 +191,8 @@ for model_n, model in enumerate(models):
 
         print("---- Round {}: tr_loss={:.4f} te_roc_auc:{:.4f} lr:{:.6f}"
               .format(epoch, loss, roc_auc_te, learn_rate))
-        # scheduler.step(loss)
 
-        # save and load the right model.
+#   -------------- MODEL SAVING ------------------------
         if roc_auc_te > max_roc_auc:
             max_roc_auc = roc_auc_te
             path = './{}/best_{}.pt'.format(modelpath, model_n)
