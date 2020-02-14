@@ -153,7 +153,6 @@ for model_n, model in enumerate(models):
         cum_pred = torch.Tensor().to(device)
         cum_labels = torch.Tensor().to(device)
         for batch_n, batch in enumerate(val_loader):
-            print(batch_n)
             batch = batch.to(device)
             out, inter = model(batch)
             labels = batch.y.to(device)
