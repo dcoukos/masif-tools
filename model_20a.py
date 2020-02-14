@@ -53,6 +53,9 @@ trainset = trainset[:cutoff]
 validset = trainset[cutoff:]
 maskedset = validset[:int(len(validset)/2)]
 validset = validset[int(len(validset)/2):]
+print(len(trainset))
+print(len(maskedset))
+print(len(validset))
 
 
 if p.shuffle_dataset:
