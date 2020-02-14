@@ -98,15 +98,17 @@ for model_n, model in enumerate(models):
         next_data = []
         for batch in train_loader:
             batch = batch.to(device)
-            out, inter = previous_model(batch)
-            inter_data = (inter.to(cpu)).to_data_list()
+            _, inter = previous_model(batch)
+            batch.y = inter
+            inter_data = (batch.to(cpu)).to_data_list()
             next_data += inter_data
         trainset = next_data
 
         next_data = []
         for batch in val_loader:
             batch = batch.to(device)
-            out, inter = previous_model(batch)
+            _, inter = previous_model(batch)
+            batch.y = inter
             inter_data = (inter.to(cpu)).to_data_list()
             next_data += inter_data
         validset = next_data
@@ -114,7 +116,8 @@ for model_n, model in enumerate(models):
         next_data = []
         for batch in masked_loader:
             batch = batch.to(device)
-            out, inter = previous_model(batch)
+            _, inter = previous_model(batch)
+            batch.y = inter
             inter_data = (inter.to(cpu)).to_data_list()
             next_data += inter_data
         maskedset = next_data
@@ -135,7 +138,7 @@ for model_n, model in enumerate(models):
         for batch_n, batch in enumerate(train_loader):
             batch = batch.to(device)
             optimizer.zero_grad()
-            out, inter = model(batch)
+            out, _ = model(batch)
             labels = batch.y.to(device)
             weights = generate_weights(labels).to(device)
             tr_loss = F.binary_cross_entropy(out, target=labels, weight=weights)
@@ -156,7 +159,7 @@ for model_n, model in enumerate(models):
         cum_labels = torch.Tensor().to(device)
         for batch_n, batch in enumerate(val_loader):
             batch = batch.to(device)
-            out, inter = model(batch)
+            out, _ = model(batch)
             labels = batch.y.to(device)
             weights = generate_weights(labels).to(device)
             te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
@@ -169,7 +172,7 @@ for model_n, model in enumerate(models):
         cum_labels = torch.Tensor().to(device)
         for batch_n, batch in enumerate(masked_loader):
             batch = batch.to(device)
-            out, inter = model(batch)
+            out, _ = model(batch)
             labels = batch.y.to(device)
             weights = generate_weights(labels).to(device)
             te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
