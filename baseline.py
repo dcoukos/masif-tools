@@ -25,6 +25,7 @@ if p.suppress_warnings:
     warnings.filterwarnings("ignore")
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+cpu = torch.device('cpu')
 # reproducibility
 torch.manual_seed(p.random_seed)
 np.random.seed(p.random_seed)
