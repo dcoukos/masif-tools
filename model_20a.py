@@ -46,18 +46,17 @@ dataset = Structures(root='./datasets/{}_train/'.format(p.dataset),
                                              NodeCurvature(), FaceToEdge(),
                                              TwoHop())),
                       transform=AddShapeIndex())
+
+
 samples = len(dataset)
 assert(p.validation_split < 0.3)
 cutoff = int(np.floor(samples*(1-p.validation_split)))
-print(len(trainset))
-print(cutoff)
 trainset = dataset[:cutoff]
 validset = trainset[cutoff:]
 maskedset = validset[:int(len(validset)/2)]
 validset = validset[int(len(validset)/2):]
-print(len(trainset))
-print(len(maskedset))
-print(len(validset))
+
+del dataset
 
 
 if p.shuffle_dataset:
