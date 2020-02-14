@@ -84,38 +84,6 @@ max_roc_masked = 0
 for model_n, model in enumerate(models):
     optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 
-
-# ----------- Loading features from best version of previous block -------------
-    if model_n > 0:
-        print('Preparing the best version of this model for next model input.')
-        previous_model = models[model_n-1]
-        previous_model.load_state_dict(torch.load('./masked_model.pt', map_location=device))
-        previous_model.eval()
-
-        next_data = []
-        for data in trainset:
-            data = data.to(device)
-            _, inter = previous_model(data)
-            data.y = inter
-            next_data.append(data.to(cpu))
-        trainset = next_data
-
-        next_data = []
-        for data in validset:
-            data = data.to(device)
-            _, inter = previous_model(data)
-            batch.y = inter
-            next_data.append(data.to(cpu))
-        validset = next_data
-
-        next_data = []
-        for data in maskedset:
-            data = data.to(device)
-            _, inter = previous_model(data)
-            data.y = inter
-            next_data.append(data.to(cpu))
-        maskedset = next_data
-
 # ------------ TRAINING NEW BLOCK --------------------------
     print('Training block {}'.format(model_n))
     for epoch in range(1, epochs+1):
@@ -197,5 +165,36 @@ for model_n, model in enumerate(models):
             path = './masked_model.pt'
             with open(path, 'w+'):
                 torch.save(model.state_dict(), path)
+
+# ----------- Preparing features from best version of this block -------------
+
+    if model_n < len(models)-1:
+        print('Preparing the best version of this model for next model input.')
+        model.load_state_dict(torch.load('./masked_model.pt', map_location=device))
+        model.eval()
+
+        next_data = []
+        for data in trainset:
+            data = data.to(device)
+            _, inter = model(data)
+            data.y = inter
+            next_data.append(data.to(cpu))
+        trainset = next_data
+
+        next_data = []
+        for data in validset:
+            data = data.to(device)
+            _, inter = model(data)
+            batch.y = inter
+            next_data.append(data.to(cpu))
+        validset = next_data
+
+        next_data = []
+        for data in maskedset:
+            data = data.to(device)
+            _, inter = model(data)
+            data.y = inter
+            next_data.append(data.to(cpu))
+        maskedset = next_data
 
 writer.close()
