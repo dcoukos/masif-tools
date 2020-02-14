@@ -329,9 +329,13 @@ class FourConvBlock(torch.nn.Module):
     def __init__(self, in_features, out_features, heads=4):
         super(FourConvBlock, self).__init__()
         self.conv1 = FeaStConv(in_features, 4, heads=heads)
+        torch.nn.init.kaiming_normal_(self.conv1, nonlinearity='relu')
         self.conv2 = FeaStConv(4, 4, heads=heads)
+        torch.nn.init.kaiming_normal_(self.conv2, nonlinearity='relu')
         self.conv3 = FeaStConv(4, 4, heads=heads)
+        torch.nn.init.kaiming_normal_(self.conv3, nonlinearity='relu')
         self.conv4 = FeaStConv(4, out_features, heads=heads)
+        torch.nn.init.kaiming_normal_(self.conv4, nonlinearity='relu')
         self.batch = BatchNorm(out_features)
 
     def forward(self, x, edge_index):
@@ -346,41 +350,6 @@ class FourConvBlock(torch.nn.Module):
         x = self.batch(x)
 
         return x
-
-
-class TwentyPoolConv(torch.nn.Module):
-
-    def __init__(self, n_features, heads=4):
-        super(TwentyPoolConv, self).__init__()
-        self.block1 = FourConvPoolBlock(n_features, 16, heads=heads)
-        self.block2 = FourConvPoolBlock(16, 16, heads=heads)
-        self.block3 = FourConvPoolBlock(16, 16, heads=heads)
-        self.block4 = FourConvPoolBlock(16, 16, heads=heads)
-        self.block5 = FourConvPoolBlock(16, 16, heads=heads)
-        self.lin1 = Linear(16, 64)
-        self.lin2 = Linear(64, 64)
-        self.lin3 = Linear(64, 16)
-        self.out = Linear(16, 1)
-
-    def forward(self, data):
-        # Should edge_index get updated?
-
-        x4, edge_index = self.block4(x3, edge_index)
-        x4 = x3 + x4
-        x5, edge_ = self.block5(x4, edge_index)
-        x5 = x4 + x5
-        z = self.lin1(x5)
-        z = z.relu()
-        z = self.lin2(z)
-        z = z.relu()
-        z = self.lin3(z)
-        z = z.relu()
-        z = self.out(z)
-        z = torch.sigmoid(z)
-
-        return z
-
-
 
 
 class FourConvPoolBlock(torch.nn.Module):
@@ -503,9 +472,13 @@ class TwentyConvNoRes(torch.nn.Module):
         self.block4 = FourConvBlock(4, 4, heads=heads)
         self.block5 = FourConvBlock(4, 4, heads=heads)
         self.lin1 = Linear(4, 64)
+        torch.nn.init.kaiming_normal_(self.lin1, nonlinearity='relu')
         self.lin2 = Linear(64, 64)
+        torch.nn.init.kaiming_normal_(self.lin2, nonlinearity='relu')
         self.lin3 = Linear(64, 16)
+        torch.nn.init.kaiming_normal_(self.lin3, nonlinearity='relu')
         self.out = Linear(16, 1)
+        torch.nn.init.kaiming_normal_(self.out, nonlinearity='relu')
 
     def forward(self, data):
         # Should edge_index get updated?
