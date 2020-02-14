@@ -89,3 +89,5 @@ for path in tqdm(paths):
 
     try:
         gpu.empty_cache()
+    except RuntimeError:
+        raise RuntimeError
