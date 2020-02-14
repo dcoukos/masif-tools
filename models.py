@@ -464,7 +464,7 @@ class TwentyConvPool(torch.nn.Module):
         return z
 
 
-class FourConv(torch.nn.Module):
+class FourConv(torch.nn.Module): # Model 18
 
     def __init__(self, n_features, heads=4):
         super(FourConv, self).__init__()
@@ -489,7 +489,7 @@ class FourConv(torch.nn.Module):
         return z
 
 
-class EightConv(torch.nn.Module):
+class EightConv(torch.nn.Module): # Model 19
 
     def __init__(self, n_features, heads=4):
         super(EightConv, self).__init__()

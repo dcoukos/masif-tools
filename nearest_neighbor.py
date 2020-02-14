@@ -10,7 +10,6 @@ from dataset import read_ply
 from tqdm import tqdm
 import numpy as np
 
-# Define the LabelEncoder
 
 def get_neighbors(path, device, label_encoder):
     ppdb.read_pdb(path=path)
@@ -71,21 +70,19 @@ res_encoder = {'LYS': 1, 'GLU': 2, 'ASP': 3, 'SER': 4, 'PHE': 5,
                 'PYL': 21}
 
 # load from file... map with sklearn. Save to file as pt. Save all structures.
-train_structures = []
-test_structures = []
+train_idx, test_idx = 0, 0
 
 for path in tqdm(paths):
     try:
         train_bool, structure = get_neighbors(path, gpu, res_encoder)
     except RuntimeError as e:
         print(e)
-        print("Rerunning on cpu")        
+        print("Rerunning on cpu")
         train_bool, structure = get_neighbors(path, cpu, res_encoder)
 
     if train_bool is True:
-        train_structures.append(structure)
+        torch.save(structure, './datasets/res_train/raw/res_structures_{}.pt'.format(train_idx))
+        train_idx += 1
     else:
-        test_structures.append(structure)
-
-torch.save(train_structures, './datasets/res_train/raw/res_structures.pt')
-torch.save(test_structures, './datasets/res_test/raw/res_structures.pt')
+        torch.save(structure, './datasets/res_test/raw/res_structures_{}.pt'.format(test_idx))
+        test_idx += 1
