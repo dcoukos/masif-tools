@@ -88,6 +88,6 @@ for path in tqdm(paths):
         test_idx += 1
 
     try:
-        gpu.empty_cache()
+        torch.cuda.empty_cache()
     except RuntimeError:
         raise RuntimeError
