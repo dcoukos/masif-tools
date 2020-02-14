@@ -41,17 +41,17 @@ else:
 print('Importing structures.')
 # Remember!!! Shape Index can only be computed on local. Add other transforms after
 # Pre_tranform step to not contaminate the data.
-trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
+dataset = Structures(root='./datasets/{}_train/'.format(p.dataset),
                       pre_transform=Compose((FaceAttributes(),
                                              NodeCurvature(), FaceToEdge(),
                                              TwoHop())),
                       transform=AddShapeIndex())
-samples = len(trainset)
+samples = len(dataset)
 assert(p.validation_split < 0.3)
 cutoff = int(np.floor(samples*(1-p.validation_split)))
 print(len(trainset))
 print(cutoff)
-trainset = trainset[:cutoff]
+trainset = dataset[:cutoff]
 validset = trainset[cutoff:]
 maskedset = validset[:int(len(validset)/2)]
 validset = validset[int(len(validset)/2):]
