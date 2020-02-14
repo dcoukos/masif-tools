@@ -44,7 +44,7 @@ trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
                       pre_transform=Compose((FaceAttributes(),
                                              NodeCurvature(), FaceToEdge(),
                                              TwoHop())),
-                      transform=Compose((Center(),RandomRotate(90))))
+                      transform=AddShapeIndex())
 samples = len(trainset)
 
 cutoff = int(np.floor(samples*(1-p.validation_split)))
@@ -56,7 +56,7 @@ if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 print('Setting up model...')
-model = p.model_type(9, heads=p.heads).to(device)
+model = p.model_type(4, heads=p.heads).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
 #                                                       factor=p.lr_decay,
@@ -76,12 +76,7 @@ max_roc_auc = 0
 # ---- Training ----
 print('Training...')
 for epoch in range(1, epochs+1):
-    # rotate the structures between epochs, when using pos data.
 
-    trainset.transform = AddPositionalData()
-    validset.transform = AddPositionalData()
-
-    # Using shape index data:
     train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
     val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
 
