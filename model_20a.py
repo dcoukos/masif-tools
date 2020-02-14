@@ -52,7 +52,7 @@ samples = len(dataset)
 assert(p.validation_split < 0.3)
 cutoff = int(np.floor(samples*(1-p.validation_split)))
 trainset = dataset[:cutoff]
-validset = trainset[cutoff:]
+validset = dataset[cutoff:]
 maskedset = validset[:int(len(validset)/2)]
 validset = validset[int(len(validset)/2):]
 
