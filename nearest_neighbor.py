@@ -12,6 +12,7 @@ import numpy as np
 
 
 def get_neighbors(path, device, label_encoder):
+    ppdb = PandasPdb()
     ppdb.read_pdb(path=path)
     # Load through read_ply function.
 
@@ -56,7 +57,6 @@ def get_neighbors(path, device, label_encoder):
         return train, structure
 
 
-ppdb = PandasPdb()
 paths = glob('../masif_site_masif_search_pdbs_and_ply_files/01-benchmark_pdbs/*')
 
 cpu = torch.device('cpu')
