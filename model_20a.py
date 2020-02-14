@@ -112,7 +112,6 @@ for model_n, model in enumerate(models):
             inter_data = (inter.to(cpu)).to_data_list()
             next_data += inter_data
         maskedset = next_data
-    if model_n < len(models)-1:
 
 # ------------ TRAINING NEW BLOCK --------------------------
     print('Training block {}'.format(model_n))
@@ -140,9 +139,6 @@ for model_n, model in enumerate(models):
             if batch_n == 0:
                 first_batch_labels = labels.clone().detach().to(device)
                 pred = out.clone().detach().round().to(device)
-            if epoch == epochs and len(models)-1:
-                inter_data = (inter.to(cpu)).to_data_list()
-                next_train_data += inter_data
 
         loss = mean(loss)
 
@@ -161,9 +157,6 @@ for model_n, model in enumerate(models):
             pred = out.detach().round().to(device)
             cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
             cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
-            if epoch == epochs and len(models)-1:
-                inter_data = (inter.to(cpu)).to_data_list()
-                next_test_data += inter_data
         roc_auc_te = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
 
         cum_pred = torch.Tensor().to(device)
@@ -177,9 +170,6 @@ for model_n, model in enumerate(models):
             pred = out.detach().round().to(device)
             cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
             cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
-            if epoch == epochs and len(models)-1:
-                inter_data = (inter.to(cpu)).to_data_list()
-                next_masked_data += inter_data
         roc_auc_masked = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
 
         writer.add_scalars('Loss', {'train': tr_loss,
