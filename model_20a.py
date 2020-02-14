@@ -91,35 +91,29 @@ for model_n, model in enumerate(models):
         previous_model = models[model_n-1]
         previous_model.load_state_dict(torch.load('./masked_model.pt', map_location=device))
         previous_model.eval()
-        train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
-        val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
-        masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
 
         next_data = []
-        for batch in train_loader:
-            batch = batch.to(device)
-            _, inter = previous_model(batch)
-            batch.y = inter
-            inter_data = (batch.to(cpu)).to_data_list()
-            next_data += inter_data
+        for data in train_loader:
+            data = data.to(device)
+            _, inter = previous_model(data)
+            data.y = inter
+            next_data.append(data.to(cpu))
         trainset = next_data
 
         next_data = []
-        for batch in val_loader:
-            batch = batch.to(device)
-            _, inter = previous_model(batch)
+        for data in val_loader:
+            data = data.to(device)
+            _, inter = previous_model(data)
             batch.y = inter
-            inter_data = (inter.to(cpu)).to_data_list()
-            next_data += inter_data
+            next_data.append(data.to(cpu))
         validset = next_data
 
         next_data = []
-        for batch in masked_loader:
-            batch = batch.to(device)
-            _, inter = previous_model(batch)
-            batch.y = inter
-            inter_data = (inter.to(cpu)).to_data_list()
-            next_data += inter_data
+        for data in masked_loader:
+            data = data.to(device)
+            _, inter = previous_model(data)
+            data.y = inter
+            next_data.append(data.to(cpu))
         maskedset = next_data
 
 # ------------ TRAINING NEW BLOCK --------------------------
