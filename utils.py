@@ -103,7 +103,7 @@ def generate_example_surfaces(model_type, model_path, n_examples=5, use_structur
 
     paths = glob('./structures/test/*')[:n_examples]
     names = [path.split('/')[-1]for path in paths]
-    structures = [read_ply(path, use_structural_data=use_structural_data) for path in paths]
+    structures = [read_ply(path) for path in paths]
 
     faces = [structure.face for structure in structures]
     structures = [converter(structure) for structure in structures]
@@ -232,10 +232,10 @@ def generate_surface(model_type, model_path, pdb_code, use_structural_data=False
     '''
     converter = Compose((Center(), FaceAttributes(),
                         NodeCurvature(), FaceToEdge(),
-                        TwoHop(), AddPositionalData()))
+                        TwoHop(), AddShapeIndex()))
     path = glob('./structures/test/{}.ply'.format(pdb_code))[0]
     name = path.split('/')[-1]
-    structure = read_ply(path, use_structural_data=use_structural_data)
+    structure = read_ply(path)
 
     face = structure.face
     structure = converter(structure)

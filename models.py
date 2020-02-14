@@ -197,60 +197,6 @@ class SixConv(torch.nn.Module):
         return x
 
 
-class SixConvPassThrough(torch.nn.Module):
-    # Seems underpowered, but less epoch-to-epoch variance in prediction compared to BasicNet
-    # Quick Setup: back to back with max pool and pass through?
-
-    # TODO: confirm that linear layers defined below are functionally equivalent to 1x1 conv
-
-    def __init__(self, n_features, heads=4, dropout=True):
-        super(SixConvPassThrough, self).__init__()
-        self.conv1 = FeaStConv(n_features, 16, heads=heads)
-        self.conv2 = FeaStConv(16, 32, heads=heads)
-        self.conv3 = FeaStConv(32, 32, heads=heads)
-        self.conv4 = FeaStConv(32, 32, heads=heads)
-        self.conv5 = FeaStConv(32, 32, heads=heads)
-        self.conv6 = FeaStConv(32, 64, heads=heads)
-        self.lin1 = Linear(128, 256)
-        self.lin2 = Linear(256, 64)
-        self.lin3 = Linear(64, 16)
-        self.out = Linear(16, 1)
-        self.batch1 = BatchNorm(32)
-        self.batch2 = BatchNorm(32)
-        self.batch3 = BatchNorm(64)
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    def forward(self, data):
-        in_, edge_index = data.x, data.edge_index
-        x1 = self.conv1(in_, edge_index)
-        x1 = x1.relu()
-        x1 = self.conv2(x1, edge_index)
-        x1 = x1.relu()
-        x1 = self.batch1(x1)
-        x2 = self.conv3(x2, edge_index)
-        x2 = x2.relu()
-        x2 = self.conv4(x2, edge_index)
-        x2 = x2.relu()
-        x2 = self.batch2(x2)
-        x3 = self.conv5(x2, edge_index)
-        x3 = x3.relu()
-        x3 = self.conv6(x3, edge_index)
-        x3 = x3.relu()
-        x3 = self.batch3(x3)
-        z = torch.cat((x1, x2, x3), dim=1)
-        z = z.relu()
-        z = self.lin1(z)
-        z = z.relu()
-        z = self.lin2(z)
-        z = z.relu()
-        z = self.lin3(z)
-        z = z.relu()
-        z = self.out(z)
-        z = torch.sigmoid(z)
-
-        return z
-
-
 class SixConvResidual(torch.nn.Module):
     def __init__(self, n_features, heads=4):
         super(SixConvResidual, self).__init__()
@@ -404,6 +350,8 @@ class TwentyPoolConv(torch.nn.Module):
         z = torch.sigmoid(z)
 
         return z
+
+
 
 
 class FourConvPoolBlock(torch.nn.Module):
