@@ -49,6 +49,8 @@ trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
 samples = len(trainset)
 assert(p.validation_split < 0.3)
 cutoff = int(np.floor(samples*(1-p.validation_split)))
+print(len(trainset))
+print(cutoff)
 trainset = trainset[:cutoff]
 validset = trainset[cutoff:]
 maskedset = validset[:int(len(validset)/2)]
