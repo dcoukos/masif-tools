@@ -93,7 +93,7 @@ for model_n, model in enumerate(models):
         previous_model.eval()
 
         next_data = []
-        for data in train_loader:
+        for data in trainset:
             data = data.to(device)
             _, inter = previous_model(data)
             data.y = inter
@@ -101,7 +101,7 @@ for model_n, model in enumerate(models):
         trainset = next_data
 
         next_data = []
-        for data in val_loader:
+        for data in validset:
             data = data.to(device)
             _, inter = previous_model(data)
             batch.y = inter
@@ -109,7 +109,7 @@ for model_n, model in enumerate(models):
         validset = next_data
 
         next_data = []
-        for data in masked_loader:
+        for data in maskedset:
             data = data.to(device)
             _, inter = previous_model(data)
             data.y = inter
