@@ -7,49 +7,29 @@ from itertools import product
 from tqdm import tqdm
 import params as p
 import os.path as osp
-from multiprocessing import Pool, cpu_count
-
-
-
 '''
 File to generate the dataset from the ply files.
 
 '''
 
-def convert_data(path_to_raw='./structures/', use_shape_data=True):
-    '''Generate raw unprocessed torch file to generate pyg datasets using all structures.
-    '''
-    if use_shape_data is True:
-        prefix = 'full_pos'
-    else:
-        prefix = 'full'
-    path_to_output = './datasets/{}_test/raw/'.format(prefix)
-    test_structures = [read_ply(path, use_shape_data) for path in tqdm(glob(path_to_raw +
-                       '/test/*'), desc='Reading structures')]
-    print('Saving test structures to file as pytorch object ...')
-    torch.save(test_structures, path_to_output+'{}_structures.pt'.format(prefix))
-    path_to_output = './datasets/{}_train/raw/'.format(prefix)
-    train_structures = [read_ply(path, use_shape_data) for path in tqdm(glob(path_to_raw +
-                        '/train/*'), desc='Reading structures')]
-    print('Saving train structures to file as pytorch object ...')
-    torch.save(train_structures, path_to_output+'{}_structures.pt'.format(prefix))
-    print('Done.')
 
-
-def convert_mini_data(path_to_raw='./structures/', use_shape_data=True, n=200, prefix='mini'):
+def convert_data(path_to_raw='./structures/', n=None, prefix='full'):
     '''Generate raw unprocessed torch file to generate pyg datasets with fewer
         candidates.
     '''
     # Does this require a different dataset directory? Can try, just back up
     # structures.pt file.
+    if n is None:
+        t = None
+    else:
+        t = int(n/5)
     path_to_output = './datasets/{}_test/raw/'.format(prefix)
-    t = int(n/5)
-    test_structures = [read_ply(path, use_shape_data) for path in tqdm(glob(path_to_raw +
+    test_structures = [read_ply(path) for path in tqdm(glob(path_to_raw +
                        '/test/*')[:t], desc='Reading structures')]
     print('Saving test structures to file as pytorch object ...')
     torch.save(test_structures, path_to_output+'{}_structures.pt'.format(prefix))
     path_to_output = './datasets/{}_train/raw/'.format(prefix)
-    train_structures = [read_ply(path, use_shape_data) for path in tqdm(glob(path_to_raw +
+    train_structures = [read_ply(path) for path in tqdm(glob(path_to_raw +
                         '/train/*')[:n], desc='Reading structures')]
     print('Saving train structures to file as pytorch object ...')
     torch.save(train_structures, path_to_output+'{}_structures.pt'.format(prefix))
@@ -92,13 +72,13 @@ def collate(data_list):
     return data, slices
 
 
-def read_ply(path, use_structural_data=False, learn_iface=True):
+def read_ply(path, learn_iface=True):
     '''
         read_ply from pytorch_geometric does not capture the properties in ply
         file. This function adds to pyg's read_ply function by capturing extra
         properties: charge, hbond, hphob, and iface.
 
-
+        # Update! Shape data should now be included as a transform.
     '''
     if learn_iface is False:
         raise NotImplementedError
@@ -115,12 +95,6 @@ def read_ply(path, use_structural_data=False, learn_iface=True):
     x = ([torch.tensor(data['vertex'][axis]) for axis in ['charge', 'hbond', 'hphob']])
     x = torch.stack(x, dim=-1)
     y = None
-    if use_structural_data:
-        x = torch.stack((x, pos, norm), dim=1)
-        x = x.reshape(-1, 9)
-
-    y = [torch.tensor(data['vertex']['iface'])]
-    y = torch.stack(y, dim=-1)
 
     face = None
     if 'face' in data:

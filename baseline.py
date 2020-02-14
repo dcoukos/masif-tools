@@ -38,10 +38,13 @@ else:
 
 # ---- Importing and structuring Datasets and Model ----
 print('Importing structures.')
+# Remember!!! Shape Index can only be computed on local. Add other transforms after
+# Pre_tranform step to not contaminate the data.
 trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
-                      pre_transform=Compose((Center(), FaceAttributes(),
+                      pre_transform=Compose((FaceAttributes(),
                                              NodeCurvature(), FaceToEdge(),
-                                             TwoHop())))
+                                             TwoHop())),
+                      transform=AddShapeIndex())
 samples = len(trainset)
 
 cutoff = int(np.floor(samples*(1-p.validation_split)))
@@ -73,18 +76,7 @@ max_roc_auc = 0
 # ---- Training ----
 print('Training...')
 for epoch in range(1, epochs+1):
-    # rotate the structures between epochs, when using pos data.
 
-    if 'pos' in p.dataset:  # Is there positional data in the features?
-        degrees = 15
-        rotation_axis = axes[epoch % 3]  # only for structural data.
-        trainset.transform = Compose((RemovePositionalData(),
-                                      RandomRotate(degrees, axis=rotation_axis),
-                                      AddPositionalData()))
-
-    # Using shape index data:
-    trainset.transform = AddShapeIndex()
-    validset.transform = AddShapeIndex()
     train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
     val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
 
@@ -111,7 +103,6 @@ for epoch in range(1, epochs+1):
             pred = out.clone().detach().round().to(device)
 
     loss = mean(loss)
-
 
     #  --------------  REPORTING ------------------------------------
     roc_auc = roc_auc_score(first_batch_labels.cpu(), pred.cpu())
