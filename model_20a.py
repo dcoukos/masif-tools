@@ -1,4 +1,5 @@
 import torch
+import gc
 import numpy as np
 from torch_geometric.data import DataLoader
 from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate, Compose, Center
@@ -167,6 +168,7 @@ for model_n, model in enumerate(models):
 
 # ----------- Preparing features from best version of this block -------------
     torch.cuda.empty_cache()
+    gc.collect()
 
     if model_n < len(models)-1:
         print('Preparing the best version of this model for next model input.')
