@@ -44,7 +44,15 @@ from torch_geometric.transforms import FaceToEdge, PointPairFeatures
 from dataset import MiniStructures
 import pandas as pd
 import numpy as np
+from torch_geometric.data import DataLoader
 dataset = MiniStructures(root='./datasets/mini/', pre_transform=FaceToEdge(), transform=PointPairFeatures())
+
+dataset = MiniStructures()
+dataloader = DataLoader(dataset, batch_size=20)
+iterator = iter(dataloader)
+batch = next(iterator)
+batch.to_data_list()
+
 dataset[0]
 dataset[0].x.shape
 edges = dataset[0].edge_index.t()

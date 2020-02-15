@@ -166,6 +166,7 @@ for model_n, model in enumerate(models):
                 torch.save(model.state_dict(), path)
 
 # ----------- Preparing features from best version of this block -------------
+    torch.cuda.empty_cache()
 
     if model_n < len(models)-1:
         print('Preparing the best version of this model for next model input.')
