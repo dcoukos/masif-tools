@@ -80,10 +80,11 @@ max_roc_auc = 0
 max_roc_masked = 0
 
 # ---- Training ----
+
 for model_n, model in enumerate(models):
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
-
+    learn_rate *= 5
 # ------------ TRAINING NEW BLOCK --------------------------
     print('Training block {}'.format(model_n))
     for epoch in range(1, epochs+1):
