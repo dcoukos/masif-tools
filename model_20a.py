@@ -92,7 +92,6 @@ for model_n, model in enumerate(models):
         val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
         masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
 
-        learn_rate = optimizer.param_groups[0]['lr']  # for when it may be modified during run
         model.train()
         first_batch_labels = torch.Tensor()
         pred = torch.Tensor()
