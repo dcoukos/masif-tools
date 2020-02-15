@@ -115,92 +115,91 @@ for model_n, model in enumerate(models):
 
 #  --------------  EVALUATION & REPORTING ------------------------------------
         roc_auc = roc_auc_score(first_batch_labels.cpu(), pred.cpu())
+        with torch.no_grad():
+            model.eval()
+            cum_pred = torch.Tensor().to(device)
+            cum_labels = torch.Tensor().to(device)
+            for batch_n, batch in enumerate(val_loader):
+                batch = batch.to(device)
+                out, _ = model(batch)
+                labels = batch.y.to(device)
+                weights = generate_weights(labels).to(device)
+                te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
+                pred = out.detach().round().to(device)
+                cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
+                cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
+            roc_auc_te = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
 
-        model.eval()
-        cum_pred = torch.Tensor().to(device)
-        cum_labels = torch.Tensor().to(device)
-        for batch_n, batch in enumerate(val_loader):
-            batch = batch.to(device)
-            out, _ = model(batch)
-            labels = batch.y.to(device)
-            weights = generate_weights(labels).to(device)
-            te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
-            pred = out.detach().round().to(device)
-            cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
-            cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
-        roc_auc_te = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
+            cum_pred = torch.Tensor().to(device)
+            cum_labels = torch.Tensor().to(device)
+            for batch_n, batch in enumerate(masked_loader):
+                batch = batch.to(device)
+                out, _ = model(batch)
+                labels = batch.y.to(device)
+                weights = generate_weights(labels).to(device)
+                te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
+                pred = out.detach().round().to(device)
+                cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
+                cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
+            roc_auc_masked = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
 
-        cum_pred = torch.Tensor().to(device)
-        cum_labels = torch.Tensor().to(device)
-        for batch_n, batch in enumerate(masked_loader):
-            batch = batch.to(device)
-            out, _ = model(batch)
-            labels = batch.y.to(device)
-            weights = generate_weights(labels).to(device)
-            te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
-            pred = out.detach().round().to(device)
-            cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
-            cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
-        roc_auc_masked = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
+            writer.add_scalars('Loss', {'train': tr_loss,
+                                        'test': te_loss}, epoch)
+            writer.add_scalars('ROC AUC', {'train': roc_auc,
+                                           'test': roc_auc_te,
+                                           'masked': roc_auc_masked}, epoch)
+            writer.add_scalar('learning rate', learn_rate, epoch)
 
-        writer.add_scalars('Loss', {'train': tr_loss,
-                                    'test': te_loss}, epoch)
-        writer.add_scalars('ROC AUC', {'train': roc_auc,
-                                       'test': roc_auc_te,
-                                       'masked': roc_auc_masked}, epoch)
-        writer.add_scalar('learning rate', learn_rate, epoch)
+            print("---- Round {}: tr_loss={:.4f} te_roc_auc:{:.4f} lr:{:.6f}"
+                  .format(epoch, loss, roc_auc_te, learn_rate))
 
-        print("---- Round {}: tr_loss={:.4f} te_roc_auc:{:.4f} lr:{:.6f}"
-              .format(epoch, loss, roc_auc_te, learn_rate))
+    #   -------------- MODEL SAVING ------------------------
+            if roc_auc_te > max_roc_auc:
+                max_roc_auc = roc_auc_te
+                path = './{}/best_{}.pt'.format(modelpath, model_n)
+                with open(path, 'w+'):
+                    torch.save(model.state_dict(), path)
 
-#   -------------- MODEL SAVING ------------------------
-        if roc_auc_te > max_roc_auc:
-            max_roc_auc = roc_auc_te
-            path = './{}/best_{}.pt'.format(modelpath, model_n)
-            with open(path, 'w+'):
-                torch.save(model.state_dict(), path)
-
-        if roc_auc_masked > max_roc_masked:
-            max_roc_masked = roc_auc_masked
-            path = './masked_model.pt'
-            with open(path, 'w+'):
-                torch.save(model.state_dict(), path)
+            if roc_auc_masked > max_roc_masked:
+                max_roc_masked = roc_auc_masked
+                path = './masked_model.pt'
+                with open(path, 'w+'):
+                    torch.save(model.state_dict(), path)
 
 # ----------- Preparing features from best version of this block -------------
-    torch.cuda.empty_cache()
-    gc.collect()
 
-    if model_n < len(models)-1:
-        print('Preparing the best version of this model for next model input.')
-        model.load_state_dict(torch.load('./masked_model.pt', map_location=device))
-        model.eval()
+    with torch.no_grad():
+        if model_n < len(models)-1:
+            print('Preparing the best version of this model for next model input.')
+            model.load_state_dict(torch.load('./masked_model.pt', map_location=device))
+            model.eval()
 
-        train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
-        val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
-        masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
+            train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
+            val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
+            masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
 
-        next_data = []
-        for batch in train_loader:
-            batch = batch.to(device)
-            _, inter = model(batch)
-            batch.y = inter
-            next_data += batch.to(cpu).to_data_list()
-        trainset = next_data
+            next_data = []
+            for batch in train_loader:
+                batch = batch.to(device)
+                _, inter = model(batch)
+                batch.y = inter
+                next_data += batch.to(cpu).to_data_list()
+            trainset = next_data
 
-        next_data = []
-        for data in validset:
-            data = data.to(device)
-            _, inter = model(data)
-            batch.y = inter
-            next_data.append(data.to(cpu))
-        validset = next_data
+            next_data = []
+            for data in validset:
+                data = data.to(device)
+                _, inter = model(data)
+                batch.y = inter
+                next_data.append(data.to(cpu))
+            validset = next_data
 
-        next_data = []
-        for data in maskedset:
-            data = data.to(device)
-            _, inter = model(data)
-            data.y = inter
-            next_data.append(data.to(cpu))
-        maskedset = next_data
+            next_data = []
+            for data in maskedset:
+                data = data.to(device)
+                _, inter = model(data)
+                data.y = inter
+                next_data.append(data.to(cpu))
+            maskedset = next_data
 
 writer.close()
