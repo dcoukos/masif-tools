@@ -182,7 +182,7 @@ for model_n, model in enumerate(models):
             for batch in train_loader:
                 batch = batch.to(device)
                 _, inter = model(batch)
-                batch.y = inter
+                batch.x = inter
                 next_data += batch.to(cpu).to_data_list()
             trainset = next_data
 
@@ -190,7 +190,7 @@ for model_n, model in enumerate(models):
             for data in validset:
                 data = data.to(device)
                 _, inter = model(data)
-                batch.y = inter
+                batch.x = inter
                 next_data.append(data.to(cpu))
             validset = next_data
 
@@ -198,7 +198,7 @@ for model_n, model in enumerate(models):
             for data in maskedset:
                 data = data.to(device)
                 _, inter = model(data)
-                data.y = inter
+                data.x = inter
                 next_data.append(data.to(cpu))
             maskedset = next_data
 
