@@ -80,6 +80,42 @@ writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.f
 optimizers = [torch.optim.Adam(models[0].parameters(), lr=learn_rate, weight_decay=p.weight_decay),
               torch.optim.Adam(models[1].parameters(), lr=learn_rate, weight_decay=p.weight_decay),
               torch.optim.Adam(models[2].parameters(), lr=learn_rate, weight_decay=p.weight_decay)]
+
+# ------ Pre-training the datasets----------
+print("Pretraining the datasets.", end='')
+
+for epoch in range(0, 10):
+    model = models[0]
+    model.to(device)
+    optimizer = optimizers[0]
+# ------------ TRAINING NEW BLOCK --------------------------
+    train_loader = DataLoader(trainset_, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
+
+    model.train()
+    first_batch_labels = torch.Tensor()
+    pred = torch.Tensor()
+    loss = []
+
+    for batch_n, batch in enumerate(train_loader):
+        batch = batch.to(device)
+        optimizer.zero_grad()
+        out, _ = model(batch)
+        labels = batch.y.to(device)
+        weights = generate_weights(labels).to(device)
+        tr_loss = F.binary_cross_entropy(out, target=labels, weight=weights)
+        loss.append(tr_loss.detach().item())
+        tr_loss.backward()
+        if batch_n == 0:
+            first_batch_labels = labels.clone().detach().to(device)
+            pred = out.clone().detach().round().to(device)
+
+    print('.', end='')
+
+print()
+
+for model in models[1:]:
+    model.load_state_dict(models[0], map_location=device)
+
 # ---- Training ----
 max_roc_te = [0, 0, 0]
 max_roc_masked = [0, 0, 0]
@@ -204,8 +240,5 @@ for cycle in range(0, epochs):
                 batch.x = batch.x + inter
                 next_data += batch.to(cpu).to_data_list()
             maskedset_ = next_data
-        if model_n < len(models)-1:
-            models[model_n+1].load_state_dict(torch.load('./{}/masked_model_{}.pt'.format(modelpath, model_n), map_location=device))
-        #learn_rate *= 5
 
 writer.close()
