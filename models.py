@@ -499,6 +499,7 @@ class TwentyConvNoRes(torch.nn.Module):
 
         return z
 
+'''
 class MultiScaleFeaStNet(torch.nn.Module):
     def __init__(self, n_features, heads=4):
         self.conv1 = FeaStConv(n_features, 8, heads=heads)
@@ -518,3 +519,4 @@ class MultiScaleFeaStNet(torch.nn.Module):
         cluster1 = graclus(edge_index, weight, x.size(0))
         y, batch = max_pool(cluster, )
         x_unpooled = x[cluster]
+'''
