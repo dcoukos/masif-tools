@@ -4,7 +4,7 @@ from models import ThreeConvBlock, TwentyConvNoRes
 batch_size = 5
 test_batch_size = 5
 validation_split = .10
-shuffle_dataset = True
+shuffle_dataset = False
 random_seed = 37
 dropout = False  # too much dropout?
 batchnorm = True
@@ -14,13 +14,8 @@ lr_decay = 0.3
 lr_cap_decay = 0.7
 patience = 10
 weight_decay = 0
-<<<<<<< HEAD
 epochs = 200
-version = '20a'
-=======
-epochs = 100
-version = '19c'
->>>>>>> 49867abca92394ae67200392ccf29f6206ad535a
+version = '20b'
 suppress_warnings = True
 dataset = 'thous'
 model_type = TwentyConvNoRes
