@@ -84,7 +84,7 @@ max_roc_masked = 0
 for model_n, model in enumerate(models):
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
-    learn_rate *= 5
+    # learn_rate *= 5
 # ------------ TRAINING NEW BLOCK --------------------------
     print('Training block {}'.format(model_n))
     for epoch in range(1, epochs+1):
@@ -182,7 +182,7 @@ for model_n, model in enumerate(models):
             for batch in train_loader:
                 batch = batch.to(device)
                 _, inter = model(batch)
-                batch.x = inter
+                batch.x = batch.x + inter
                 next_data += batch.to(cpu).to_data_list()
             trainset = next_data
 
@@ -190,7 +190,7 @@ for model_n, model in enumerate(models):
             for data in validset:
                 data = data.to(device)
                 _, inter = model(data)
-                batch.x = inter
+                batch.x = batch.x + inter
                 next_data.append(data.to(cpu))
             validset = next_data
 
@@ -198,7 +198,7 @@ for model_n, model in enumerate(models):
             for data in maskedset:
                 data = data.to(device)
                 _, inter = model(data)
-                data.x = inter
+                data.x = batch.x + inter
                 next_data.append(data.to(cpu))
             maskedset = next_data
 
