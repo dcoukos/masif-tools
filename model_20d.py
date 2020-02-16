@@ -108,7 +108,7 @@ for epoch in range(0, 10):
         if batch_n == 0:
             first_batch_labels = labels.clone().detach().to(device)
             pred = out.clone().detach().round().to(device)
-
+    model[0] = model
     print('.', end='')
 
 print()
