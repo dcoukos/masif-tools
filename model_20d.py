@@ -208,37 +208,37 @@ for cycle in range(0, epochs):
     # ----------- Preparing features from best version of this block -------------
 
         with torch.no_grad():
-        if model_n < len(models)-1:
-            print('Preparing the best version of this model for next model input.')
-            model.load_state_dict(torch.load('./{}/masked_model_{}.pt'.format(modelpath, model_n), map_location=device))
-            model.eval()
+            if model_n < len(models)-1:
+                print('Preparing the best version of this model for next model input.')
+                model.load_state_dict(torch.load('./{}/masked_model_{}.pt'.format(modelpath, model_n), map_location=device))
+                model.eval()
 
-            train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
-            val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
-            masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
+                train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
+                val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
+                masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
 
-            next_data = []
-            for batch in train_loader:
-                batch = batch.to(device)
-                _, inter = model(batch)
-                batch.x = batch.x + inter
-                next_data += batch.to(cpu).to_data_list()
-            trainset_ = next_data
+                next_data = []
+                for batch in train_loader:
+                    batch = batch.to(device)
+                    _, inter = model(batch)
+                    batch.x = batch.x + inter
+                    next_data += batch.to(cpu).to_data_list()
+                trainset_ = next_data
 
-            next_data = []
-            for batch in val_loader:
-                batch = batch.to(device)
-                _, inter = model(batch)
-                batch.x = batch.x + inter
-                next_data += batch.to(cpu).to_data_list()
-            validset_ = next_data
+                next_data = []
+                for batch in val_loader:
+                    batch = batch.to(device)
+                    _, inter = model(batch)
+                    batch.x = batch.x + inter
+                    next_data += batch.to(cpu).to_data_list()
+                validset_ = next_data
 
-            next_data = []
-            for batch in masked_loader:
-                batch = batch.to(device)
-                _, inter = model(batch)
-                batch.x = batch.x + inter
-                next_data += batch.to(cpu).to_data_list()
-            maskedset_ = next_data
+                next_data = []
+                for batch in masked_loader:
+                    batch = batch.to(device)
+                    _, inter = model(batch)
+                    batch.x = batch.x + inter
+                    next_data += batch.to(cpu).to_data_list()
+                maskedset_ = next_data
 
 writer.close()
