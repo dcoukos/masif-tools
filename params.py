@@ -4,7 +4,7 @@ from models import ThreeConvBlock, TwentyConvNoRes
 batch_size = 5
 test_batch_size = 5
 validation_split = .10
-shuffle_dataset = False
+shuffle_dataset = True
 random_seed = 37
 dropout = False  # too much dropout?
 batchnorm = True

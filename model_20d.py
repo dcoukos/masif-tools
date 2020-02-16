@@ -93,9 +93,9 @@ for cycle in range(0, epochs):
         optimizer = optimizers[model_n]
     # ------------ TRAINING NEW BLOCK --------------------------
         print('Training block {}'.format(model_n))
-            train_loader = DataLoader(trainset_, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
-            val_loader = DataLoader(validset_, shuffle=False, batch_size=p.test_batch_size)
-            masked_loader = DataLoader(maskedset_, shuffle=False, batch_size=p.test_batch_size)
+        train_loader = DataLoader(trainset_, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
+        val_loader = DataLoader(validset_, shuffle=False, batch_size=p.test_batch_size)
+        masked_loader = DataLoader(maskedset_, shuffle=False, batch_size=p.test_batch_size)
 
         model.train()
         first_batch_labels = torch.Tensor()
