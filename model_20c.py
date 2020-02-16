@@ -77,9 +77,9 @@ writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.f
                        p.random_seed))
 
 
-optimizers = [torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay),
-              torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay),
-              torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)]
+optimizers = [torch.optim.Adam(models[0].parameters(), lr=learn_rate, weight_decay=p.weight_decay),
+              torch.optim.Adam(models[1].parameters(), lr=learn_rate, weight_decay=p.weight_decay),
+              torch.optim.Adam(models[2].parameters(), lr=learn_rate, weight_decay=p.weight_decay)]
 # ---- Training ----
 max_roc_te = [0, 0, 0]
 max_roc_mased = [0, 0, 0]
