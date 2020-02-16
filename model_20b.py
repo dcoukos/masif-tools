@@ -70,7 +70,7 @@ models = [ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu),
 
 # setting up reporting
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.format(
-                       '20b',
+                       p.version,
                        learn_rate,
                        p.lr_decay,
                        p.shuffle_dataset,
@@ -186,7 +186,7 @@ for model_n, model in enumerate(models):
             trainset = next_data
 
             next_data = []
-            for batch in valid_loader:
+            for batch in val_loader:
                 batch = batch.to(device)
                 _, inter = model(batch)
                 batch.x = batch.x + inter
