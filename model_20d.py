@@ -111,8 +111,6 @@ for cycle in range(0, epochs):
             tr_loss = F.binary_cross_entropy(out, target=labels, weight=weights)
             loss.append(tr_loss.detach().item())
             tr_loss.backward()
-            for model, opt in zip(models[model_n:], optimizers[model_n]):
-                optimizer.step(tr_loss)
             if batch_n == 0:
                 first_batch_labels = labels.clone().detach().to(device)
                 pred = out.clone().detach().round().to(device)
