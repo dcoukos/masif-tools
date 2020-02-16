@@ -105,6 +105,7 @@ for epoch in range(0, 10):
         tr_loss = F.binary_cross_entropy(out, target=labels, weight=weights)
         loss.append(tr_loss.detach().item())
         tr_loss.backward()
+        optimizer.step()
         if batch_n == 0:
             first_batch_labels = labels.clone().detach().to(device)
             pred = out.clone().detach().round().to(device)
@@ -146,6 +147,7 @@ for cycle in range(0, epochs):
             tr_loss = F.binary_cross_entropy(out, target=labels, weight=weights)
             loss.append(tr_loss.detach().item())
             tr_loss.backward()
+            optimizer.step()
             if batch_n == 0:
                 first_batch_labels = labels.clone().detach().to(device)
                 pred = out.clone().detach().round().to(device)
