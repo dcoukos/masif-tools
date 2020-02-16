@@ -82,7 +82,7 @@ optimizers = [torch.optim.Adam(models[0].parameters(), lr=learn_rate, weight_dec
               torch.optim.Adam(models[2].parameters(), lr=learn_rate, weight_decay=p.weight_decay)]
 # ---- Training ----
 max_roc_te = [0, 0, 0]
-max_roc_mased = [0, 0, 0]
+max_roc_masked = [0, 0, 0]
 
 for cycle in range(0, 20):
     trainset_ = trainset
