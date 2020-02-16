@@ -114,7 +114,7 @@ for epoch in range(0, 10):
 print()
 
 for model in models[1:]:
-    model.load_state_dict(models[0], map_location=device)
+    model.load_state_dict(models[0])
 
 # ---- Training ----
 max_roc_te = [0, 0, 0]
