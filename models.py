@@ -124,7 +124,7 @@ class ThreeConvBlock(torch.nn.Module):
         x = self.out(x)
         x = torch.sigmoid(x)
 
-        return x, inter.sigmoid()
+        return x, torch.sigmoid(inter)
 
 
 class ThreeConv(torch.nn.Module):

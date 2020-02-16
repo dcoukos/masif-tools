@@ -161,7 +161,7 @@ for model_n, model in enumerate(models):
 
             if roc_auc_masked > max_roc_masked:
                 max_roc_masked = roc_auc_masked
-                path = './masked_model.pt'
+                path = './{}/masked_model_{}.pt'.format(modelpath, model_n)
                 with open(path, 'w+'):
                     torch.save(model.state_dict(), path)
 
@@ -170,7 +170,7 @@ for model_n, model in enumerate(models):
     with torch.no_grad():
         if model_n < len(models)-1:
             print('Preparing the best version of this model for next model input.')
-            model.load_state_dict(torch.load('./masked_model.pt', map_location=device))
+            model.load_state_dict(torch.load('./{}/masked_model_{}.pt'.format(modelpath, model_n), map_location=device))
             model.eval()
 
             train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
@@ -200,6 +200,7 @@ for model_n, model in enumerate(models):
                 batch.x = inter
                 next_data += batch.to(cpu).to_data_list()
             maskedset = next_data
+            models[model_n+1].load_state_dict(torch.load('./masked_model.pt', map_location=device))
     #learn_rate *= 5
 
 writer.close()
