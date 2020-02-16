@@ -207,7 +207,7 @@ for cycle in range(0, epochs):
 
     # ----------- Preparing features from best version of this block -------------
 
-    with torch.no_grad():
+        with torch.no_grad():
         if model_n < len(models)-1:
             print('Preparing the best version of this model for next model input.')
             model.load_state_dict(torch.load('./{}/masked_model_{}.pt'.format(modelpath, model_n), map_location=device))
