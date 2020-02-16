@@ -92,7 +92,6 @@ for cycle in range(0, epochs):
         model.to(device)
         optimizer = optimizers[model_n]
     # ------------ TRAINING NEW BLOCK --------------------------
-        print('Training block {}'.format(model_n))
         train_loader = DataLoader(trainset_, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
         val_loader = DataLoader(validset_, shuffle=False, batch_size=p.test_batch_size)
         masked_loader = DataLoader(maskedset_, shuffle=False, batch_size=p.test_batch_size)
@@ -205,7 +204,7 @@ for cycle in range(0, epochs):
                 batch.x = batch.x + inter
                 next_data += batch.to(cpu).to_data_list()
             maskedset_ = next_data
-        if cycle == 0:
+        if model_n < len(models)-1:
             models[model_n+1].load_state_dict(torch.load('./{}/masked_model_{}.pt'.format(modelpath, model_n), map_location=device))
         #learn_rate *= 5
 
