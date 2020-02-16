@@ -463,7 +463,7 @@ class EightConv(torch.nn.Module): # Model 19
 
 
 class TwentyConvNoRes(torch.nn.Module):
-
+    # Try again with much higher learning rate!
     def __init__(self, n_features, heads=4):
         super(TwentyConvNoRes, self).__init__()
         self.block1 = FourConvBlock(n_features, 4, heads=heads)
@@ -498,3 +498,23 @@ class TwentyConvNoRes(torch.nn.Module):
         z = torch.sigmoid(z)
 
         return z
+
+class MultiScaleFeaStNet(torch.nn.Module):
+    def __init__(self, n_features, heads=4):
+        self.conv1 = FeaStConv(n_features, 8, heads=heads)
+        self.conv2 = FeaStConv(8, 16, heads=heads)
+        self.conv3 = FeaStConv(16, 32, heads=heads)
+        self.conv4 = FeaStConv(32, 16, heads=heads)
+        self.conv5 = FeaStConv(32, 8, heads=heads)
+        self.lin1 = Linear(16, 256)
+        self.lin2 = Linear(256, 6890)
+        self.out = Linear(6890, 1)
+
+    forward(data):
+        x, edge_index = data.x, data.edge_index
+        x = self.conv1(x, edge_index)
+        x = x.relu()
+        weight = normalized_cut_2d(edge_index, data.pos)
+        cluster1 = graclus(edge_index, weight, x.size(0))
+        y, batch = max_pool(cluster, )
+        x_unpooled = x[cluster]
