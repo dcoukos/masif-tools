@@ -85,9 +85,6 @@ max_roc_te = [0, 0, 0]
 max_roc_masked = [0, 0, 0]
 
 for cycle in range(0, 20):
-    trainset_ = trainset
-    validset_ = validset
-    maskedset_ = maskedset
     for model_n, model in enumerate(models):
         model.to(device)
         optimizer = optimizers[model_n]
