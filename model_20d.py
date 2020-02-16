@@ -89,7 +89,7 @@ for epoch in range(0, 10):
     model.to(device)
     optimizer = optimizers[0]
 # ------------ TRAINING NEW BLOCK --------------------------
-    train_loader = DataLoader(trainset_, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
+    train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
 
     model.train()
     first_batch_labels = torch.Tensor()
