@@ -108,13 +108,13 @@ for epoch in range(0, 10):
         if batch_n == 0:
             first_batch_labels = labels.clone().detach().to(device)
             pred = out.clone().detach().round().to(device)
-    model[0] = model
+    torch.save(model, 'temp.pt')
     print('.', end='')
 
 print()
 
-for model in models[1:]:
-    model.load_state_dict(models[0])
+for model in models:
+    model.load_state_dict(torch.load('temp.pt', map_location=device))
 
 # ---- Training ----
 max_roc_te = [0, 0, 0]
