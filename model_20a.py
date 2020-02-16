@@ -143,14 +143,14 @@ for model_n, model in enumerate(models):
             roc_auc_masked = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
 
             writer.add_scalars('Loss', {'train': tr_loss,
-                                        'test': te_loss}, epoch)
+                                        'test': te_loss}, epoch+model_n*3)
             writer.add_scalars('ROC AUC', {'train': roc_auc,
                                            'test': roc_auc_te,
-                                           'masked': roc_auc_masked}, epoch)
-            writer.add_scalar('learning rate', learn_rate, epoch)
+                                           'masked': roc_auc_masked}, epoch+model_n*3)
+            writer.add_scalar('learning rate', learn_rate, epoch+model_n*3)
 
             print("---- Round {}: tr_loss={:.4f} te_roc_auc:{:.4f} lr:{:.6f}"
-                  .format(epoch, loss, roc_auc_te, learn_rate))
+                  .format(epoch+model_n*3, loss, roc_auc_te, learn_rate))
 
     #   -------------- MODEL SAVING ------------------------
             if roc_auc_te > max_roc_auc:
@@ -200,7 +200,7 @@ for model_n, model in enumerate(models):
                 batch.x = inter
                 next_data += batch.to(cpu).to_data_list()
             maskedset = next_data
-            models[model_n+1].load_state_dict(torch.load('./masked_model.pt', map_location=device))
+            models[model_n+1].load_state_dict(torch.load('./{}/masked_model_{}.pt'.format(modelpath, model_n), map_location=device))
     #learn_rate *= 5
 
 writer.close()

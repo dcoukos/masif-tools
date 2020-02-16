@@ -84,7 +84,7 @@ optimizers = [torch.optim.Adam(models[0].parameters(), lr=learn_rate, weight_dec
 max_roc_te = [0, 0, 0]
 max_roc_masked = [0, 0, 0]
 
-for cycle in range(0, 20):
+for cycle in range(0, epochs):
     trainset_ = trainset
     validset_ = validset
     maskedset_ = maskedset
@@ -93,121 +93,122 @@ for cycle in range(0, 20):
         optimizer = optimizers[model_n]
     # ------------ TRAINING NEW BLOCK --------------------------
         print('Training block {}'.format(model_n))
-        for epoch in range(1, epochs+1):
             train_loader = DataLoader(trainset_, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
             val_loader = DataLoader(validset_, shuffle=False, batch_size=p.test_batch_size)
             masked_loader = DataLoader(maskedset_, shuffle=False, batch_size=p.test_batch_size)
 
-            model.train()
-            first_batch_labels = torch.Tensor()
-            pred = torch.Tensor()
-            loss = []
+        model.train()
+        first_batch_labels = torch.Tensor()
+        pred = torch.Tensor()
+        loss = []
 
-            for batch_n, batch in enumerate(train_loader):
+        for batch_n, batch in enumerate(train_loader):
+            batch = batch.to(device)
+            optimizer.zero_grad()
+            out, _ = model(batch)
+            labels = batch.y.to(device)
+            weights = generate_weights(labels).to(device)
+            tr_loss = F.binary_cross_entropy(out, target=labels, weight=weights)
+            loss.append(tr_loss.detach().item())
+            tr_loss.backward()
+            for model, opt in zip(models[model_n:], optimizers[model_n]):
+                optimizer.step(tr_loss)
+            if batch_n == 0:
+                first_batch_labels = labels.clone().detach().to(device)
+                pred = out.clone().detach().round().to(device)
+
+        loss = mean(loss)
+
+#  --------------  EVALUATION & REPORTING ------------------------------------
+        roc_auc = roc_auc_score(first_batch_labels.cpu(), pred.cpu())
+        with torch.no_grad():
+            model.eval()
+            cum_pred = torch.Tensor().to(device)
+            cum_labels = torch.Tensor().to(device)
+            for batch_n, batch in enumerate(val_loader):
                 batch = batch.to(device)
-                optimizer.zero_grad()
                 out, _ = model(batch)
                 labels = batch.y.to(device)
                 weights = generate_weights(labels).to(device)
-                tr_loss = F.binary_cross_entropy(out, target=labels, weight=weights)
-                loss.append(tr_loss.detach().item())
-                tr_loss.backward()
-                for model, opt in zip(models[model_n:], optimizers[model_n]):
-                    optimizer.step(tr_loss)
-                if batch_n == 0:
-                    first_batch_labels = labels.clone().detach().to(device)
-                    pred = out.clone().detach().round().to(device)
+                te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
+                pred = out.detach().round().to(device)
+                cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
+                cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
+            roc_auc_te = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
 
-            loss = mean(loss)
+            cum_pred = torch.Tensor().to(device)
+            cum_labels = torch.Tensor().to(device)
+            for batch_n, batch in enumerate(masked_loader):
+                batch = batch.to(device)
+                out, _ = model(batch)
+                labels = batch.y.to(device)
+                weights = generate_weights(labels).to(device)
+                te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
+                pred = out.detach().round().to(device)
+                cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
+                cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
+            roc_auc_masked = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
 
-    #  --------------  EVALUATION & REPORTING ------------------------------------
-            roc_auc = roc_auc_score(first_batch_labels.cpu(), pred.cpu())
-            with torch.no_grad():
-                model.eval()
-                cum_pred = torch.Tensor().to(device)
-                cum_labels = torch.Tensor().to(device)
-                for batch_n, batch in enumerate(val_loader):
-                    batch = batch.to(device)
-                    out, _ = model(batch)
-                    labels = batch.y.to(device)
-                    weights = generate_weights(labels).to(device)
-                    te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
-                    pred = out.detach().round().to(device)
-                    cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
-                    cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
-                roc_auc_te = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
+            writer.add_scalars('Loss', {'train': tr_loss,
+                                        'test': te_loss}, cycle*3+model_n)
+            writer.add_scalars('ROC AUC', {'train': roc_auc,
+                                           'test': roc_auc_te,
+                                           'masked': roc_auc_masked}, cycle*3+model_n)
+            writer.add_scalar('learning rate', learn_rate, cycle*3+model_n)
 
-                cum_pred = torch.Tensor().to(device)
-                cum_labels = torch.Tensor().to(device)
-                for batch_n, batch in enumerate(masked_loader):
-                    batch = batch.to(device)
-                    out, _ = model(batch)
-                    labels = batch.y.to(device)
-                    weights = generate_weights(labels).to(device)
-                    te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
-                    pred = out.detach().round().to(device)
-                    cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
-                    cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
-                roc_auc_masked = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
+            print("---- Round {}: tr_loss={:.4f} te_roc_auc:{:.4f} lr:{:.6f}"
+                  .format(cycle*3+model_n, loss, roc_auc_te, learn_rate))
 
-                writer.add_scalars('Loss', {'train': tr_loss,
-                                            'test': te_loss}, epoch)
-                writer.add_scalars('ROC AUC', {'train': roc_auc,
-                                               'test': roc_auc_te,
-                                               'masked': roc_auc_masked}, epoch)
-                writer.add_scalar('learning rate', learn_rate, epoch)
+    #   -------------- MODEL SAVING ------------------------
+            if roc_auc_te > max_roc_te[model_n]:
+                max_roc_te[model_n] = roc_auc_te
+                path = './{}/best_{}.pt'.format(modelpath, model_n)
+                with open(path, 'w+'):
+                    torch.save(model.state_dict(), path)
 
-                print("---- Round {}: tr_loss={:.4f} te_roc_auc:{:.4f} lr:{:.6f}"
-                      .format(epoch, loss, roc_auc_te, learn_rate))
-
-        #   -------------- MODEL SAVING ------------------------
-                if roc_auc_te > max_roc_te[model_n]:
-                    max_roc_te[model_n] = roc_auc_te
-                    path = './{}/best_{}.pt'.format(modelpath, model_n)
-                    with open(path, 'w+'):
-                        torch.save(model.state_dict(), path)
-
-                if roc_auc_masked > max_roc_masked[model_n]:
-                    max_roc_masked[model_n] = roc_auc_masked
-                    path = './{}/masked_model_{}.pt'.format(modelpath, model_n)
-                    with open(path, 'w+'):
-                        torch.save(model.state_dict(), path)
+            if roc_auc_masked > max_roc_masked[model_n]:
+                max_roc_masked[model_n] = roc_auc_masked
+                path = './{}/masked_model_{}.pt'.format(modelpath, model_n)
+                with open(path, 'w+'):
+                    torch.save(model.state_dict(), path)
 
     # ----------- Preparing features from best version of this block -------------
 
-        with torch.no_grad():
-            if model_n < len(models)-1:
-                print('Preparing the best version of this model for next model input.')
-                model.load_state_dict(torch.load('./{}/masked_model_{}.pt'.format(modelpath, model_n), map_location=device))
-                model.eval()
+    with torch.no_grad():
+        if model_n < len(models)-1:
+            print('Preparing the best version of this model for next model input.')
+            model.load_state_dict(torch.load('./{}/masked_model_{}.pt'.format(modelpath, model_n), map_location=device))
+            model.eval()
 
-                train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
-                val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
-                masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
+            train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
+            val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
+            masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
 
-                next_data = []
-                for batch in train_loader:
-                    batch = batch.to(device)
-                    _, inter = model(batch)
-                    batch.x = batch.x + inter
-                    next_data += batch.to(cpu).to_data_list()
-                trainset_ = next_data
+            next_data = []
+            for batch in train_loader:
+                batch = batch.to(device)
+                _, inter = model(batch)
+                batch.x = batch.x + inter
+                next_data += batch.to(cpu).to_data_list()
+            trainset_ = next_data
 
-                next_data = []
-                for batch in val_loader:
-                    batch = batch.to(device)
-                    _, inter = model(batch)
-                    batch.x = batch.x + inter
-                    next_data += batch.to(cpu).to_data_list()
-                validset_ = next_data
+            next_data = []
+            for batch in val_loader:
+                batch = batch.to(device)
+                _, inter = model(batch)
+                batch.x = batch.x + inter
+                next_data += batch.to(cpu).to_data_list()
+            validset_ = next_data
 
-                next_data = []
-                for batch in masked_loader:
-                    batch = batch.to(device)
-                    _, inter = model(batch)
-                    batch.x = batch.x + inter
-                    next_data += batch.to(cpu).to_data_list()
-                maskedset_ = next_data
+            next_data = []
+            for batch in masked_loader:
+                batch = batch.to(device)
+                _, inter = model(batch)
+                batch.x = batch.x + inter
+                next_data += batch.to(cpu).to_data_list()
+            maskedset_ = next_data
+        if cycle == 0:
+            models[model_n+1].load_state_dict(torch.load('./{}/masked_model_{}.pt'.format(modelpath, model_n), map_location=device))
         #learn_rate *= 5
 
 writer.close()

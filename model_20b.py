@@ -201,7 +201,7 @@ for model_n, model in enumerate(models):
                 next_data += batch.to(cpu).to_data_list()
             maskedset = next_data
 
-            models[model_n+1].load_state_dict(torch.load('./masked_model.pt', map_location=device))
+            models[model_n+1].load_state_dict(torch.load('./{}/masked_model_{}.pt'.format(modelpath, model_n), map_location=device))
     #learn_rate *= 5
 
 writer.close()
