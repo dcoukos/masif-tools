@@ -121,10 +121,11 @@ for model in models:
 max_roc_te = [0, 0, 0]
 max_roc_masked = [0, 0, 0]
 
-trainset_ = trainset
-validset_ = validset
-maskedset_ = maskedset
+
 for cycle in range(0, epochs):
+    trainset_ = trainset
+    validset_ = validset
+    maskedset_ = maskedset
     for model_n, model in enumerate(models):
         model.to(device)
         optimizer = optimizers[model_n]
@@ -211,13 +212,12 @@ for cycle in range(0, epochs):
 
         with torch.no_grad():
             if model_n < len(models)-1:
-                print('Preparing the best version of this model for next model input.')
                 model.load_state_dict(torch.load('./{}/masked_model_{}.pt'.format(modelpath, model_n), map_location=device))
                 model.eval()
 
-                train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
-                val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
-                masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
+                train_loader = DataLoader(trainset_, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
+                val_loader = DataLoader(validset_, shuffle=False, batch_size=p.test_batch_size)
+                masked_loader = DataLoader(maskedset_, shuffle=False, batch_size=p.test_batch_size)
 
                 next_data = []
                 for batch in train_loader:
