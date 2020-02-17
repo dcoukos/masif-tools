@@ -525,6 +525,7 @@ class TwentyConvNoRes(torch.nn.Module):
 
 class MultiScaleFeaStNet(torch.nn.Module):
     def __init__(self, n_features, heads=4):
+        super(MultiScaleFeaStNet,self).__init__()
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
         self.conv2 = FeaStConv(16, 32, heads=heads)
         self.conv3 = FeaStConv(32, 64, heads=heads)
