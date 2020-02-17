@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from torch_geometric.data import DataLoader
 from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate, Compose, Center
-from torch_geometric.nn import DataParallel
+from torch_geometric.nn import DataParallel, BatchNorm
 from dataset import Structures
 from transforms import *
 from torch.utils.tensorboard import SummaryWriter
@@ -62,6 +62,15 @@ paths = ['./models/Feb16_14:09_20b/best_0.pt',
          './models/Feb16_14:09_20b/best_1.pt',
          './models/Feb16_14:09_20b/best_2.pt']
 model = PretrainedBlocks(paths, 4, 4, heads=p.heads).to(device)
+model = torch.nn.Sequential(
+    ThreeConvBlock(4, 4, 4).load_state_dict(torch.load(
+        paths[0], map_location=device)),
+    BatchNorm(4),
+    ThreeConvBlock(4, 4, 4).load_state_dict(torch.load(
+        paths[1], map_location=device)),
+    BatchNorm(4),
+    ThreeConvBlock(4, 4, 4, True).load_state_dict(torch.load(
+        paths[2], map_location=device)))
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.format(

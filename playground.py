@@ -219,3 +219,8 @@ def save_ply(
     pymesh.save_mesh(
         filename, mesh, *mesh.get_attribute_names(), use_float=True, ascii=True
     )
+
+
+#  ---- trying to recover model parameters for use in multi-block model -----
+import torch
+torch.load('./models/Feb16_14:09_20b/best_0.pt', map_location=torch.device('cpu'))
