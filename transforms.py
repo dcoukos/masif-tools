@@ -166,9 +166,10 @@ class AddShapeIndex(object):
 
 class RemovePositionalData(object):
     ''''''
-    def __call__(self, data):
+    def __call__(self, data, shape_index=True):
+        len_ = 4 if shape_index else 3
         x = data.x
-        y = x.narrow(1, 6, 3).clone()
+        y = x.narrow(1, 0, len_).clone()
         data.x = y
         return data
 
