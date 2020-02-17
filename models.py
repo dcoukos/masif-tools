@@ -522,24 +522,46 @@ class TwentyConvNoRes(torch.nn.Module):
 
         return z
 
-'''
+
 class MultiScaleFeaStNet(torch.nn.Module):
     def __init__(self, n_features, heads=4):
-        self.conv1 = FeaStConv(n_features, 8, heads=heads)
-        self.conv2 = FeaStConv(8, 16, heads=heads)
-        self.conv3 = FeaStConv(16, 32, heads=heads)
-        self.conv4 = FeaStConv(32, 16, heads=heads)
-        self.conv5 = FeaStConv(32, 8, heads=heads)
-        self.lin1 = Linear(16, 256)
+        self.conv1 = FeaStConv(n_features, 16, heads=heads)
+        self.conv2 = FeaStConv(16, 32, heads=heads)
+        self.conv3 = FeaStConv(32, 64, heads=heads)
+        self.conv4 = FeaStConv(64, 32, heads=heads)
+        self.conv5 = FeaStConv(64, 16, heads=heads)
+        self.lin1 = Linear(32, 256)
         self.lin2 = Linear(256, 6890)
         self.out = Linear(6890, 1)
 
-    forward(data):
+    def forward(data):
         x, edge_index = data.x, data.edge_index
         x = self.conv1(x, edge_index)
         x = x.relu()
-        weight = normalized_cut_2d(edge_index, data.pos)
-        cluster1 = graclus(edge_index, weight, x.size(0))
-        y, batch = max_pool(cluster, )
-        x_unpooled = x[cluster]
-'''
+        cluster1 = graclus(edge_index, nodes=x.shape[0])
+        x2 = max_pool(cluster1, x)
+        edge_index_2 = x2.edge_index
+        x2 = x2.x
+        x2 = self.conv2(x2, edge_index2)
+        x2 = x2.relu()
+        cluster2 = graclus(edge_index_2, nodes=x2.shape[0])
+        x3 = max_pool(cluster2, x2)
+        edge_index_3 = x3.edge_index
+        x3 = x3.x
+        x3 = self.conv3(x3, edge_index_3)
+        x3 = x3.relu()
+        x3 = self.conv4(x3, edge_index_3)
+        x3 = x3.relu()
+        x3 = x3[cluster2]
+        x3 = torch.cat((x2, x3), dim=1)
+        x3 = self.conv5(x3, edge_index_2)
+        x3 = x3.relu()
+        x3 = x3[cluster1]
+        x = torch.cat((x, x3), dim=1)
+        x = self.lin1(x)
+        x = x.relu()
+        x = self.lin2(x)
+        x = x.relu()
+        x = torch.sigmoid(self.out(x))
+
+        return x
