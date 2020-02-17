@@ -88,7 +88,7 @@ for model_n, model in enumerate(models):
 # ------------ TRAINING NEW BLOCK --------------------------
     print('Training block {}'.format(model_n))
     for epoch in range(1, epochs+1):
-        trainset.transform = Compose((RemovePositionalData(), RandomRotate(90, axes[epoch%3]),
+        trainset.transform = Compose((AddShapeIndex(), Center(), RandomRotate(90, axes[epoch%3]),
                                       AddPositionalData()))
 
         train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
