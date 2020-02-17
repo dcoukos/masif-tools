@@ -48,7 +48,7 @@ dataset = Structures(root='./datasets/{}_train/'.format(p.dataset),
                       pre_transform=Compose((FaceAttributes(),
                                              NodeCurvature(), FaceToEdge(),
                                              TwoHop())),
-                      transform=Compose(AddShapeIndex(), Center(), AddPositionalData()))
+                      transform=Compose((AddShapeIndex(), Center(), AddPositionalData())))
 
 
 samples = len(dataset)
@@ -81,7 +81,6 @@ max_roc_masked = 0
 
 # ---- Training ----
 axes = [0,1,2]
-trainset.transform = Compose(RemovePositionalData(), RandomRotate(90))
 
 for model_n, model in enumerate(models):
     model.to(device)
