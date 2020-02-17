@@ -223,7 +223,7 @@ class BlockModelApply(object):
 
     def __call__(self, data):
         for model in self.models:
-            data = data.to(device)
+            data = data.to(self.device)
             _, inter = model(data)
             data.x += inter
 
