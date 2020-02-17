@@ -535,7 +535,7 @@ class MultiScaleFeaStNet(torch.nn.Module):
         self.lin2 = Linear(256, 6890)
         self.out = Linear(6890, 1)
 
-    def forward(data):
+    def forward(self, data):
         x, edge_index = data.x, data.edge_index
         x = self.conv1(x, edge_index)
         x = x.relu()
