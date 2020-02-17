@@ -11,8 +11,6 @@ import os.path as osp
 File to generate the dataset from the ply files.
 
 '''
-
-
 def convert_data(path_to_raw='./structures/', n=None, prefix='full'):
     '''Generate raw unprocessed torch file to generate pyg datasets with fewer
         candidates.

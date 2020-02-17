@@ -126,6 +126,10 @@ class ThreeConvBlock(torch.nn.Module):
 
         return x, torch.sigmoid(inter)
 
+'''
+class PretrainedBlocks(torch.nn.Module):
+'''    
+
 
 class ThreeConv(torch.nn.Module):
     # Seems underpowered, but less epoch-to-epoch variance in prediction compared to BasicNet

@@ -3,6 +3,7 @@ from torch_geometric.nn.conv.ppf_conv import point_pair_features
 import math
 import numpy as np
 import torch.sparse as tsp
+from models import ThreeConvBlock
 
 
 class FaceAttributes(object):
@@ -198,6 +199,34 @@ class AddPositionalData(object):
         x = torch.stack((x, pos, norm), dim=1)  # Potential error here!!
         x = x.reshape(-1, n_features+6)
         data.x = x
+        return data
+
+    def __repr__(self):
+        return '{}()'.format(self.__class__.__name__)
+
+
+class BlockModelApply(object):
+    '''
+        Runs data through model, which is saved per-block in various torch files.
+        Returns treated data from pre-output layer.
+    '''
+    def __init__(self, model_parameters, saved_model_paths):
+        super(BlockModelApply, self).__init__()
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.models = [ThreeConvBlock(*model_parameters) for path in saved_model_paths]
+        self.prepare_models_(saved_model_paths)
+
+    def prepare_models_(self, paths):
+        for model, path in zip(self.models, paths):
+            model.load_state_dict(torch.load(path, map_location=self.device))
+            model.eval()
+
+    def __call__(self, data):
+        for model in self.models:
+            data = data.to(device)
+            _, inter = model(data)
+            data.x += inter
+
         return data
 
     def __repr__(self):
