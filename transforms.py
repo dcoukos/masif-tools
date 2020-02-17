@@ -155,7 +155,7 @@ class AddShapeIndex(object):
         x = data.x
         s = s.view(-1, 1)
 
-        x = torch.cat((x, s), dim=1)
+        x = torch.cat((x, s), dim=0)
         data.x = x
         return data
 
@@ -196,7 +196,7 @@ class AddPositionalData(object):
         x = data.x
         n_features = x.shape[1]
 
-        x = torch.cat((x, pos, norm), dim=1)  # Potential error here!!
+        x = torch.cat((x, pos, norm), dim=0)  # Potential error here!!
         data.x = x
         return data
 
