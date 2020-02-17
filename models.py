@@ -126,9 +126,25 @@ class ThreeConvBlock(torch.nn.Module):
 
         return x, torch.sigmoid(inter)
 
-'''
+
 class PretrainedBlocks(torch.nn.Module):
-'''    
+    def __init__(self, paths, n_features=4, lin2=4, heads=4):
+        self.blocks = [ThreeConvBlock(n_features, lin2, heads) for path in paths]
+        self.batches = [BatchNorm(lin2) for n in range(1, len(paths))]
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        for block, path in zip(self.blocks, paths):
+            block = block.load_state_dict(torch.load(path, map_location=self.device))
+
+    def forward(self, data):
+        out = None
+        for idx, block in enumerate(self.blocks):
+            x = data.x
+            out, inter = block(data)
+            x += inter
+            x = self.batches[idx](x) if idx < len(self.blocks)-1 else x
+            data.x = x
+
+        return out
 
 
 class ThreeConv(torch.nn.Module):
