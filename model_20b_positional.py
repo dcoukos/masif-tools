@@ -63,10 +63,10 @@ validset = validset[int(len(validset)/2):]
 if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
-print('Setting up model...')
-models = [ThreeConvBlock(n_features=10, lin2=10, heads=p.heads).to(cpu),
-          ThreeConvBlock(n_features=10, lin2=10, heads=p.heads).to(cpu),
-          ThreeConvBlock(n_features=10, lin2=10, heads=p.heads).to(cpu)]
+print('Setting up model...{}'.format(n_features))
+models = [ThreeConvBlock(n_features, lin2=10, heads=p.heads).to(cpu),
+          ThreeConvBlock(n_features, lin2=10, heads=p.heads).to(cpu),
+          ThreeConvBlock(n_features, lin2=10, heads=p.heads).to(cpu)]
 
 # setting up reporting
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.format(
