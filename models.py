@@ -539,13 +539,13 @@ class MultiScaleFeaStNet(torch.nn.Module):
         x, edge_index = data.x, data.edge_index
         x = self.conv1(x, edge_index)
         x = x.relu()
-        cluster1 = graclus(edge_index, nodes=x.shape[0])
+        cluster1 = graclus(edge_index, num_nodes=x.shape[0])
         x2 = max_pool(cluster1, x)
         edge_index_2 = x2.edge_index
         x2 = x2.x
         x2 = self.conv2(x2, edge_index2)
         x2 = x2.relu()
-        cluster2 = graclus(edge_index_2, nodes=x2.shape[0])
+        cluster2 = graclus(edge_index_2, num_nodes=x2.shape[0])
         x3 = max_pool(cluster2, x2)
         edge_index_3 = x3.edge_index
         x3 = x3.x
