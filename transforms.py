@@ -218,6 +218,7 @@ class BlockModelApply(object):
 
     def prepare_models_(self, paths):
         for model, path in zip(self.models, paths):
+            model = model.to(self.device)
             model.load_state_dict(torch.load(path, map_location=self.device))
             model.eval()
 
