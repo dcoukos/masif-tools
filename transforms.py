@@ -187,6 +187,21 @@ class RemoveXYZ(object):
     def __repr__(self):
         return '{}()'.format(self.__class__.__name__)
 
+import torch
+
+a = torch.tensor([[1,2,3,4],
+                 [1,2,3,4],
+                 [1,2,3,4]])
+
+b = torch.tensor([[5,6,7],
+                 [5,6,7],
+                 [5,6,7]])
+
+c = torch.tensor([[8, 9, 10],
+                 [8, 9, 10],
+                 [8, 9, 10]])
+
+torch.cat((a,b,c), dim=1)
 
 class AddPositionalData(object):
     ''''''

@@ -47,6 +47,8 @@ trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
                                              NodeCurvature(), FaceToEdge(),
                                              TwoHop())),
                       transform=AddShapeIndex())
+trainset[0].x.shape
+torch.cat((trainset[0].x, trainset[0].pos, trainset[0].norm), dim=1).shape
 samples = len(trainset)
 
 cutoff = int(np.floor(samples*(1-p.validation_split)))
@@ -62,15 +64,6 @@ paths = ['./models/Feb16_14:09_20b/best_0.pt',
          './models/Feb16_14:09_20b/best_1.pt',
          './models/Feb16_14:09_20b/best_2.pt']
 model = PretrainedBlocks(paths, 4, 4, heads=p.heads).to(device)
-model = torch.nn.Sequential(
-    ThreeConvBlock(4, 4, 4).load_state_dict(torch.load(
-        paths[0], map_location=device)),
-    BatchNorm(4),
-    ThreeConvBlock(4, 4, 4).load_state_dict(torch.load(
-        paths[1], map_location=device)),
-    BatchNorm(4),
-    ThreeConvBlock(4, 4, 4, True).load_state_dict(torch.load(
-        paths[2], map_location=device)))
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.format(
