@@ -129,6 +129,7 @@ class ThreeConvBlock(torch.nn.Module):
 
 class PretrainedBlocks(torch.nn.Module):
     def __init__(self, paths, n_features=4, lin2=4, heads=4):
+        super(PretrainedBlocks, self).__init__()
         self.blocks = [ThreeConvBlock(n_features, lin2, heads) for path in paths]
         self.batches = [BatchNorm(lin2) for n in range(1, len(paths))]
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
