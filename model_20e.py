@@ -67,9 +67,9 @@ if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 print('Setting up model...')
-models = [ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu),
-          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu),
-          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu)]
+models = [ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(device),
+          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(device),
+          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(device)]
 
 # setting up reporting
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.format(
