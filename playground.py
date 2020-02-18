@@ -224,3 +224,89 @@ def save_ply(
 #  ---- trying to recover model parameters for use in multi-block model -----
 import torch
 torch.load('./models/Feb16_14:09_20b/best_0.pt', map_location=torch.device('cpu'))
+
+
+# ------ Adding shape index features to full dataset ---------------------
+from dataset import Structures
+from transforms import *
+from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate, Compose, Center
+import params as p
+
+dataset = Structures(root='./datasets/{}_train/'.format(p.dataset),
+                      pre_transform=Compose((FaceAttributes(),
+                                             NodeCurvature(), FaceToEdge(),
+                                             TwoHop())),
+                      transform=Compose((AddShapeIndex(), Center(), AddPositionalData())))
+
+dataset = Structures(root='./datasets/{}_test/'.format(p.dataset),
+                      pre_transform=Compose((FaceAttributes(),
+                                             NodeCurvature(), FaceToEdge(),
+                                             TwoHop())),
+                      transform=Compose((AddShapeIndex(), Center(), AddPositionalData())))
+dataset
+
+
+
+#   ------ Testing MultiScaleFeaStNet --------
+from torch_geometric.nn import FeaStConv, graclus, max_pool, knn_interpolate
+import torch
+from torch.nn import Linear
+from dataset import Structures
+from torch_geometric.data import DataLoader
+from torch_geometric.transforms import *
+from transforms import *
+
+
+
+n_features = 10
+heads = 4
+conv1 = FeaStConv(n_features, 16, heads=heads)
+conv2 = FeaStConv(16, 32, heads=heads)
+conv3 = FeaStConv(32, 64, heads=heads)
+conv4 = FeaStConv(64, 32, heads=heads)
+conv5 = FeaStConv(64, 16, heads=heads)
+lin1 = Linear(32, 256)
+lin2 = Linear(256, 6890)
+out = Linear(6890, 1)
+
+dataset = Structures(root='./datasets/thous_train/')
+data_loader = DataLoader(dataset, batch_size=5)
+
+converter = Compose((AddShapeIndex(), Center(), AddPositionalData()))
+data_iterator = iter(data_loader)
+batch = next(data_iterator)
+
+data = converter(batch)
+
+x, edge_index = data.x, data.edge_index
+x = conv1(x, edge_index)
+x = x.relu()
+cluster1 = graclus(edge_index, num_nodes=x.shape[0])
+pooled_1 = data
+pooled_1.x = x
+pooled_1 = max_pool(cluster1, pooled_1)
+edge_index_2 = pooled_1.edge_index
+x2 = pooled_1.x
+x2 = conv2(x2, edge_index_2)
+x2 = x2.relu()
+cluster2 = graclus(edge_index_2, num_nodes=x2.shape[0])
+pooled_2 = pooled_1
+pooled_2.x = x2
+pooled_2 = max_pool(cluster2, pooled_2)
+edge_index_3 = pooled_2.edge_index
+x3 = pooled_2.x
+x3 = conv3(x3, edge_index_3)
+x3 = x3.relu()
+x3 = conv4(x3, edge_index_3)
+x3 = x3.relu()
+x3 = knn_interpolate(x3, pooled_2.pos, pooled_1.pos)
+x3 = torch.cat((x2, x3), dim=1)
+x3 = conv5(x3, edge_index_2)
+x3 = x3.relu()
+x3 = knn_interpolate(x3, pooled_1.pos, data.pos)
+x = torch.cat((x, x3), dim=1)
+x = lin1(x)
+x = x.relu()
+x = lin2(x)
+x = x.relu()
+x = torch.sigmoid(out(x))

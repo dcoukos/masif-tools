@@ -93,6 +93,9 @@ for model_n, model in enumerate(models):
         trainset.transform = Compose((AddShapeIndex(), Center(), RandomRotate(90, axes[epoch%3]),
                                       AddPositionalData()))
 
+        # if model > 0:
+
+
         train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
         val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
         masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
@@ -100,7 +103,7 @@ for model_n, model in enumerate(models):
         model.train()
         first_batch_labels = torch.Tensor()
         pred = torch.Tensor()
-        loss = []
+        loss = []\\
 
         for batch_n, batch in enumerate(train_loader):
             batch = batch.to(device)
