@@ -48,13 +48,22 @@ def convert_data(path_to_raw='./structures/', n=None, prefix='full'):
     torch.save(train_indices, path_to_output+'{}_indices.pt'.format(prefix))
     print('Done.')
 
+train_structures = Structures('./datasets/thous_train/')
+train_indices = torch.load('./datasets/full_test/raw/full_indices.pt')
+struct_iter = iter(train_structures)
+ex = next(struct_iter)
+name = train_indices[0][1]
+name
+cat = torch.cat((ex.pos, ex.norm, ex.x, ex.shape_index, ex.y), dim=1)
+ex
 
 def generate_numpy_from_structures(prefix='full'):
     train_structures = Structures(root='./datasets/{}_train'.format(prefix))
-    train_indices = torch.load('./datasets/{}/raw/{}_indices.pt'.format(prefix))
+    train_indices = torch.load('./datasets/{}_train/raw/{}_indices.pt'.format(prefix))
     collection = []
-    for data in tqdm(train_structures, desc='Converting train structures -> numpy'):
-        cat = torch.cat((data.pos, data.norm, data.x, data.shape_index, data.y), dim=1).numpy()
+    for idx, data in enumerate(train_structures):
+        name = train_indices[idx][1]
+        cat = torch.cat((data.pos, data.norm, data.x, data.shape_index, data.y), dim=1).numpy().append(name)
         collection.append(cat)
     train_array = np.asarray(collection)
 
@@ -125,8 +134,11 @@ def read_ply(path, learn_iface=True):
 
     x = ([torch.tensor(data['vertex'][axis]) for axis in ['charge', 'hbond', 'hphob']])
     x = torch.stack(x, dim=-1)
-    y = None
+    y = None  #what the fuck
 
+    y = [torch.tensor(data['vertex']['iface'])]
+    y = torch.stack(y, dim=-1)
+    
     face = None
     if 'face' in data:
         faces = data['face']['vertex_indices']
