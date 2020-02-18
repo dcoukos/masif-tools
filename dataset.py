@@ -25,6 +25,7 @@ def convert_data(path_to_raw='./structures/', n=None, prefix='full'):
     path_to_output = './datasets/{}_test/raw/'.format(prefix)
     test_indices = []
     test_structures = []
+    idx = 0
     for path in tqdm(glob(path_to_raw + '/test/*')[:t], desc='Reading Structures'):
         name = path.rsplit('/', 1)[1].split('.')[0]
         test_structures.append(read_ply(path))
