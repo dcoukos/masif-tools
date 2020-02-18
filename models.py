@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch.nn import Linear, Dropout, Sequential, ReLU
-from torch_geometric.nn import GCNConv, FeaStConv, MessagePassing, knn_graph, BatchNorm, TopKPooling, graclus, max_pool
+from torch_geometric.nn import GCNConv, FeaStConv, MessagePassing, knn_graph, BatchNorm, TopKPooling, graclus, max_pool, knn_interpolate
 import params as p
 # graclus, avg_pool_x
 
@@ -540,26 +540,28 @@ class MultiScaleFeaStNet(torch.nn.Module):
         x = self.conv1(x, edge_index)
         x = x.relu()
         cluster1 = graclus(edge_index, num_nodes=x.shape[0])
-        data_1 = Data(x=x, edge_index=edge_index)
-        x2 = max_pool(cluster1, data_1)
-        edge_index_2 = x2.edge_index
-        x2 = x2.x
-        x2 = self.conv2(x2, edge_index2)
+        pooled_1 = data
+        pooled_1.x = x
+        pooled_1 = max_pool(cluster1, pooled_1)
+        edge_index_2 = pooled_1.edge_index
+        x2 = pooled_1.x
+        x2 = self.conv2(x2, edge_index_2)
         x2 = x2.relu()
         cluster2 = graclus(edge_index_2, num_nodes=x2.shape[0])
-        data_2 = Data(x=x2, edge_index=edge_index_2)
-        x3 = max_pool(cluster2, x2)
-        edge_index_3 = x3.edge_index
-        x3 = x3.x
+        pooled_2 = pooled_1
+        pooled_2.x = x2
+        pooled_2 = max_pool(cluster2, pooled_2)
+        edge_index_3 = pooled_2.edge_index
+        x3 = pooled_2.x
         x3 = self.conv3(x3, edge_index_3)
         x3 = x3.relu()
         x3 = self.conv4(x3, edge_index_3)
         x3 = x3.relu()
-        x3 = x3[cluster2]
+        x3 = knn_interpolate(x3, pooled_2.pos, pooled_1.pos)
         x3 = torch.cat((x2, x3), dim=1)
         x3 = self.conv5(x3, edge_index_2)
         x3 = x3.relu()
-        x3 = x3[cluster1]
+        x3 = knn_interpolate(x3, pooled_1.pos, data.pos)
         x = torch.cat((x, x3), dim=1)
         x = self.lin1(x)
         x = x.relu()
