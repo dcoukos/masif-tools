@@ -3,6 +3,7 @@ import torch.nn.functional as F
 from torch.nn import Linear, Dropout, Sequential, ReLU
 from torch_geometric.nn import GCNConv, FeaStConv, MessagePassing, knn_graph, BatchNorm, TopKPooling, graclus, max_pool, knn_interpolate
 import params as p
+from torch_geometric.data import Data
 # graclus, avg_pool_x
 
 

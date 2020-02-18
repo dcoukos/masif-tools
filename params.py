@@ -15,10 +15,14 @@ lr_cap_decay = 0.7
 patience = 10
 weight_decay = 0
 epochs = 200
-version = '20b_pos_full'
+version = '20g_MFN'
 suppress_warnings = True
 dataset = 'thous'
+<<<<<<< HEAD
+model_type = None
+=======
 model_type = PretrainedBlocks
+>>>>>>> ab0040fe50d823d44cd5576d0c32511df77eea8a
 interface_weight = .8
 twohop = True
 heads = 4
