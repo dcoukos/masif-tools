@@ -3,6 +3,7 @@ import torch.nn.functional as F
 from torch.nn import Linear, Dropout, Sequential, ReLU
 from torch_geometric.nn import GCNConv, FeaStConv, MessagePassing, knn_graph, BatchNorm, TopKPooling, graclus, max_pool
 import params as p
+from torch_geometric.data import Data
 # graclus, avg_pool_x
 
 
@@ -540,17 +541,18 @@ class MultiScaleFeaStNet(torch.nn.Module):
         x = self.conv1(x, edge_index)
         x = x.relu()
         cluster1 = graclus(edge_index, num_nodes=x.shape[0])
-        data_1 = Data(x=x, edge_index=edge_index)
-        x2 = max_pool(cluster1, data_1)
-        edge_index_2 = x2.edge_index
-        x2 = x2.x
-        x2 = self.conv2(x2, edge_index2)
+        data_1 = data
+        data_1.x = x
+        data_1 = max_pool(cluster1, data_1)
+        edge_index_2 = data_1.edge_index
+        x2 = data_1.x
+        x2 = self.conv2(x2, edge_index_2)
         x2 = x2.relu()
         cluster2 = graclus(edge_index_2, num_nodes=x2.shape[0])
-        data_2 = Data(x=x2, edge_index=edge_index_2)
-        x3 = max_pool(cluster2, x2)
-        edge_index_3 = x3.edge_index
-        x3 = x3.x
+        data_1.x = x2
+        x3 = max_pool(cluster2, data_1)
+        edge_index_3 = data_1.edge_index
+        x3 = data_1.x
         x3 = self.conv3(x3, edge_index_3)
         x3 = x3.relu()
         x3 = self.conv4(x3, edge_index_3)
