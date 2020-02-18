@@ -7,6 +7,7 @@ from itertools import product
 from tqdm import tqdm
 import params as p
 import os.path as osp
+import numpy as np
 '''
 File to generate the dataset from the ply files.
 
@@ -22,16 +23,47 @@ def convert_data(path_to_raw='./structures/', n=None, prefix='full'):
     else:
         t = int(n/5)
     path_to_output = './datasets/{}_test/raw/'.format(prefix)
-    test_structures = [read_ply(path) for path in tqdm(glob(path_to_raw +
-                       '/test/*')[:t], desc='Reading structures')]
+    test_indices = []
+    test_structures = []
+    for path in tqdm(glob(path_to_raw + '/test/*')[:t], desc='Reading Structures'):
+        name = path.rsplit('/', 1)[1].split('.')[0]
+        test_structures.append(read_ply(path))
+        test_indices.append((idx, name))
+        idx += 1
     print('Saving test structures to file as pytorch object ...')
     torch.save(test_structures, path_to_output+'{}_structures.pt'.format(prefix))
+    torch.save(test_indices, path_to_output+'{}_indices.pt'.format(prefix))
     path_to_output = './datasets/{}_train/raw/'.format(prefix)
-    train_structures = [read_ply(path) for path in tqdm(glob(path_to_raw +
-                        '/train/*')[:n], desc='Reading structures')]
+    train_indices = []
+    train_structures = []
+    idx = 0
+    for path in tqdm(glob(path_to_raw + '/train/*')[:n], desc='Reading Structures'):
+        name = path.rsplit('/', 1)[1].split('.')[0]
+        train_structures.append(read_ply(path))
+        train_indices.append((idx, name))
+        idx += 1
     print('Saving train structures to file as pytorch object ...')
     torch.save(train_structures, path_to_output+'{}_structures.pt'.format(prefix))
+    torch.save(train_indices, path_to_output+'{}_indices.pt'.format(prefix))
     print('Done.')
+
+
+def generate_numpy_from_structures(prefix='full'):
+    train_structures = Structures(root='./datasets/{}_train'.format(prefix))
+    train_indices = torch.load('./datasets/{}/raw/{}_indices.pt'.format(prefix))
+    collection = []
+    for data in tqdm(train_structures, desc='Converting train structures -> numpy'):
+        cat = torch.cat((data.pos, data.norm, data.x, data.shape_index, data.y), dim=1).numpy()
+        collection.append(cat)
+    train_array = np.asarray(collection)
+
+    test_structures = Structures(root='./datasets/{}_test'.format(prefix))
+    test_indices = torch.load('./datasets/{}/raw/{}_indices.pt'.format(prefix))
+    collection = []
+    for data in tqdm(test_structures, desc='Converting test structures -> numpy'):
+        cat = torch.cat((data.pos, data.norm, data.x, data.shape_index, data.y), dim=1).numpy()
+        collection.append(cat)
+    test_array = np.asarray(collection)
 
 
 def collate(data_list):
