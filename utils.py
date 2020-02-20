@@ -293,6 +293,4 @@ def has_nan(dataset):
         if has_nan:
             idx.append(i)
         max_ = max(has_nan, max_)
-    idx
-    max_
     return max_, idx
