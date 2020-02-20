@@ -67,7 +67,6 @@ def convert_data_for_dataset(path_to_raw='./structures/', n=None, prefix='full')
         torch.save(read_ply(path), path_to_output+'{}_structure_{}.pt'.format(prefix, idx))
         test_indices.append((idx, name))
         idx += 1
-    torch.save(test_structures, path_to_output+'{}_structures.pt'.format(prefix))
     torch.save(test_indices, path_to_output+'{}_indices.pt'.format(prefix))
     path_to_output = './datasets/{}_train_ds/raw/'.format(prefix)
     train_indices = []
@@ -78,6 +77,7 @@ def convert_data_for_dataset(path_to_raw='./structures/', n=None, prefix='full')
         torch.save(read_ply(path), path_to_output+'{}_structure_{}.pt'.format(prefix, idx))
         train_indices.append((idx, name))
         idx += 1
+    torch.save(train_indices, path_to_output+'{}_indices.pt'.format(prefix))
     print('Done.')
 
 
