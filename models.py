@@ -128,10 +128,38 @@ class ThreeConvBlock(torch.nn.Module):
         return x, torch.sigmoid(inter)
 
 
+class ThreeConvBlock2(torch.nn.Module):
+    # Too many parameters?
+    def __init__(self, n_features, lin2=4, heads=4):
+        super(ThreeConvBlock2, self).__init__()
+        self.conv1 = FeaStConv(n_features, 32, heads=heads)
+        self.conv2 = FeaStConv(32, 32, heads=heads)
+        self.conv3 = FeaStConv(32, 32, heads=heads)
+        self.lin1 = Linear(32, 64)
+        self.lin2 = Linear(64, lin2)
+        self.out = Linear(lin2, 1)
+
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
+        x = self.conv1(x, edge_index)
+        x = x.relu()
+        x = self.conv2(x, edge_index)
+        x = x.relu()
+        x = self.conv3(x, edge_index)
+        x = x.relu()
+        x = self.lin1(x)
+        x = x.relu()
+        inter = self.lin2(x)
+        x = inter.relu()
+        x = self.out(x)
+        x = torch.sigmoid(x)
+
+        return x, torch.sigmoid(inter)
+
 class GraphThreeConvBlock(torch.nn.Module):
     # Too many parameters?
     def __init__(self, n_features, lin2=4, heads=4):
-        super(ThreeConvBlock, self).__init__()
+        super(GraphThreeConvBlock, self).__init__()
         self.conv1 = GCNConv(n_features, 16, improved=True)
         self.conv2 = GCNConv(16, 16, improved=True)
         self.conv3 = GCNConv(16, 16, improved=True)

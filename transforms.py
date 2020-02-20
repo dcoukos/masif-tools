@@ -231,8 +231,3 @@ class BlockModelApply(object):
 
     def __repr__(self):
         return '{}()'.format(self.__class__.__name__)
-
-'''
-class SumFeatures(object):
-    def __init__(self, saved_model_path):
-'''
