@@ -54,31 +54,31 @@ def convert_data_for_dataset(path_to_raw='./structures/', n=None, prefix='full')
     Like convert_data converts structures from ply files into pytorch files. Unlike convert_data,
     each structure gets it's own file. For use with the StructuresDataset class.
     '''
-        if n is None:
-            t = None
-        else:
-            t = int(n/5)
-        path_to_output = './datasets/{}_test_ds/raw/'.format(prefix)
-        test_indices = []
-        idx = 0
-        print('Saving test structures to file as pytorch object ...')
-        for path in tqdm(glob(path_to_raw + '/test/*')[:t], desc='Reading Structures'):
-            name = path.rsplit('/', 1)[1].split('.')[0]
-            torch.save(read_ply(path), path_to_output+'{}_structure_{}.pt'.format(prefix, idx))
-            test_indices.append((idx, name))
-            idx += 1
-        torch.save(test_structures, path_to_output+'{}_structures.pt'.format(prefix))
-        torch.save(test_indices, path_to_output+'{}_indices.pt'.format(prefix))
-        path_to_output = './datasets/{}_train_ds/raw/'.format(prefix)
-        train_indices = []
-        idx = 0
-        print('Saving train structures to file as pytorch object ...')
-        for path in tqdm(glob(path_to_raw + '/train/*')[:n], desc='Reading Structures'):
-            name = path.rsplit('/', 1)[1].split('.')[0]
-            torch.save(read_ply(path), path_to_output+'{}_structure_{}.pt'.format(prefix, idx))
-            train_indices.append((idx, name))
-            idx += 1
-        print('Done.')
+    if n is None:
+        t = None
+    else:
+        t = int(n/5)
+    path_to_output = './datasets/{}_test_ds/raw/'.format(prefix)
+    test_indices = []
+    idx = 0
+    print('Saving test structures to file as pytorch object ...')
+    for path in tqdm(glob(path_to_raw + '/test/*')[:t], desc='Reading Structures'):
+        name = path.rsplit('/', 1)[1].split('.')[0]
+        torch.save(read_ply(path), path_to_output+'{}_structure_{}.pt'.format(prefix, idx))
+        test_indices.append((idx, name))
+        idx += 1
+    torch.save(test_structures, path_to_output+'{}_structures.pt'.format(prefix))
+    torch.save(test_indices, path_to_output+'{}_indices.pt'.format(prefix))
+    path_to_output = './datasets/{}_train_ds/raw/'.format(prefix)
+    train_indices = []
+    idx = 0
+    print('Saving train structures to file as pytorch object ...')
+    for path in tqdm(glob(path_to_raw + '/train/*')[:n], desc='Reading Structures'):
+        name = path.rsplit('/', 1)[1].split('.')[0]
+        torch.save(read_ply(path), path_to_output+'{}_structure_{}.pt'.format(prefix, idx))
+        train_indices.append((idx, name))
+        idx += 1
+    print('Done.')
 
 
 def generate_numpy_from_structures(prefix='full'):
