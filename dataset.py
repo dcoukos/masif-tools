@@ -254,10 +254,12 @@ class StructuresDataset(Dataset):
         super(Structures, self).__init__(root, transform, pre_transform)
         self.data, self.slices = torch.load(self.processed_paths[0])
         self.has_nan = []
+        self.device = torch.device('cpu')
 
     @property
     def raw_file_names(self):
-        return ['{}structures.pt'.format(self.prefix + '_')]
+        n_files = len(glob('./datasets/{}/raw/*'.format(p.dataset)))
+        return ['full_structures_{}.pt'.format(idx) for idx in range(0, n_files)]
 
     @property
     def processed_file_names(self):
@@ -268,21 +270,25 @@ class StructuresDataset(Dataset):
 
     def process(self):
         from utils import has_nan
-        data_list = torch.load(self.raw_paths[0])
 
-        if self.pre_filter is not None:
-            data_list = [data for data in data_list if self.pre_filter(data)]
+        i = 0
+        for raw_path in self.raw_paths:
+            data = torch.load(raw_path, map_location=self.device)
 
-        if self.pre_transform is not None:
-            data_list = [self.pre_transform(data) for data in tqdm(data_list)]
+            if self.pre_filter is not None:
+                if max(torch.isnan(data.shape_index)):
+                    self.has_nan.append(i)
+                    continue
 
-        try:
-            if data_list[0].shape_index is not None:
-                _, idx = has_nan(data_list)
-                self.has_nan = idx
-                data_list = [data_list[i] for i in range(0, len(data_list)) if i not in idx]
-        except AttributeError:
-            pass
+            if self.pre_transform is not None:
+                data = self.pre_transform(data)
 
-        data, slices = self.collate(data_list)
-        torch.save((data, slices), self.processed_paths[0])
+            torch.save(data, osp.join(self.processed_dir, 'data_{}.pt'.format(i)))
+            i += 1
+
+    def len(self):
+        return len(self.processed_file_names)
+
+    def get(self, idx):
+        data = torch.load(osp.join(self.processed_dir, 'data_{}.pt'.format(idx)))
+        return data
