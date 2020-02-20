@@ -48,14 +48,6 @@ def convert_data(path_to_raw='./structures/', n=None, prefix='full'):
     torch.save(train_indices, path_to_output+'{}_indices.pt'.format(prefix))
     print('Done.')
 
-train_structures = Structures('./datasets/thous_train/')
-train_indices = torch.load('./datasets/full_test/raw/full_indices.pt')
-struct_iter = iter(train_structures)
-ex = next(struct_iter)
-name = train_indices[0][1]
-name
-cat = torch.cat((ex.pos, ex.norm, ex.x, ex.shape_index, ex.y), dim=1)
-ex
 
 def generate_numpy_from_structures(prefix='full'):
     train_structures = Structures(root='./datasets/{}_train'.format(prefix))

@@ -1,8 +1,8 @@
 # REMEMBER TO CHANGE VERSION NUMBER
 from models import ThreeConvBlock, TwentyConvNoRes, PretrainedBlocks
 
-batch_size = 5
-test_batch_size = 5
+batch_size = 1
+test_batch_size = 1
 validation_split = .10
 shuffle_dataset = False
 random_seed = 37
@@ -15,9 +15,9 @@ lr_cap_decay = 0.7
 patience = 10
 weight_decay = 0
 epochs = 200
-version = '21_multi'
+version = '20b_full'
 suppress_warnings = True
-dataset = 'thous'
+dataset = 'full'
 model_type = None
 interface_weight = .8
 twohop = True
