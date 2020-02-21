@@ -64,11 +64,11 @@ if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 print('Setting up model...')
-models = [ThreeConvBlock2(n_features=4, lin2=4, heads=p.heads).to(cpu),
-          ThreeConvBlock2(n_features=4, lin2=4, heads=p.heads).to(cpu),
-          ThreeConvBlock2(n_features=4, lin2=4, heads=p.heads).to(cpu),
-          ThreeConvBlock2(n_features=4, lin2=4, heads=p.heads).to(cpu),
-          ThreeConvBlock2(n_features=4, lin2=4, heads=p.heads).to(cpu)]
+models = [ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu),
+          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu),
+          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu),
+          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu),
+          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu)]
 
 # setting up reporting
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.format(
@@ -93,7 +93,10 @@ for model_n, model in enumerate(models):
         val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
         masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
 
-        train_loader
+        ns = NeighborSampler(next(iter(train_loader)), 0.92, 9)
+        for dataflow in iter(ns):
+            print(dataflow)
+
         model.train()
         first_batch_labels = torch.Tensor()
         pred = torch.Tensor()
