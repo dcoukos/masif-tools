@@ -91,13 +91,7 @@ for model_n, model in enumerate(models):
 # ------------ TRAINING NEW BLOCK --------------------------
     print('Training block {}'.format(model_n))
     for epoch in range(1, epochs+1):
-        train_loader = NeighborSampler(trainset, 0.5, 9)
         train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
-
-        batch_n = 0
-        batch = next(iter(train_loader))
-        ns = NeighborSampler(batch, 0.5, 9)
-
         val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
         masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
 
