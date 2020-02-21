@@ -82,8 +82,6 @@ max_roc_auc = 0
 max_roc_masked = 0
 
 # ---- Training ----
-model_n = 0
-model = models[0]
 
 for model_n, model in enumerate(models):
     model.to(device)
