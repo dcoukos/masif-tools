@@ -70,8 +70,6 @@ models = [ThreeConvBlock(10, lin2=10, heads=p.heads).to(cpu),
           ThreeConvBlock(10, lin2=10, heads=p.heads).to(cpu),
           ThreeConvBlock(10, lin2=10, heads=p.heads).to(cpu)]
 
-best_models = []
-
 # setting up reporting
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.format(
                        p.version,
@@ -89,13 +87,6 @@ axes = [0,1,2]
 for model_n, model in enumerate(models):
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
-
-    # ------ Collecting output from previously trained blocks ------------------
-    if best_models is not None:
-        for model_path in best_models:
-            model.load_state_dict(torch.load('./{}/masked_model_{}.pt'.format(modelpath, model_n), map_location=device))
-            model.eval()
-
 # ------------ TRAINING NEW BLOCK --------------------------
     print('Training block {}'.format(model_n))
     for epoch in range(1, epochs+1):

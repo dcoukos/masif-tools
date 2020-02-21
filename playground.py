@@ -227,10 +227,15 @@ torch.load('./models/Feb16_14:09_20b/best_0.pt', map_location=torch.device('cpu'
 
 
 # ------ Adding shape index features to full dataset ---------------------
+import torch
 from dataset import Structures
 from transforms import *
 from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate, Compose, Center
 import params as p
+from tqdm import tqdm
+from torch_geometric.data import DataLoader
+import pandas as pd
+import numpy as np
 
 dataset = Structures(root='./datasets/{}_train/'.format(p.dataset),
                       pre_transform=Compose((FaceAttributes(),
@@ -238,6 +243,7 @@ dataset = Structures(root='./datasets/{}_train/'.format(p.dataset),
                                              TwoHop())),
                       transform=Compose((AddShapeIndex(), Center(), AddPositionalData())))
 
+dataset.has_nan
 dataset = Structures(root='./datasets/{}_test/'.format(p.dataset),
                       pre_transform=Compose((FaceAttributes(),
                                              NodeCurvature(), FaceToEdge(),
@@ -245,68 +251,147 @@ dataset = Structures(root='./datasets/{}_test/'.format(p.dataset),
                       transform=Compose((AddShapeIndex(), Center(), AddPositionalData())))
 dataset
 
+# ---------------- Trying to generate numpy files ----------------------
 
 
-#   ------ Testing MultiScaleFeaStNet --------
-from torch_geometric.nn import FeaStConv, graclus, max_pool, knn_interpolate
+train_structures = Structures(root='./datasets/{}_train'.format(p.dataset))
+
+len(train_structures)
+
+collection = []
+for data in tqdm(train_structures):
+    collection.append(pd.DataFrame(torch.cat((data.pos, data.norm, data.x,
+                                              data.shape_index.view(-1,1),
+                                              data.y), dim=1).numpy(),
+                      columns=['x', 'y', 'z', 'norm_x', 'norm_y', 'norm_z',
+                               'charge', 'hbond', 'hphob', 'shape_index',
+                               'interface']))
+del train_structures
+train_array = pd.DataFrame(np.asarray(collection), columns=['structure'])
+train_array
+torch.save(train_array, './datasets/{}_train/processed/numpy.pt'.format(p.dataset))
+
 import torch
-from torch.nn import Linear
-from dataset import Structures
-from torch_geometric.data import DataLoader
+array = torch.load('./datasets/full_train/processed/train_numpy.pt')
+structures = []
+for structure in array:
+    structures.append(pd.DataFrame(structure, columns=['x', 'y', 'z', 'norm_x', 'norm_y', 'norm_z',
+                                             'charge', 'hbond', 'hphob', 'shape_index',
+                                             'interface']))
+len(structures)
+array = pd.DataFrame(structures, columns=['structures'])
+len(names[:, 1])
+names = np.array(torch.load('./datasets/full_train/raw/full_indices.pt'))
+names[:, 1]
+
+
+names[:,1]
+array['name'] = names[:, 1]
+array.shape
+names.shape
+
+dataframe = pd.DataFrame(array, columns=['x', 'y', 'z', 'norm_x', 'norm_y', 'norm_z',
+                                         'charge', 'hbond', 'hphob', 'shape_index',
+                                         'interface'])
+
+test_structures = Structures(root='./datasets/{}_test'.format(p.dataset))
+collection = []
+for data in tqdm(test_structures):
+    collection.append(torch.cat((data.pos, data.norm, data.x, data.shape_index.view(-1,1), data.y), dim=1).numpy())
+del test_structures
+test_array = np.asarray(collection)
+torch.save(test_array, './datasets/{}_test/processed/numpy.pt'.format(p.dataset))
+
+torch.load('./datasets/full_train/processed/pre_filter.pt')
+# ------------------------ Find the ROC AUC for PDL1 -----------------------------
+from dataset import read_ply
+import torch
+import os
+import params as p
+from glob import glob
+from torch_geometric.transforms import Compose, FaceToEdge, TwoHop, Center
+from transforms import *
+from models import *
+import datetime
+import pathlib
+from tqdm import tqdm
+from utils import save_ply
+from sklearn.metrics import roc_auc_score
+
+
+converter = Compose((Center(), FaceAttributes(),
+                     NodeCurvature(), FaceToEdge(),
+                     TwoHop(), AddShapeIndex()))
+pdb_code = '3BIK_A'
+code2 = '4ZQK_A'
+path = glob('./structures/test/{}.ply'.format(code2))[0]
+name = path.split('/')[-1]
+structure = read_ply(path)
+
+face = structure.face
+structure = converter(structure)
+
+device = torch.device('cpu')
+structure.x.shape[1]
+
+model0 = ThreeConvBlock(4, 4, 4)
+model1 = ThreeConvBlock(4, 4, 4)
+model2 = ThreeConvBlock(4, 4, 4)
+
+model0.load_state_dict(torch.load('./models/Feb16_14:09_20b/best_0.pt', map_location=device))
+model1.load_state_dict(torch.load('./models/Feb16_14:09_20b/best_1.pt', map_location=device))
+model2.load_state_dict(torch.load('./models/Feb16_14:09_20b/best_2.pt', map_location=device))
+
+model0.eval()
+model1.eval()
+model2.eval()
+
+prediction0, inter0 = model0(structure)
+structure.x += inter0
+prediction1, inter1 = model1(structure)
+structure.x += inter1
+prediction2, inter2 = model2(structure)
+
+
+
+
+path0 = os.path.expanduser('~/Desktop/Drawer/LPDI/masif-tools/surfaces/Feb16_14:09_20b/best0/3BIK_A.ply')
+path1 = os.path.expanduser('~/Desktop/Drawer/LPDI/masif-tools/surfaces/Feb16_14:09_20b/best1/3BIK_A.ply')
+path2 = os.path.expanduser('~/Desktop/Drawer/LPDI/masif-tools/surfaces/Feb16_14:09_20b/best2/3BIK_A.ply')
+
+
+
+
+roc_auc_score(structure.y, prediction2.detach())
+roc_auc_score(structure.y, prediction2.detach())
+
+structure.pos.shape
+structure.norm.shape
+face.t().shape
+structure.x.shape
+prediction0.shape
+
+save_ply(
+    filename=path0,
+    vertices=structure.pos.detach().numpy(),
+    normals=structure.norm.detach().numpy(),
+    faces=face.t().detach().numpy(),
+    charges=structure.x[:, 0].reshape(-1, 1).detach().numpy(),
+    hbond=structure.x[:, 3].reshape(-1, 1).detach().numpy(),
+    hphob=structure.x[:, 2].reshape(-1, 1).detach().numpy(),
+    iface=prediction0.detach().numpy()
+)
+
+
+
+
+# ---------- Creating out of memory Datasets ------------------------
+from dataset import StructuresDataset
 from torch_geometric.transforms import *
 from transforms import *
 
 
-
-n_features = 10
-heads = 4
-conv1 = FeaStConv(n_features, 16, heads=heads)
-conv2 = FeaStConv(16, 32, heads=heads)
-conv3 = FeaStConv(32, 64, heads=heads)
-conv4 = FeaStConv(64, 32, heads=heads)
-conv5 = FeaStConv(64, 16, heads=heads)
-lin1 = Linear(32, 256)
-lin2 = Linear(256, 6890)
-out = Linear(6890, 1)
-
-dataset = Structures(root='./datasets/thous_train/')
-data_loader = DataLoader(dataset, batch_size=5)
-
-converter = Compose((AddShapeIndex(), Center(), AddPositionalData()))
-data_iterator = iter(data_loader)
-batch = next(data_iterator)
-
-data = converter(batch)
-
-x, edge_index = data.x, data.edge_index
-x = conv1(x, edge_index)
-x = x.relu()
-cluster1 = graclus(edge_index, num_nodes=x.shape[0])
-pooled_1 = data
-pooled_1.x = x
-pooled_1 = max_pool(cluster1, pooled_1)
-edge_index_2 = pooled_1.edge_index
-x2 = pooled_1.x
-x2 = conv2(x2, edge_index_2)
-x2 = x2.relu()
-cluster2 = graclus(edge_index_2, num_nodes=x2.shape[0])
-pooled_2 = pooled_1
-pooled_2.x = x2
-pooled_2 = max_pool(cluster2, pooled_2)
-edge_index_3 = pooled_2.edge_index
-x3 = pooled_2.x
-x3 = conv3(x3, edge_index_3)
-x3 = x3.relu()
-x3 = conv4(x3, edge_index_3)
-x3 = x3.relu()
-x3 = knn_interpolate(x3, pooled_2.pos, pooled_1.pos)
-x3 = torch.cat((x2, x3), dim=1)
-x3 = conv5(x3, edge_index_2)
-x3 = x3.relu()
-x3 = knn_interpolate(x3, pooled_1.pos, data.pos)
-x = torch.cat((x, x3), dim=1)
-x = lin1(x)
-x = x.relu()
-x = lin2(x)
-x = x.relu()
-x = torch.sigmoid(out(x))
+train = StructuresDataset(root='./datasets/full_train_ds',
+                          pre_transform=Compose((Center(), FaceAttributes(),
+                          NodeCurvature(), FaceToEdge(),
+                          TwoHop(), AddShapeIndex())))

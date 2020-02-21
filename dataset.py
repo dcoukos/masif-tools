@@ -250,20 +250,19 @@ class StructuresDataset(Dataset):
     Structures class for datasets that do not fit into memory.
     '''
     def __init__(self, root='./datasets/{}/'.format(p.dataset), pre_transform=None, transform=None):
-        self.prefix = p.dataset
-        super(Structures, self).__init__(root, transform, pre_transform)
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        super(StructuresDataset, self).__init__(root, transform, pre_transform)
         self.has_nan = []
         self.device = torch.device('cpu')
 
     @property
     def raw_file_names(self):
-        n_files = len(glob('./datasets/{}/raw/*'.format(p.dataset)))
-        return ['full_structures_{}.pt'.format(idx) for idx in range(0, n_files)]
+        n_files = len(glob('./datasets/{}/raw/full_structure_*'.format(p.dataset)))
+        return ['full_structure_{}.pt'.format(idx) for idx in range(0, n_files)]
 
     @property
     def processed_file_names(self):
-        return ['{}structures.pt'.format(self.prefix + '_')]
+        n_files = len(glob('./datasets/{}/processed/data*'.format(p.dataset)))
+        return ['data_{}.pt'.format(idx) for idx in range(0, 9390)]  # right order
 
     def download(self):
         pass
