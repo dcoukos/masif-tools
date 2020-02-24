@@ -250,19 +250,20 @@ class StructuresDataset(Dataset):
     Structures class for datasets that do not fit into memory.
     '''
     def __init__(self, root='./datasets/{}/'.format(p.dataset), pre_transform=None, transform=None):
+        self.device = torch.device('cpu')
         super(StructuresDataset, self).__init__(root, transform, pre_transform)
         self.has_nan = []
-        self.device = torch.device('cpu')
+
 
     @property
     def raw_file_names(self):
-        n_files = len(glob('./datasets/{}/raw/full_structure_*'.format(p.dataset)))
+        n_files = len(glob('{}/raw/full_structure_*'.format(self.root, p.dataset)))
         return ['full_structure_{}.pt'.format(idx) for idx in range(0, n_files)]
 
     @property
     def processed_file_names(self):
         n_files = len(glob('./datasets/{}/processed/data*'.format(p.dataset)))
-        return ['data_{}.pt'.format(idx) for idx in range(0, 9390)]  # right order
+        return ['data_0.pt']  # right order
 
     def download(self):
         pass
@@ -271,13 +272,12 @@ class StructuresDataset(Dataset):
         from utils import has_nan
 
         i = 0
-        for raw_path in self.raw_paths:
+        for raw_path in tqdm(self.raw_paths):
             data = torch.load(raw_path, map_location=self.device)
 
             if self.pre_filter is not None:
                 if max(torch.isnan(data.shape_index)):
                     self.has_nan.append(i)
-                    continue
 
             if self.pre_transform is not None:
                 data = self.pre_transform(data)
@@ -285,7 +285,7 @@ class StructuresDataset(Dataset):
             torch.save(data, osp.join(self.processed_dir, 'data_{}.pt'.format(i)))
             i += 1
 
-    def len(self):
+    def __len__(self):
         return len(self.processed_file_names)
 
     def get(self, idx):
