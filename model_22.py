@@ -95,14 +95,13 @@ for model_n, model in enumerate(models):
         val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
         masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
 
-        train_loader
         model.train()
         first_batch_labels = torch.Tensor()
         pred = torch.Tensor()
         loss = []
 
         for batch_n, batch in enumerate(train_loader):
-            ns = NeighborSampler(batch, 0.5, 9)
+            ns = NeighborSampler(batch, 0.92, 9)
             batch = ns.data
             batch = batch.to(device)
             optimizer.zero_grad()
@@ -126,7 +125,7 @@ for model_n, model in enumerate(models):
             cum_pred = torch.Tensor().to(device)
             cum_labels = torch.Tensor().to(device)
             for batch_n, batch in enumerate(val_loader):
-                ns = NeighborSampler(batch, 0.5, 9)
+                ns = NeighborSampler(batch, 0.92, 9)
                 batch = ns.data
                 batch = batch.to(device)
                 out, _ = model(batch)
@@ -141,7 +140,7 @@ for model_n, model in enumerate(models):
             cum_pred = torch.Tensor().to(device)
             cum_labels = torch.Tensor().to(device)
             for batch_n, batch in enumerate(masked_loader):
-                ns = NeighborSampler(batch, 0.5, 9)
+                ns = NeighborSampler(batch, 0.92, 9)
                 batch = ns.data
                 batch = batch.to(device)
                 out, _ = model(batch)
