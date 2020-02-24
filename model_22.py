@@ -13,7 +13,7 @@ import params as p
 from statistics import mean
 import torch.nn.functional as F
 from tqdm import tqdm
-from models import ThreeConvBlock2
+from models import ThreeConvBlock
 
 '''
 Implementing Model 16a: (Model 15b + Shape index data):
@@ -64,11 +64,11 @@ if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 print('Setting up model...')
-models = [ThreeConvBlock2(n_features=4, lin2=4, heads=p.heads).to(cpu),
-          ThreeConvBlock2(n_features=4, lin2=4, heads=p.heads).to(cpu),
-          ThreeConvBlock2(n_features=4, lin2=4, heads=p.heads).to(cpu),
-          ThreeConvBlock2(n_features=4, lin2=4, heads=p.heads).to(cpu),
-          ThreeConvBlock2(n_features=4, lin2=4, heads=p.heads).to(cpu)]
+models = [ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu),
+          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu),
+          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu),
+          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu),
+          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu)]
 
 # setting up reporting
 writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.format(
@@ -82,8 +82,6 @@ max_roc_auc = 0
 max_roc_masked = 0
 
 # ---- Training ----
-model_n = 0
-model = models[0]
 
 for model_n, model in enumerate(models):
     model.to(device)
@@ -95,11 +93,18 @@ for model_n, model in enumerate(models):
         val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
         masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
 
+        data = next(iter(train_loader))
+        ns = NeighborSampler(next(iter(train_loader)), 0.92, 9, batch_size=1000)
+
+        # error with NeighborSampler:
+        # neighbor sampler does not seem to be iterable like in the example.
+
         model.train()
         first_batch_labels = torch.Tensor()
         pred = torch.Tensor()
         loss = []
-
+        cum_pred = torch.Tensor().to(device)
+        cum_labels = torch.Tensor().to(device)
         for batch_n, batch in enumerate(train_loader):
             ns = NeighborSampler(batch, 0.92, 9)
             batch = ns.data
@@ -112,14 +117,13 @@ for model_n, model in enumerate(models):
             loss.append(tr_loss.detach().item())
             tr_loss.backward()
             optimizer.step()
-            if batch_n == 0:
-                first_batch_labels = labels.clone().detach().to(device)
-                pred = out.clone().detach().round().to(device)
+            cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
+            cum_pred = torch.cat((cum_pred, out.clone().detach()), dim=0)
 
+        roc_auc = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
         loss = mean(loss)
 
 #  --------------  EVALUATION & REPORTING ------------------------------------
-        roc_auc = roc_auc_score(first_batch_labels.cpu(), pred.cpu())
         with torch.no_grad():
             model.eval()
             cum_pred = torch.Tensor().to(device)
@@ -212,6 +216,5 @@ for model_n, model in enumerate(models):
             maskedset = next_data
 
             models[model_n+1].load_state_dict(torch.load('./{}/masked_model_{}.pt'.format(modelpath, model_n), map_location=device))
-    #learn_rate *= 5
 
 writer.close()

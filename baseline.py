@@ -13,11 +13,6 @@ from statistics import mean
 import torch.nn.functional as F
 from tqdm import tqdm
 
-'''
-Implementing Model 16a: (Model 15b + Shape index data):
-    - Comment out rotations.
-    - Replace transforms with those that allow adding of shape_index data.
-'''
 
 # --- Parameter setting -----
 if p.suppress_warnings:
@@ -44,8 +39,7 @@ print('Importing structures.')
 trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
                       pre_transform=Compose((FaceAttributes(),
                                              NodeCurvature(), FaceToEdge(),
-                                             TwoHop())),
-                      transform=AddShapeIndex())
+                                             TwoHop())))
 samples = len(trainset)
 
 cutoff = int(np.floor(samples*(1-p.validation_split)))
@@ -57,7 +51,7 @@ if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 print('Setting up model...')
-model = p.model_type(4, heads=p.heads).to(device)
+model = p.model_type(3, heads=p.heads).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
 #                                                       factor=p.lr_decay,
@@ -88,6 +82,8 @@ for epoch in range(1, epochs+1):
     tr_weights = torch.Tensor()
     loss = []
 
+    cum_pred = torch.Tensor().to(device)
+    cum_labels = torch.Tensor().to(device)
     for batch_n, batch in enumerate(train_loader):
         batch = batch.to(device)
         optimizer.zero_grad()
@@ -98,16 +94,13 @@ for epoch in range(1, epochs+1):
         loss.append(tr_loss.detach().item())
         tr_loss.backward()
         optimizer.step()
-        if batch_n == 0:
-            tr_weights = weights
-            first_batch_labels = labels.clone().detach().to(device)
-            pred = out.clone().detach().round().to(device)
+        cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
+        cum_pred = torch.cat((cum_pred, out.clone().detach()), dim=0)
 
+    roc_auc = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
     loss = mean(loss)
 
     #  --------------  REPORTING ------------------------------------
-    roc_auc = roc_auc_score(first_batch_labels.cpu(), pred.cpu())
-
     model.eval()
     cum_pred = torch.Tensor().to(device)
     cum_labels = torch.Tensor().to(device)
