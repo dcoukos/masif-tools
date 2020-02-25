@@ -321,6 +321,7 @@ class FourteenConv(torch.nn.Module):
         self.s8 = SELU()
         self.s9 = SELU()
         self.s10 = SELU()
+        self.s11 = SELU()
         self.s12 = SELU()
         self.s13 = SELU()
         self.s14 = SELU()
