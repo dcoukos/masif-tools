@@ -103,7 +103,7 @@ class TwoConv(torch.nn.Module):
 class FourConv(torch.nn.Module):
     def __init__(self, n_features, heads=4):
         # REMEMBER TO UPDATE MODEL NAME
-        super(TwoConv, self).__init__()
+        super(FourConv, self).__init__()
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
         self.conv2 = FeaStConv(16, 16, heads=heads)
         self.conv3 = FeaStConv(16, 16, heads=heads)
@@ -135,7 +135,7 @@ class FourConv(torch.nn.Module):
 class SixConv(torch.nn.Module):
     def __init__(self, n_features, heads=4):
         # REMEMBER TO UPDATE MODEL NAME
-        super(TwoConv, self).__init__()
+        super(SixConv, self).__init__()
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
         self.conv2 = FeaStConv(16, 16, heads=heads)
         self.conv3 = FeaStConv(16, 16, heads=heads)
@@ -181,7 +181,7 @@ class SixConv(torch.nn.Module):
 class EightConv(torch.nn.Module):
     def __init__(self, n_features, heads=4):
         # REMEMBER TO UPDATE MODEL NAME
-        super(TwoConv, self).__init__()
+        super(EightConv, self).__init__()
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
         self.conv2 = FeaStConv(16, 16, heads=heads)
         self.conv3 = FeaStConv(16, 16, heads=heads)
@@ -235,7 +235,7 @@ class EightConv(torch.nn.Module):
 class TenConv(torch.nn.Module):
     def __init__(self, n_features, heads=4):
         # REMEMBER TO UPDATE MODEL NAME
-        super(TwoConv, self).__init__()
+        super(TenConv, self).__init__()
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
         self.conv2 = FeaStConv(16, 16, heads=heads)
         self.conv3 = FeaStConv(16, 16, heads=heads)
@@ -296,7 +296,7 @@ class TenConv(torch.nn.Module):
 class FourteenConv(torch.nn.Module):
     def __init__(self, n_features, heads=4):
         # REMEMBER TO UPDATE MODEL NAME
-        super(TwoConv, self).__init__()
+        super(FourteenConv, self).__init__()
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
         self.conv2 = FeaStConv(16, 16, heads=heads)
         self.conv3 = FeaStConv(16, 16, heads=heads)
