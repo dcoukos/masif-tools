@@ -231,3 +231,25 @@ class BlockModelApply(object):
 
     def __repr__(self):
         return '{}()'.format(self.__class__.__name__)
+
+
+class RemoveFeatures(object):
+    def __init__(self, columns):
+        super(RemoveFeatures, self).__init__()
+        self.to_remove = columns
+
+    def __call__(self, data):
+        n_features = data.x.shape[1]
+        idx = [i for i in range(0, n_features)]
+        if isinstance(self.to_remove, int):
+            idx.pop(self.to_remove)
+        elif isinstance(self.to_remove, list):
+            self.to_remove.sort(reverse=True)
+            for i in self.to_remove:
+                idx.pop(i)
+        else:
+            raise RuntimeError('"columns" attribute must be int or list of int.')
+        idx = torch.tensor(idx)
+
+        data.x = data.x[:, idx]
+        return data

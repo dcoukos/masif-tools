@@ -3,7 +3,7 @@ import numpy as np
 from torch_geometric.data import DataLoader
 from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate, Compose, Center
 from torch_geometric.nn import DataParallel
-from dataset import Structures
+from dataset import StructuresDataset
 from transforms import *
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_auc_score
@@ -36,8 +36,8 @@ else:
 print('Importing structures.')
 # Remember!!! Shape Index can only be computed on local. Add other transforms after
 # Pre_tranform step to not contaminate the data.
-trainset = Structures(root='./datasets/{}_train/'.format(p.dataset),
-                      pre_transform=Compose((FaceAttributes(),
+trainset = StructuresDataset(root='./datasets/full_train_ds/',
+                             pre_transform=Compose((FaceAttributes(),
                                              NodeCurvature(), FaceToEdge(),
                                              TwoHop())))
 samples = len(trainset)
@@ -45,7 +45,7 @@ samples = len(trainset)
 cutoff = int(np.floor(samples*(1-p.validation_split)))
 validset = trainset[cutoff:]
 trainset = trainset[:cutoff]
-
+validset.transform = RemoveFeatures(3)
 
 if p.shuffle_dataset:
     trainset = trainset.shuffle()

@@ -81,8 +81,8 @@ class TwoConv(torch.nn.Module):
         self.out = Linear(4, 1)
 
     def forward(self, data):
-        in_, edge_index = data.x, data.edge_index
-        x = self.conv1(in_, edge_index)
+        x, edge_index = data.x, data.edge_index
+        x = self.conv1(x, edge_index)
         x = x.selu_()
         x = self.conv2(x, edge_index)
         x = x.selu_()
