@@ -40,11 +40,10 @@ trainset = StructuresDataset(root='./datasets/full_train_ds/',
                              pre_transform=Compose((FaceAttributes(),
                                              NodeCurvature(), FaceToEdge(),
                                              TwoHop())))
-samples = len(trainset)
-
-cutoff = int(np.floor(samples*(1-p.validation_split)))
-validset = trainset[cutoff:]
-trainset = trainset[:cutoff]
+validset = StructuresDataset(root='./dataset/full_test_ds/',
+                             pre_transform=Compose((FaceAttributes(),
+                                                   NodeCurvature(), FaceToEdge(),
+                                                   TwoHop())))[:200]
 trainset.transform = RemoveFeatures(3)
 validset.transform = RemoveFeatures(3)
 
