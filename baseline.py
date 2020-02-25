@@ -78,14 +78,13 @@ for epoch in range(1, epochs+1):
 
     learn_rate = optimizer.param_groups[0]['lr']  # for when it may be modified during run
     model.train()
-    first_batch_labels = torch.Tensor()
     pred = torch.Tensor()
     tr_weights = torch.Tensor()
     loss = []
 
     cum_pred = torch.Tensor().to(device)
     cum_labels = torch.Tensor().to(device)
-    for batch_n, batch in enumerate(train_loader):
+    for batch in tqdm(train_loader, desc='Training.'):
         batch = batch.to(device)
         optimizer.zero_grad()
         out = model(batch)
@@ -106,7 +105,7 @@ for epoch in range(1, epochs+1):
     cum_pred = torch.Tensor().to(device)
     cum_labels = torch.Tensor().to(device)
     te_weights = torch.Tensor().to(device)
-    for batch_n, batch in enumerate(val_loader):
+    for batch in tqdm(val_loader, desc='Evaluating.'):
         batch = batch.to(device)
         out = model(batch)
         labels = batch.y.to(device)
