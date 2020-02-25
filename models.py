@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-from torch.nn import Linear, Dropout, Sequential, ReLU
+from torch.nn import Linear, Dropout, Sequential, ReLU, SELU
 from torch_geometric.nn import GCNConv, FeaStConv, MessagePassing, knn_graph, BatchNorm, TopKPooling, graclus, max_pool, knn_interpolate
 import params as p
 from torch_geometric.data import Data
@@ -78,18 +78,22 @@ class TwoConv(torch.nn.Module):
         self.conv2 = FeaStConv(16, 16, heads=heads)
         self.lin1 = Linear(16, 16)
         self.lin2 = Linear(16, 4)
+        self.s1 = SELU()
+        self.s2 = SELU()
+        self.s3 = SELU()
+        self.s4 = SELU()
         self.out = Linear(4, 1)
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
         x = self.conv1(x, edge_index)
-        x = x.selu_()
+        x = self.s1(x)
         x = self.conv2(x, edge_index)
-        x = x.selu_()
+        x = self.s2(x)
         x = self.lin1(x)
-        x = x.selu_()
+        x = self.s3(x)
         x = self.lin2(x)
-        x = x.selu_()
+        x = self.s4(x)
         x = self.out(x)
         x = torch.sigmoid(x)
 
