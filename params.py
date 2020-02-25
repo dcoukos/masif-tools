@@ -1,5 +1,5 @@
 # REMEMBER TO CHANGE VERSION NUMBER
-from models import ThreeConvBlock, TwentyConvNoRes, PretrainedBlocks
+from models import TwoConv, FourConv, SixConv, EightConv, TenConv, TwelveConv
 
 batch_size = 1
 test_batch_size = 1
@@ -15,10 +15,10 @@ lr_cap_decay = 0.7
 patience = 10
 weight_decay = 0
 epochs = 200
-version = '20b_full'
+version = 'exp1-2conv-electro'
 suppress_warnings = True
-dataset = 'thous'
-model_type = None
+dataset = 'full_train_ds'
+model_type = TwoConv
 interface_weight = .8
 twohop = True
 heads = 4

@@ -45,6 +45,7 @@ samples = len(trainset)
 cutoff = int(np.floor(samples*(1-p.validation_split)))
 validset = trainset[cutoff:]
 trainset = trainset[:cutoff]
+trainset.transform = RemoveFeatures(3)
 validset.transform = RemoveFeatures(3)
 
 if p.shuffle_dataset:
