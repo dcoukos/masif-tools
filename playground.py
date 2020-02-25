@@ -478,5 +478,35 @@ for epoch in range(1, 31):
     print('Epoch: {:02d}, Loss: {:.4f}, Test: {:.4f}'.format(
         epoch, loss, test_acc))
 
-
+# ---------------------- Trying to use datastructures ----------------------------
+import torch
 from dataset import StructuresDataset
+from transforms import *
+from torch_geometric.transforms import *
+from models import TwoConv
+import params as p
+
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+cpu = torch.device('cpu')
+# reproducibility
+torch.manual_seed(p.random_seed)
+np.random.seed(p.random_seed)
+learn_rate = p.learn_rate
+
+
+model = TwoConv(3, heads=p.heads).to(device)
+optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
+
+trainset = StructuresDataset(root='./datasets/full_train_ds/',
+                             pre_transform=Compose((FaceAttributes(), NodeCurvature(),
+                                                    FaceToEdge(), TwoHop())))
+
+samples = len(trainset)
+cutoff = int(np.floor(samples*(1-p.validation_split)))
+train_indices = torch.tensor([i for i in range(0, cutoff)])
+train = trainset[train_indices]
+
+validset = trainset[cutoff:]
+trainset = trainset[:cutoff]
+
+sorted(glob.glob('./datasets/full_train_ds/processed/data_*.pt'))

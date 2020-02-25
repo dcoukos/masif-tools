@@ -11,3 +11,5 @@ Experiment 1:
 - Depth: {2, 4, 6, 8, 10, 12... while perf increasing}
 - Input Data: {Masif identifiers, Electrostatics, + Shape Index, +Rotated Positional Data}
 - Uses SeLU because ReLU kills the learning...
+
+Observations & Results:

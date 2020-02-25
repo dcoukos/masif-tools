@@ -12,6 +12,8 @@ import numpy as np
 File to generate the dataset from the ply files.
 
 '''
+
+
 def convert_data(path_to_raw='./structures/', n=None, prefix='full'):
     '''Generate raw unprocessed torch file to generate pyg datasets with fewer
         candidates.
@@ -160,7 +162,7 @@ def read_ply(path, learn_iface=True):
 
     x = ([torch.tensor(data['vertex'][axis]) for axis in ['charge', 'hbond', 'hphob']])
     x = torch.stack(x, dim=-1)
-    y = None  #what the fuck
+    y = None
 
     y = [torch.tensor(data['vertex']['iface'])]
     y = torch.stack(y, dim=-1)
@@ -254,16 +256,15 @@ class StructuresDataset(Dataset):
         super(StructuresDataset, self).__init__(root, transform, pre_transform)
         self.has_nan = []
 
-
     @property
     def raw_file_names(self):
-        n_files = len(glob('{}/raw/full_structure_*'.format(self.root, p.dataset)))
+        n_files = len(glob('{}/raw/full_structure_*'.format(self.root)))
         return ['full_structure_{}.pt'.format(idx) for idx in range(0, n_files)]
 
     @property
     def processed_file_names(self):
-        n_files = len(glob('./datasets/{}/processed/data*'.format(p.dataset)))
-        return ['data_0.pt']  # right order
+        n_files = len(glob('{}/processed/data*'.format(self.root)))
+        return ['data_{}.pt'.format(i) for i in range(0, n_files)]  # right order
 
     def download(self):
         pass
@@ -285,8 +286,8 @@ class StructuresDataset(Dataset):
             torch.save(data, osp.join(self.processed_dir, 'data_{}.pt'.format(i)))
             i += 1
 
-    def __len__(self):
-        return len(self.processed_file_names)
+    def len(self):
+        return len(self.processed_paths)
 
     def get(self, idx):
         data = torch.load(osp.join(self.processed_dir, 'data_{}.pt'.format(idx)))

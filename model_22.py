@@ -84,6 +84,7 @@ max_roc_masked = 0
 # ---- Training ----
 
 for model_n, model in enumerate(models):
+
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 # ------------ TRAINING NEW BLOCK --------------------------
@@ -94,11 +95,12 @@ for model_n, model in enumerate(models):
         masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
 
         data = next(iter(train_loader))
-        ns = NeighborSampler(next(iter(train_loader)), 0.92, 9, batch_size=1000)
+        ns = NeighborSampler(next(iter(train_loader)), 0.4, 9, batch_size=1)
 
         # error with NeighborSampler:
         # neighbor sampler does not seem to be iterable like in the example.
-
+        for dataflow in ns():
+            print(dataflow)
         model.train()
         first_batch_labels = torch.Tensor()
         pred = torch.Tensor()
