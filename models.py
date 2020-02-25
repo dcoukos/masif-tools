@@ -59,8 +59,8 @@ class OneConv(torch.nn.Module):
         self.out = Linear(8, 1)
 
     def forward(self, data):
-        in_, edge_index = data.x, data.edge_index
-        x = self.conv1(in_, edge_index)
+        x, edge_index = data.x, data.edge_index
+        x = self.conv1(x, edge_index)
         x = x.relu()
         x = self.lin1(x)
         x = x.relu()
@@ -113,8 +113,8 @@ class FourConv(torch.nn.Module):
         self.out = Linear(4, 1)
 
     def forward(self, data):
-        in_, edge_index = data.x, data.edge_index
-        x = self.conv1(in_, edge_index)
+        x, edge_index = data.x, data.edge_index
+        x = self.conv1(x, edge_index)
         x = x.selu_()
         x = self.conv2(x, edge_index)
         x = x.selu_()
@@ -155,8 +155,8 @@ class SixConv(torch.nn.Module):
         self.out = Linear(4, 1)
 
     def forward(self, data):
-        in_, edge_index = data.x, data.edge_index
-        x = self.conv1(in_, edge_index)
+        x, edge_index = data.x, data.edge_index
+        x = self.conv1(x, edge_index)
         x = self.s1(x)
         x = self.conv2(x, edge_index)
         x = self.s2(x)
@@ -205,8 +205,8 @@ class EightConv(torch.nn.Module):
         self.out = Linear(4, 1)
 
     def forward(self, data):
-        in_, edge_index = data.x, data.edge_index
-        x = self.conv1(in_, edge_index)
+        x, edge_index = data.x, data.edge_index
+        x = self.conv1(x, edge_index)
         x = self.s1(x)
         x = self.conv2(x, edge_index)
         x = self.s2(x)
@@ -262,8 +262,8 @@ class TenConv(torch.nn.Module):
         self.out = Linear(4, 1)
 
     def forward(self, data):
-        in_, edge_index = data.x, data.edge_index
-        x = self.conv1(in_, edge_index)
+        x, edge_index = data.x, data.edge_index
+        x = self.conv1(x, edge_index)
         x = self.s1(x)
         x = self.conv2(x, edge_index)
         x = self.s2(x)
@@ -293,7 +293,7 @@ class TenConv(torch.nn.Module):
         return x
 
 
-class TwelveConv(torch.nn.Module):
+class FourteenConv(torch.nn.Module):
     def __init__(self, n_features, heads=4):
         # REMEMBER TO UPDATE MODEL NAME
         super(TwoConv, self).__init__()
@@ -309,40 +309,61 @@ class TwelveConv(torch.nn.Module):
         self.conv10 = FeaStConv(16, 16, heads=heads)
         self.conv11 = FeaStConv(16, 16, heads=heads)
         self.conv12 = FeaStConv(16, 16, heads=heads)
+        self.conv13 = FeaStConv(16, 16, heads=heads)
+        self.conv14 = FeaStConv(16, 16, heads=heads)
+        self.s1 = SELU()
+        self.s2 = SELU()
+        self.s3 = SELU()
+        self.s4 = SELU()
+        self.s5 = SELU()
+        self.s6 = SELU()
+        self.s7 = SELU()
+        self.s8 = SELU()
+        self.s9 = SELU()
+        self.s10 = SELU()
+        self.s12 = SELU()
+        self.s13 = SELU()
+        self.s14 = SELU()
+        self.s15 = SELU()
+        self.s16 = SELU()
         self.lin1 = Linear(16, 16)
         self.lin2 = Linear(16, 4)
         self.out = Linear(4, 1)
 
     def forward(self, data):
-        in_, edge_index = data.x, data.edge_index
-        x = self.conv1(in_, edge_index)
-        x = x.selu_()
+        x, edge_index = data.x, data.edge_index
+        x = self.conv1(x, edge_index)
+        x = self.s1(x)
         x = self.conv2(x, edge_index)
-        x = x.selu_()
+        x = self.s2(x)
         x = self.conv3(x, edge_index)
-        x = x.selu_()
+        x = self.s3(x)
         x = self.conv4(x, edge_index)
-        x = x.selu_()
+        x = self.s4(x)
         x = self.conv5(x, edge_index)
-        x = x.selu_()
+        x = self.s5(x)
         x = self.conv6(x, edge_index)
-        x = x.selu_()
+        x = self.s6(x)
         x = self.conv7(x, edge_index)
-        x = x.selu_()
+        x = self.s7(x)
         x = self.conv8(x, edge_index)
-        x = x.selu_()
+        x = self.s8(x)
         x = self.conv9(x, edge_index)
-        x = x.selu_()
+        x = self.s9(x)
         x = self.conv10(x, edge_index)
-        x = x.selu_()
+        x = self.s10(x)
         x = self.conv11(x, edge_index)
-        x = x.selu_()
+        x = self.s11(x)
         x = self.conv12(x, edge_index)
-        x = x.selu_()
+        x = self.s12(x)
+        x = self.conv13(x, edge_index)
+        x = self.s13(x)
+        x = self.conv14(x, edge_index)
+        x = self.s14(x)
         x = self.lin1(x)
-        x = x.selu_()
+        x = self.s15(x)
         x = self.lin2(x)
-        x = x.selu_()
+        x = self.s16(x)
         x = self.out(x)
         x = torch.sigmoid(x)
 
