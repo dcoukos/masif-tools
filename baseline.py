@@ -40,10 +40,10 @@ trainset = StructuresDataset(root='./datasets/full_train_ds/',
                              pre_transform=Compose((FaceAttributes(),
                                              NodeCurvature(), FaceToEdge(),
                                              TwoHop())))
-validset = StructuresDataset(root='./dataset/full_test_ds/',
+validset = StructuresDataset(root='./datasets/full_test_ds/',
                              pre_transform=Compose((FaceAttributes(),
                                                    NodeCurvature(), FaceToEdge(),
-                                                   TwoHop())))[:200]
+                                                   TwoHop())))
 trainset.transform = RemoveFeatures(3)
 validset.transform = RemoveFeatures(3)
 

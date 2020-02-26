@@ -9,7 +9,7 @@ PyMesh
 temp/
 
 # Structures
-structures/
+*structures*/
 datasets/
 
 # Training/testing data
