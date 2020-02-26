@@ -238,16 +238,15 @@ import pandas as pd
 import numpy as np
 
 
-train = StructuresDataset(root='./datasets/full_train_ds/',
-                          pre_transform=Compose((Center(), FaceAttributes(),
-                          NodeCurvature(), FaceToEdge(),
-                          TwoHop(), AddShapeIndex())))
+train = Structures(root='./datasets/masif_site_train/',
+                   pre_transform=Compose((Center(), FaceAttributes(),
+                                          NodeCurvature(), FaceToEdge(),
+                                          TwoHop())))
 
-test = StructuresDataset(root='./datasets/full_test_ds/',
+test = StructuresDataset(root='./datasets/masif_site_test/',
                          pre_transform=Compose((Center(), FaceAttributes(),
                          NodeCurvature(), FaceToEdge(),
-                         TwoHop(), AddShapeIndex())))
-dataset
+                         TwoHop())))
 
 # ---------------- Trying to generate numpy files ----------------------
 
@@ -500,6 +499,11 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.w
 trainset = StructuresDataset(root='./datasets/full_train_ds/',
                              pre_transform=Compose((FaceAttributes(), NodeCurvature(),
                                                     FaceToEdge(), TwoHop())))
+
+
+torch.load('./datasets/full_train_ds/processed/pre_filter.pt')
+torch.
+
 
 validset = StructuresDataset(root='./datasets/full_test_ds',
                              pre_transform=Compose((FaceAttributes(), NodeCurvature(),

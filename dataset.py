@@ -210,9 +210,9 @@ class MiniStructures(InMemoryDataset):
 class Structures(InMemoryDataset):
     def __init__(self, root='./datasets/{}/'.format(p.dataset), pre_transform=None, transform=None):
         self.prefix = p.dataset
+        self.has_nan = []
         super(Structures, self).__init__(root, transform, pre_transform)
         self.data, self.slices = torch.load(self.processed_paths[0])
-        self.has_nan = []
 
     @property
     def raw_file_names(self):
@@ -235,13 +235,10 @@ class Structures(InMemoryDataset):
         if self.pre_transform is not None:
             data_list = [self.pre_transform(data) for data in tqdm(data_list)]
 
-        try:
-            if data_list[0].shape_index is not None:
-                _, idx = has_nan(data_list)
-                self.has_nan.append(idx)
-                data_list = [data_list[i] for i in range(0, len(data_list)) if i not in idx]
-        except AttributeError:
-            pass
+        if data_list[0].shape_index is not None:
+            _, idx = has_nan(data_list)
+            self.has_nan.append(idx)
+            data_list = [data_list[i] for i in range(0, len(data_list)) if i not in idx]
 
         torch.save(self.has_nan, osp.join(self.root, 'filtered_data_points.pt'))
 

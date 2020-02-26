@@ -36,17 +36,14 @@ else:
 print('Importing structures.')
 # Remember!!! Shape Index can only be computed on local. Add other transforms after
 # Pre_tranform step to not contaminate the data.
-trainset = StructuresDataset(root='./datasets/full_train_ds/',
+trainset = Structures(root='./datasets/masif_site_train/',
                              pre_transform=Compose((FaceAttributes(),
                                              NodeCurvature(), FaceToEdge(),
                                              TwoHop())))
-validset = StructuresDataset(root='./datasets/full_test_ds/',
+validset = Structures(root='./datasets/masif_site_test/',
                              pre_transform=Compose((FaceAttributes(),
                                                    NodeCurvature(), FaceToEdge(),
                                                    TwoHop())))
-trainset.transform = RemoveFeatures(3)
-validset.transform = RemoveFeatures(3)
-
 if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
