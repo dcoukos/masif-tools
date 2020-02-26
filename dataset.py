@@ -14,7 +14,7 @@ File to generate the dataset from the ply files.
 '''
 
 
-def convert_data(path_to_raw='./masif_site_structures/', n=None, prefix='masif_site_full'):
+def convert_data(path_to_raw='./masif_site_structures/', n=None, prefix='masif_site'):
     '''Generate raw unprocessed torch file to generate pyg datasets with fewer
         candidates.
     '''
@@ -51,7 +51,7 @@ def convert_data(path_to_raw='./masif_site_structures/', n=None, prefix='masif_s
     print('Done.')
 
 
-def convert_data_for_dataset(path_to_raw='./structures/', n=None, prefix='masif_site_full'):
+def convert_data_for_dataset(path_to_raw='./structures/', n=None, prefix='masif_site'):
     '''
     Like convert_data converts structures from ply files into pytorch files. Unlike convert_data,
     each structure gets it's own file. For use with the StructuresDataset class.
