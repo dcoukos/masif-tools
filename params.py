@@ -1,5 +1,5 @@
 # REMEMBER TO CHANGE VERSION NUMBER
-from models import TwoConv, FourConv, SixConv, EightConv, TenConv, TwelveConv
+from models import TwoConv, FourConv, SixConv, EightConv, TenConv, FourteenConv
 
 batch_size = 1
 test_batch_size = 1

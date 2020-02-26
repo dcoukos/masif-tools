@@ -14,7 +14,7 @@ File to generate the dataset from the ply files.
 '''
 
 
-def convert_data(path_to_raw='./structures/', n=None, prefix='full'):
+def convert_data(path_to_raw='./masif_site_structures/', n=None, prefix='masif_full'):
     '''Generate raw unprocessed torch file to generate pyg datasets with fewer
         candidates.
     '''
@@ -51,7 +51,7 @@ def convert_data(path_to_raw='./structures/', n=None, prefix='full'):
     print('Done.')
 
 
-def convert_data_for_dataset(path_to_raw='./structures/', n=None, prefix='full'):
+def convert_data_for_dataset(path_to_raw='./structures/', n=None, prefix='masif_full'):
     '''
     Like convert_data converts structures from ply files into pytorch files. Unlike convert_data,
     each structure gets it's own file. For use with the StructuresDataset class.
@@ -238,10 +238,12 @@ class Structures(InMemoryDataset):
         try:
             if data_list[0].shape_index is not None:
                 _, idx = has_nan(data_list)
-                self.has_nan = idx
+                self.has_nan.append(idx)
                 data_list = [data_list[i] for i in range(0, len(data_list)) if i not in idx]
         except AttributeError:
             pass
+
+        torch.save(self.has_nan, osp.join(self.root, 'filtered_data_points.pt'))
 
         data, slices = self.collate(data_list)
         torch.save((data, slices), self.processed_paths[0])
@@ -255,6 +257,7 @@ class StructuresDataset(Dataset):
         self.device = torch.device('cpu')
         super(StructuresDataset, self).__init__(root, transform, pre_transform)
         self.has_nan = []
+        self.pre_filter = 3
 
     @property
     def raw_file_names(self):
@@ -276,15 +279,17 @@ class StructuresDataset(Dataset):
         for raw_path in tqdm(self.raw_paths):
             data = torch.load(raw_path, map_location=self.device)
 
-            if self.pre_filter is not None:
-                if max(torch.isnan(data.shape_index)):
-                    self.has_nan.append(i)
+            # prefiltering
+            if max(torch.isnan(data.shape_index)):
+                self.has_nan.append(i)
+                continue
 
             if self.pre_transform is not None:
                 data = self.pre_transform(data)
 
             torch.save(data, osp.join(self.processed_dir, 'data_{}.pt'.format(i)))
             i += 1
+        torch.save(self.has_nan, osp.join(self.root, 'filtered_data_points.pt'))
 
     def len(self):
         return len(self.processed_paths)

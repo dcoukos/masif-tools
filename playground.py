@@ -501,6 +501,10 @@ trainset = StructuresDataset(root='./datasets/full_train_ds/',
                              pre_transform=Compose((FaceAttributes(), NodeCurvature(),
                                                     FaceToEdge(), TwoHop())))
 
+validset = StructuresDataset(root='./datasets/full_test_ds',
+                             pre_transform=Compose((FaceAttributes(), NodeCurvature(),
+                                                    FaceToEdge(), TwoHop())))
+
 samples = len(trainset)
 cutoff = int(np.floor(samples*(1-p.validation_split)))
 train_indices = torch.tensor([i for i in range(0, cutoff)])
@@ -510,3 +514,10 @@ validset = trainset[cutoff:]
 trainset = trainset[:cutoff]
 
 sorted(glob.glob('./datasets/full_train_ds/processed/data_*.pt'))
+
+
+
+import itertools
+x = itertools.product([11, 12], [1,23], )
+for prd in x:
+    print(prd)

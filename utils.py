@@ -7,6 +7,37 @@ from transforms import *
 import datetime
 import pathlib
 from tqdm import tqdm
+import pandas as pd
+
+
+
+def match_indices(dataset, path, testing):
+    path = './datasets/full_test_ds/raw/full_indices.pt'
+    idx, nd = generate_index_list(path)
+    print(len(nd))
+    idx
+    'test' in path
+
+
+def generate_index_list(path_to_index_file):
+    f = None
+    if 'test' in path_to_index_file:
+        f = list(open('./lists/masif_site_testing.txt', 'r'))
+    else:
+        f = list(open('./lists/masif_site_training.txt', 'r'))
+    indices = pd.DataFrame(torch.load(path_to_index_file), columns=['index', 'name'])
+    names = []
+    saved_indices = []
+    not_in_dataset = []
+    for line in f:
+        names.append(line.split('\n')[0])
+    for name in names:
+        try:
+            i, = indices[indices.name == name].index
+        except ValueError:
+            not_in_dataset.append(name)
+        saved_indices.append(i)
+    return saved_indices, not_in_dataset
 
 
 def apply_pretransforms(pre_transforms=None):
@@ -42,6 +73,10 @@ def perf_measure(pred, labels):
     return (TP, FP, TN, FN)
 
 
+import glob
+glob.glob('./structures_copy/1BO6*')
+
+
 def stats(pred, labels):
     from sklearn.metrics import classification_report
     return classification_report(labels.cpu().detach().numpy(), pred.cpu().detach().numpy())
@@ -50,27 +85,57 @@ def stats(pred, labels):
 def split_datasets():
     '''Need to call from inside masif-tools'''
     wd = pathlib.Path().absolute()
-    os.mkdir('{}/structures/test'.format(wd))
+    #os.mkdir('{}/structures_copy/test'.format(wd))
+    #os.mkdir('{}/structures_copy/train'.format(wd))
     test_paths = []
-    with open('./lists/testing.txt', 'r') as f:
+    missing_test_paths = []
+    missing_train_paths = []
+
+    with open('./lists/masif_site_testing.txt', 'r') as f:
         for line in f:
             line = line.split('\n')[0]
             test_paths.append(line)
-    for name in test_paths:
+    for name in tqdm(test_paths, desc='Moving test files'):
         if len(name.split('_')) == 3:
             a, b, c = name.split('_')
             name = a + '_' + b
             structure2 = a + '_' + c
             test_paths.append(structure2)
-        new_path = os.path.expanduser('~/Desktop/Drawer/LPDI/masif-tools/structures/test/') + name + \
+        new_path = os.path.expanduser('/Volumes/Storage/LPDI/masif-tools/structures_copy/test/') + name + \
             '.ply'
-        path = os.path.expanduser('~/Desktop/Drawer/LPDI/masif-tools/structures/') + name + \
+        path = os.path.expanduser('/Volumes/Storage/LPDI/masif-tools/structures_copy/') + name + \
             '.ply'
         try:
             os.replace(path, new_path)
         except:
-            print('{} not found'.format(name))
+            missing_test_paths.append(name)
+    print('{} test paths missing'.format(len(missing_test_paths)))
+
+    train_paths = []
+    with open('./lists/masif_site_training.txt', 'r') as f:
+        for line in f:
+            line = line.split('\n')[0]
+            train_paths.append(line)
+    for name in tqdm(train_paths, desc='Moving train files'):
+        if len(name.split('_')) == 3:
+            a, b, c = name.split('_')
+            name = a + '_' + b
+            structure2 = a + '_' + c
+            train_paths.append(structure2)
+        new_path = os.path.expanduser('/Volumes/Storage/LPDI/masif-tools/structures_copy/train/') + name + \
+            '.ply'
+        path = os.path.expanduser('/Volumes/Storage/LPDI/masif-tools/structures_copy/') + name + \
+            '.ply'
+        try:
+            os.replace(path, new_path)
+        except FileNotFoundError:
+            missing_train_paths.append(name)
+
+    print('{} paths missing'.format(len(missing_train_paths)))
+    return {'missing_test_paths': missing_test_paths,
+            'missing_train_paths': missing_train_paths}
     # rest in command line
+    # Move remaining structures to new directory called train.
 
 
 def generate_weights(labels):
