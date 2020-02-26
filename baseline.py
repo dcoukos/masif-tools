@@ -3,7 +3,7 @@ import numpy as np
 from torch_geometric.data import DataLoader
 from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate, Compose, Center
 from torch_geometric.nn import DataParallel
-from dataset import StructuresDataset
+from dataset import Structures
 from transforms import *
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_auc_score
@@ -54,10 +54,9 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.w
 #                                                       factor=p.lr_decay,
 #                                                       patience=p.patience)
 
-writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.format(
+writer = SummaryWriter(comment='model:{}_lr:{}_shuffle:{}_seed:{}'.format(
                        p.version,
                        learn_rate,
-                       p.lr_decay,
                        p.shuffle_dataset,
                        p.random_seed))
 
