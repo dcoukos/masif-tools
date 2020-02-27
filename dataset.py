@@ -14,6 +14,7 @@ File to generate the dataset from the ply files.
 '''
 
 
+
 def convert_data(path_to_raw='./masif_site_structures/', n=None, prefix='masif_site'):
     '''Generate raw unprocessed torch file to generate pyg datasets with fewer
         candidates.
@@ -173,7 +174,11 @@ def read_ply(path, learn_iface=True):
         faces = [torch.tensor(fa, dtype=torch.long) for fa in faces]
         face = torch.stack(faces, dim=-1)
 
-    data = Data(x=x, pos=pos, face=face, norm=norm, y=y)
+    name = path.rsplit('/', 1)[1].split('.')[0]
+    if use_masif_descriptor:
+        ms = find_masif_descriptor(path)
+
+    data = Data(x=x, pos=pos, face=face, norm=norm, y=y, name=name)
 
     return data
 
