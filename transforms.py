@@ -253,3 +253,32 @@ class RemoveFeatures(object):
 
         data.x = data.x[:, idx]
         return data
+
+
+class AddMasifDescriptor(object):
+    def __init__(self):
+        super(AddMasifDescriptor, self).__init__()
+
+    def __call__(self, data, remove_other_features):
+        assert data.name is not None
+
+        pdb = data.name.split('_')[0]
+        chain = data.name.split('_')[1]
+
+        folder_list = glob('./all_feat/{}*'.format(pdb))
+        assert len(folder_list) == 0
+        folder = folder_list[0]
+        _, chA, chB = folder.rsplit('/', 1)[1].split('_')
+        descriptor = None
+        if chain == chA:
+            descriptor = torch.tensor(np.load('{}/p1_desc_straight.npy'.format(folder)))
+        if chain == chB:
+            descriptor = torch.tensor(np.load('{}/p2_desc_straight.npy'.format(folder)))
+
+        assert data.x.shape[0] == descriptor.shape[0]
+        if remove_other_features:
+            torch.x = descriptors
+        else:
+            data.x = torch.cat((data.x, descriptor), dim=1)
+
+        return data
