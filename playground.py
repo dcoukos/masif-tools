@@ -238,24 +238,21 @@ import pandas as pd
 import numpy as np
 
 
+test = Structures(root='./datasets/masif_site_test/',
+                         pre_transform=Compose((Center(), FaceAttributes(),
+                         NodeCurvature(), FaceToEdge(),
+                         TwoHop())))
 train = Structures(root='./datasets/masif_site_train/',
                    pre_transform=Compose((Center(), FaceAttributes(),
                                           NodeCurvature(), FaceToEdge(),
                                           TwoHop())))
 
-test = StructuresDataset(root='./datasets/masif_site_test/',
-                         pre_transform=Compose((Center(), FaceAttributes(),
-                         NodeCurvature(), FaceToEdge(),
-                         TwoHop())))
 
 # ---------------- Trying to generate numpy files ----------------------
 
 
 train_structures = Structures(root='./datasets/{}_train'.format(p.dataset))
 
-len(train_structures)
-## ------- full datasets generated above ------------------
-# ---->  train & test
 
 collection = []
 for data in tqdm(test):

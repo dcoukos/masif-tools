@@ -39,11 +39,13 @@ print('Importing structures.')
 trainset = Structures(root='./datasets/masif_site_train/',
                              pre_transform=Compose((FaceAttributes(),
                                              NodeCurvature(), FaceToEdge(),
-                                             TwoHop())))
+                                             TwoHop())),
+                             transform=AddShapeIndex())
 validset = Structures(root='./datasets/masif_site_test/',
                              pre_transform=Compose((FaceAttributes(),
                                                    NodeCurvature(), FaceToEdge(),
-                                                   TwoHop())))
+                                                   TwoHop())),
+                             transform=AddShapeIndex())
 if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
