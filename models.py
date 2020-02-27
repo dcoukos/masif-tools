@@ -70,9 +70,12 @@ class OneConv(torch.nn.Module):
 
 
 class TwoConv(torch.nn.Module):
-    def __init__(self, n_features, heads=4):
+    def __init__(self, n_features, heads=4, masif_descr=False):
         # REMEMBER TO UPDATE MODEL NAME
         super(TwoConv, self).__init__()
+        self.masif_descr = masif_descr
+        if masif_descr is True:
+            self.pre_lin = Linear(80, n_features)
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
         self.conv2 = FeaStConv(16, 16, heads=heads)
         self.lin1 = Linear(16, 16)
@@ -85,6 +88,7 @@ class TwoConv(torch.nn.Module):
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
+        x = self.pre_lin(x) if self.masif_descr else x
         x = self.conv1(x, edge_index)
         x = self.s1(x)
         x = self.conv2(x, edge_index)
@@ -132,9 +136,12 @@ class FourConv(torch.nn.Module):
 
 
 class SixConv(torch.nn.Module):
-    def __init__(self, n_features, heads=4):
+    def __init__(self, n_features, heads=4, masif_descr=False):
         # REMEMBER TO UPDATE MODEL NAME
         super(SixConv, self).__init__()
+        self.masif_descr = masif_descr
+        if masif_descr is True:
+            self.pre_lin = Linear(80, n_features)
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
         self.conv2 = FeaStConv(16, 16, heads=heads)
         self.conv3 = FeaStConv(16, 16, heads=heads)
@@ -155,6 +162,7 @@ class SixConv(torch.nn.Module):
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
+        x = self.pre_lin(x) if self.masif_descr else x
         x = self.conv1(x, edge_index)
         x = self.s1(x)
         x = self.conv2(x, edge_index)
@@ -232,9 +240,12 @@ class EightConv(torch.nn.Module):
 
 
 class TenConv(torch.nn.Module):
-    def __init__(self, n_features, heads=4):
+    def __init__(self, n_features, heads=4, masif_descr=False):
         # REMEMBER TO UPDATE MODEL NAME
         super(TenConv, self).__init__()
+        self.masif_descr = masif_descr
+        if masif_descr is True:
+            self.pre_lin = Linear(80, n_features)
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
         self.conv2 = FeaStConv(16, 16, heads=heads)
         self.conv3 = FeaStConv(16, 16, heads=heads)
@@ -263,6 +274,7 @@ class TenConv(torch.nn.Module):
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
+        x = self.pre_lin(x) if self.masif_descr else x
         x = self.conv1(x, edge_index)
         x = self.s1(x)
         x = self.conv2(x, edge_index)
@@ -294,9 +306,12 @@ class TenConv(torch.nn.Module):
 
 
 class FourteenConv(torch.nn.Module):
-    def __init__(self, n_features, heads=4):
+    def __init__(self, n_features, heads=4, masif_descr=False):
         # REMEMBER TO UPDATE MODEL NAME
         super(FourteenConv, self).__init__()
+        self.masif_descr = masif_descr
+        if masif_descr is True:
+            self.pre_lin = Linear(80, n_features)
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
         self.conv2 = FeaStConv(16, 16, heads=heads)
         self.conv3 = FeaStConv(16, 16, heads=heads)
@@ -333,6 +348,7 @@ class FourteenConv(torch.nn.Module):
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
+        x = self.pre_lin(x) if self.masif_descr else x
         x = self.conv1(x, edge_index)
         x = self.s1(x)
         x = self.conv2(x, edge_index)
