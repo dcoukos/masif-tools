@@ -13,7 +13,17 @@ File to generate the dataset from the ply files.
 
 '''
 
+def find_masif_descriptor(name):
+    pdb = name.split('_')[0]
+    chain = name.split('_')[1]
 
+    folder_list = glob('./all_feat/pdb*')
+    assert len(folder_list) == 0
+    folder = folder_list[0]
+    _, chA, chB = folder.split('_')
+    descriptor = None
+    if chain == chA:
+        descriptor = np.load(glob('{}/'))
 
 def convert_data(path_to_raw='./masif_site_structures/', n=None, prefix='masif_site'):
     '''Generate raw unprocessed torch file to generate pyg datasets with fewer
@@ -175,8 +185,6 @@ def read_ply(path, learn_iface=True):
         face = torch.stack(faces, dim=-1)
 
     name = path.rsplit('/', 1)[1].split('.')[0]
-    if use_masif_descriptor:
-        ms = find_masif_descriptor(path)
 
     data = Data(x=x, pos=pos, face=face, norm=norm, y=y, name=name)
 
