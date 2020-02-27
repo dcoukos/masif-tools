@@ -256,10 +256,11 @@ class RemoveFeatures(object):
 
 
 class AddMasifDescriptor(object):
-    def __init__(self):
+    def __init__(self, remove_other_features):
         super(AddMasifDescriptor, self).__init__()
+        self.clean = remove_other_features
 
-    def __call__(self, data, remove_other_features):
+    def __call__(self, data):
         assert data.name is not None
 
         pdb = data.name.split('_')[0]
@@ -276,7 +277,7 @@ class AddMasifDescriptor(object):
             descriptor = torch.tensor(np.load('{}/p2_desc_straight.npy'.format(folder)))
 
         assert data.x.shape[0] == descriptor.shape[0]
-        if remove_other_features:
+        if self.clean:
             torch.x = descriptors
         else:
             data.x = torch.cat((data.x, descriptor), dim=1)
