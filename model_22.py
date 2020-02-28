@@ -47,7 +47,7 @@ if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 print('Setting up model...')
-model = SageNet(80)
+model = SageNet(80).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
 #                                                       factor=p.lr_decay,
@@ -63,8 +63,6 @@ writer = SummaryWriter(comment='model:{}_lr:{}_shuffle:{}_seed:{}'.format(
 # axes = [0, 1, 2]
 max_roc_auc = 0
 # ---- Training ----
-
-for model_n, model in enumerate(models):
 
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
