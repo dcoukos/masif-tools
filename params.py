@@ -1,5 +1,5 @@
 # REMEMBER TO CHANGE VERSION NUMBER
-from models import TwoConv, SixConv, TenConv, FourteenConv
+from models import SageNet, TwoConv, SixConv, TenConv, FourteenConv
 
 batch_size = 1
 test_batch_size = 1
@@ -9,10 +9,10 @@ random_seed = 37
 learn_rate = .00031
 weight_decay = 0
 epochs = 100
-version = 'exp1_conv-masif_desc'
+version = 'Neighborhood_Sampler'
 suppress_warnings = True
 dataset = 'named_masif'
-model_type = SixConv
+model_type = SageNet
 interface_weight = .8
 twohop = True
 heads = 4
