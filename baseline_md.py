@@ -2,8 +2,7 @@ import torch
 import numpy as np
 from torch_geometric.data import DataLoader
 from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate, Compose, Center
-from torch_geometric.nn import DataParallel
-from dataset import Structures
+from dataset import StructuresDataset
 from transforms import *
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_auc_score
@@ -36,21 +35,13 @@ else:
 print('Importing structures.')
 # Remember!!! Shape Index can only be computed on local. Add other transforms after
 # Pre_tranform step to not contaminate the data.
-trainset = Structures(root='./datasets/masif_site_train/',
-                             pre_transform=Compose((FaceAttributes(),
-                                             NodeCurvature(), FaceToEdge(),
-                                             TwoHop())),
-                             transform=AddShapeIndex())
-validset = Structures(root='./datasets/masif_site_test/',
-                             pre_transform=Compose((FaceAttributes(),
-                                                   NodeCurvature(), FaceToEdge(),
-                                                   TwoHop())),
-                             transform=AddShapeIndex())
+trainset = StructuresDataset(root='./datasets/named_masif_train_ds/')
+validset = StructuresDataset(root='./datasets/named_masif_test_ds/')
 if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 print('Setting up model...')
-model = p.model_type(4, heads=p.heads).to(device)
+model = p.model_type(16, heads=p.heads, masif_descr=True).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
 #                                                       factor=p.lr_decay,
