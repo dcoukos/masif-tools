@@ -499,7 +499,6 @@ trainset = StructuresDataset(root='./datasets/full_train_ds/',
 
 
 torch.load('./datasets/full_train_ds/processed/pre_filter.pt')
-torch.
 
 
 validset = StructuresDataset(root='./datasets/full_test_ds',
@@ -522,3 +521,12 @@ import itertools
 x = itertools.product([11, 12], [1,23], )
 for prd in x:
     print(prd)
+
+test = StructuresDataset(root='./datasets/named_masif_test_ds/',
+                         pre_transform=Compose((FaceToEdge(), TwoHop(), AddMasifDescriptor(True))),
+                         prefilter=None)
+
+len(test)
+test
+converter =
+Compose((FaceToEdge(), TwoHop(), AddMasifDescriptor(True)))

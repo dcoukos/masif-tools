@@ -4,6 +4,7 @@ import math
 import numpy as np
 import torch.sparse as tsp
 from models import ThreeConvBlock
+from glob import glob
 
 
 class FaceAttributes(object):
@@ -267,18 +268,28 @@ class AddMasifDescriptor(object):
         chain = data.name.split('_')[1]
 
         folder_list = glob('./all_feat/{}*'.format(pdb))
-        assert len(folder_list) == 0
-        folder = folder_list[0]
+        try:
+            assert len(folder_list) == 1
+        except AssertionError:
+            print(folder_list)
+            return None
+        try:
+            folder = folder_list[0]
+        except IndexError:
+            print(data.name)
+            return None
         _, chA, chB = folder.rsplit('/', 1)[1].split('_')
         descriptor = None
         if chain == chA:
             descriptor = torch.tensor(np.load('{}/p1_desc_straight.npy'.format(folder)))
         if chain == chB:
             descriptor = torch.tensor(np.load('{}/p2_desc_straight.npy'.format(folder)))
-
-        assert data.x.shape[0] == descriptor.shape[0]
+        try:
+            assert data.x.shape[0] == descriptor.shape[0]
+        except AttributeError:
+            return None
         if self.clean:
-            torch.x = descriptors
+            data.x = descriptor
         else:
             data.x = torch.cat((data.x, descriptor), dim=1)
 

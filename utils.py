@@ -10,15 +10,6 @@ from tqdm import tqdm
 import pandas as pd
 
 
-
-def match_indices(dataset, path, testing):
-    path = './datasets/full_test_ds/raw/full_indices.pt'
-    idx, nd = generate_index_list(path)
-    print(len(nd))
-    idx
-    'test' in path
-
-
 def generate_index_list(path_to_index_file):
     f = None
     if 'test' in path_to_index_file:

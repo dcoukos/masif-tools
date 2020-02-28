@@ -252,21 +252,26 @@ class StructuresDataset(Dataset):
     '''
     Structures class for datasets that do not fit into memory.
     '''
-    def __init__(self, root='./datasets/{}/'.format(p.dataset), pre_transform=None, transform=None):
+    def __init__(self, root='./datasets/{}/'.format(p.dataset), pre_transform=None, transform=None,
+                prefilter=3):
         self.device = torch.device('cpu')
+        self.pref = prefilter
         super(StructuresDataset, self).__init__(root, transform, pre_transform)
         self.has_nan = []
-        self.pre_filter = 3
 
     @property
     def raw_file_names(self):
-        n_files = len(glob('{}/raw/full_structure_*'.format(self.root)))
-        return ['full_structure_{}.pt'.format(idx) for idx in range(0, n_files)]
+        prefix = glob('{}/raw/*_structure_*'.format(self.root))[0].rsplit('/', 1)[1].rsplit('_', 2)[0]
+        n_files = len(glob('{}/raw/*_structure_*'.format(self.root)))
+        return ['{}_structure_{}.pt'.format(prefix, idx) for idx in range(0, n_files)]
 
     @property
     def processed_file_names(self):
         n_files = len(glob('{}/processed/data*'.format(self.root)))
-        return ['data_{}.pt'.format(i) for i in range(0, n_files)]  # right order
+        if n_files == 0:
+            return ['data_0.pt']
+        else:
+            return ['data_{}.pt'.format(i) for i in range(0, n_files)]  # right order
 
     def download(self):
         pass
@@ -279,12 +284,15 @@ class StructuresDataset(Dataset):
             data = torch.load(raw_path, map_location=self.device)
 
             # prefiltering
-            if max(torch.isnan(data.shape_index)):
-                self.has_nan.append(i)
-                continue
+            if self.pref is not None:
+                if max(torch.isnan(data.shape_index)):
+                    self.has_nan.append(i)
+                    continue
 
             if self.pre_transform is not None:
                 data = self.pre_transform(data)
+            if data is None:
+                continue
 
             torch.save(data, osp.join(self.processed_dir, 'data_{}.pt'.format(i)))
             i += 1

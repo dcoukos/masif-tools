@@ -1,19 +1,16 @@
 import torch
-import gc
 import numpy as np
 from torch_geometric.data import DataLoader, NeighborSampler
 from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate, Compose, Center
-from torch_geometric.nn import DataParallel
-from dataset import Structures
+from dataset import StructuresDataset
 from transforms import *
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_auc_score
-from utils import generate_weights, generate_example_surfaces, make_model_directory
+from utils import generate_weights, make_model_directory
 import params as p
 from statistics import mean
 import torch.nn.functional as F
-from tqdm import tqdm
-from models import ThreeConvBlock
+from models import SageNet
 
 '''
 Implementing Model 16a: (Model 15b + Shape index data):
@@ -44,43 +41,27 @@ else:
 print('Importing structures.')
 # Remember!!! Shape Index can only be computed on local. Add other transforms after
 # Pre_tranform step to not contaminate the data.
-dataset = Structures(root='./datasets/{}_train/'.format(p.dataset),
-                      pre_transform=Compose((FaceAttributes(),
-                                             NodeCurvature(), FaceToEdge(),
-                                             TwoHop())),
-                      transform=AddShapeIndex())
-
-
-samples = len(dataset)
-assert(p.validation_split < 0.3)
-cutoff = int(np.floor(samples*(1-p.validation_split)))
-trainset = dataset[:cutoff]
-validset = dataset[cutoff:]
-maskedset = validset[:int(len(validset)/2)]
-validset = validset[int(len(validset)/2):]
-
-
+trainset = StructuresDataset(root='./datasets/named_masif_train_ds/')
+validset = StructuresDataset(root='./datasets/named_masif_test_ds/')
 if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 print('Setting up model...')
-models = [ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu),
-          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu),
-          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu),
-          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu),
-          ThreeConvBlock(n_features=4, lin2=4, heads=p.heads).to(cpu)]
+model = SageNet(80)
+optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
+# scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
+#                                                       factor=p.lr_decay,
+#                                                       patience=p.patience)
 
-# setting up reporting
-writer = SummaryWriter(comment='model:{}_lr:{}_lr_decay:{}_shuffle:{}_seed:{}'.format(
+writer = SummaryWriter(comment='model:{}_lr:{}_shuffle:{}_seed:{}'.format(
                        p.version,
                        learn_rate,
-                       p.lr_decay,
                        p.shuffle_dataset,
                        p.random_seed))
 
-max_roc_auc = 0
-max_roc_masked = 0
 
+# axes = [0, 1, 2]
+max_roc_auc = 0
 # ---- Training ----
 
 for model_n, model in enumerate(models):
@@ -94,13 +75,6 @@ for model_n, model in enumerate(models):
         val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
         masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
 
-        data = next(iter(train_loader))
-        ns = NeighborSampler(next(iter(train_loader)), 0.4, 9, batch_size=1)
-
-        # error with NeighborSampler:
-        # neighbor sampler does not seem to be iterable like in the example.
-        for dataflow in ns():
-            print(dataflow)
         model.train()
         first_batch_labels = torch.Tensor()
         pred = torch.Tensor()
@@ -108,19 +82,19 @@ for model_n, model in enumerate(models):
         cum_pred = torch.Tensor().to(device)
         cum_labels = torch.Tensor().to(device)
         for batch_n, batch in enumerate(train_loader):
-            ns = NeighborSampler(batch, 0.92, 9)
-            batch = ns.data
-            batch = batch.to(device)
-            optimizer.zero_grad()
-            out, _ = model(batch)
-            labels = batch.y.to(device)
-            weights = generate_weights(labels).to(device)
-            tr_loss = F.binary_cross_entropy(out, target=labels, weight=weights)
-            loss.append(tr_loss.detach().item())
-            tr_loss.backward()
-            optimizer.step()
-            cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
-            cum_pred = torch.cat((cum_pred, out.clone().detach()), dim=0)
+            ns = NeighborSampler(batch, 0.5, 9)
+            for data_flow in ns():
+                batch = batch.to(device)
+                optimizer.zero_grad()
+                out, _ = SageNet(batch.x.to(device), data_flow.to(device))
+                labels = batch.y.to(device)
+                weights = generate_weights(labels).to(device)
+                tr_loss = F.binary_cross_entropy_with_logits(out, target=labels, weight=weights)
+                loss.append(tr_loss.detach().item())
+                tr_loss.backward()
+                optimizer.step()
+                cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
+                cum_pred = torch.cat((cum_pred, out.clone().detach()), dim=0)
 
         roc_auc = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
         loss = mean(loss)
@@ -131,31 +105,30 @@ for model_n, model in enumerate(models):
             cum_pred = torch.Tensor().to(device)
             cum_labels = torch.Tensor().to(device)
             for batch_n, batch in enumerate(val_loader):
-                ns = NeighborSampler(batch, 0.92, 9)
-                batch = ns.data
-                batch = batch.to(device)
-                out, _ = model(batch)
-                labels = batch.y.to(device)
-                weights = generate_weights(labels).to(device)
-                te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
-                pred = out.detach().round().to(device)
-                cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
-                cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
+                ns = NeighborSampler(batch, 0.5, 9)
+                for data_flow in ns():
+                    out, _ = model(batch.x.to(device), data_flow.to(device))
+                    labels = batch.y.to(device)
+                    weights = generate_weights(labels).to(device)
+                    te_loss = F.binary_cross_entropy_with_logits(out, target=labels, weight=generate_weights(labels))
+                    pred = out.detach().round().to(device)
+                    cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
+                    cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
             roc_auc_te = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
 
             cum_pred = torch.Tensor().to(device)
             cum_labels = torch.Tensor().to(device)
             for batch_n, batch in enumerate(masked_loader):
-                ns = NeighborSampler(batch, 0.92, 9)
-                batch = ns.data
-                batch = batch.to(device)
-                out, _ = model(batch)
-                labels = batch.y.to(device)
-                weights = generate_weights(labels).to(device)
-                te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
-                pred = out.detach().round().to(device)
-                cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
-                cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
+                ns = NeighborSampler(batch, 0.5, 9)
+                for data_flow in ns():
+                    batch = batch.to(device)
+                    out, _ = model(batch.x.to(device), data_flow.to(device))
+                    labels = batch.y.to(device)
+                    weights = generate_weights(labels).to(device)
+                    te_loss = F.binary_cross_entropy_with_logits(out, target=labels, weight=generate_weights(labels))
+                    pred = out.detach().round().to(device)
+                    cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
+                    cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
             roc_auc_masked = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
 
             writer.add_scalars('Loss', {'train': tr_loss,
@@ -171,52 +144,8 @@ for model_n, model in enumerate(models):
     #   -------------- MODEL SAVING ------------------------
             if roc_auc_te > max_roc_auc:
                 max_roc_auc = roc_auc_te
-                path = './{}/best_{}.pt'.format(modelpath, model_n)
+                path = './{}/best.pt'.format(modelpath)
                 with open(path, 'w+'):
                     torch.save(model.state_dict(), path)
-
-            if roc_auc_masked > max_roc_masked:
-                max_roc_masked = roc_auc_masked
-                path = path = './{}/masked_model_{}.pt'.format(modelpath, model_n)
-                with open(path, 'w+'):
-                    torch.save(model.state_dict(), path)
-
-# ----------- Preparing features from best version of this block -------------
-
-    with torch.no_grad():
-        if model_n < len(models)-1:
-            print('Preparing the best version of this model for next model input.')
-            model.load_state_dict(torch.load('./{}/masked_model_{}.pt'.format(modelpath, model_n), map_location=device))
-            model.eval()
-
-            train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
-            val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
-            masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
-
-            next_data = []
-            for batch in train_loader:
-                batch = batch.to(device)
-                _, inter = model(batch)
-                batch.x = batch.x + inter
-                next_data += batch.to(cpu).to_data_list()
-            trainset = next_data
-
-            next_data = []
-            for batch in val_loader:
-                batch = batch.to(device)
-                _, inter = model(batch)
-                batch.x = batch.x + inter
-                next_data += batch.to(cpu).to_data_list()
-            validset = next_data
-
-            next_data = []
-            for batch in masked_loader:
-                batch = batch.to(device)
-                _, inter = model(batch)
-                batch.x = batch.x + inter
-                next_data += batch.to(cpu).to_data_list()
-            maskedset = next_data
-
-            models[model_n+1].load_state_dict(torch.load('./{}/masked_model_{}.pt'.format(modelpath, model_n), map_location=device))
 
 writer.close()

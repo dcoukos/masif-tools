@@ -771,3 +771,55 @@ class MultiScaleFeaStNet(torch.nn.Module):
         x = torch.sigmoid(self.out(x))
 
         return x
+
+
+class SageNet(torch.nn.Module):
+    def __init__(self, n_features):
+        super(SageNet, self).__init__()
+        self.conv1 = SageConv(n_features, 16, normalize=False, concat=False)
+        self.conv2 = SageConv(16, 16, normalize=False, concat=False)
+        self.conv3 = SageConv(16, 16, normalize=False, concat=False)
+        self.conv4 = SageConv(16, 16, normalize=False, concat=False)
+        self.conv5 = SageConv(16, 16, normalize=False, concat=False)
+        self.conv6 = SageConv(16, 16, normalize=False, concat=False)
+        self.conv7 = SageConv(16, 16, normalize=False, concat=False)
+        self.conv8 = SageConv(16, 16, normalize=False, concat=False)
+        self.conv9 = SageConv(16, 16, normalize=False, concat=False)
+        self.lin1 = Linear(16, 64)
+        self.lin2 = Linear(64, 16)
+        self.out = Linear(16, 1)
+        self.s1 = SELU()
+        self.s2 = SELU()
+        self.s3 = SELU()
+        self.s4 = SELU()
+        self.s5 = SELU()
+        self.s6 = SELU()
+        self.s7 = SELU()
+        self.s8 = SELU()
+        self.s9 = SELU()
+        self.s10 = SELU()
+        self.s11 = SELU()
+
+    def forward(self, x, data_flow):
+        data = data_flow[0]
+        x = x[data.n_id]
+        x = self.s1(self.conv1((x, None), data.edge_index, size=data.size, res_n_id=data.res_n_id))
+        data = data_flow[1]
+        x = self.s2(self.conv2((x, None), data.edge_index, size=data.size, res_n_id=data.res_n_id))
+        data = data_flow[2]
+        x = self.s3(self.conv3((x, None), data.edge_index, size=data.size, res_n_id=data.res_n_id))
+        data = data_flow[3]
+        x = self.s4(self.conv4((x, None), data.edge_index, size=data.size, res_n_id=data.res_n_id))
+        data = data_flow[4]
+        x = self.s5(self.conv5((x, None), data.edge_index, size=data.size, res_n_id=data.res_n_id))
+        data = data_flow[5]
+        x = self.s6(self.conv6((x, None), data.edge_index, size=data.size, res_n_id=data.res_n_id))
+        data = data_flow[6]
+        x = self.s7(self.conv7((x, None), data.edge_index, size=data.size, res_n_id=data.res_n_id))
+        data = data_flow[7]
+        x = self.s8(self.conv8((x, None), data.edge_index, size=data.size, res_n_id=data.res_n_id))
+        data = data_flow[8]
+        x = self.s9(self.conv9((x, None), data.edge_index, size=data.size, res_n_id=data.res_n_id))
+        x = self.s10(self.lin1(x))
+        x = self.s11(self.lin2(x))
+        return self.out(x)
