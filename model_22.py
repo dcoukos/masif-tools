@@ -64,86 +64,86 @@ writer = SummaryWriter(comment='model:{}_lr:{}_shuffle:{}_seed:{}'.format(
 max_roc_auc = 0
 # ---- Training ----
 
-    model.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
+model.to(device)
+optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 # ------------ TRAINING NEW BLOCK --------------------------
-    print('Training block {}'.format(model_n))
-    for epoch in range(1, epochs+1):
-        train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
-        val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
-        masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
+print('Training block {}'.format(model_n))
+for epoch in range(1, epochs+1):
+    train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
+    val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
+    masked_loader = DataLoader(maskedset, shuffle=False, batch_size=p.test_batch_size)
 
-        model.train()
-        first_batch_labels = torch.Tensor()
-        pred = torch.Tensor()
-        loss = []
+    model.train()
+    first_batch_labels = torch.Tensor()
+    pred = torch.Tensor()
+    loss = []
+    cum_pred = torch.Tensor().to(device)
+    cum_labels = torch.Tensor().to(device)
+    for batch_n, batch in enumerate(train_loader):
+        ns = NeighborSampler(batch, 0.5, 9)
+        for data_flow in ns():
+            batch = batch.to(device)
+            optimizer.zero_grad()
+            out, _ = SageNet(batch.x.to(device), data_flow.to(device))
+            labels = batch.y.to(device)
+            weights = generate_weights(labels).to(device)
+            tr_loss = F.binary_cross_entropy_with_logits(out, target=labels, weight=weights)
+            loss.append(tr_loss.detach().item())
+            tr_loss.backward()
+            optimizer.step()
+            cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
+            cum_pred = torch.cat((cum_pred, out.clone().detach()), dim=0)
+
+    roc_auc = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
+    loss = mean(loss)
+
+#  --------------  EVALUATION & REPORTING ------------------------------------
+    with torch.no_grad():
+        model.eval()
         cum_pred = torch.Tensor().to(device)
         cum_labels = torch.Tensor().to(device)
-        for batch_n, batch in enumerate(train_loader):
+        for batch_n, batch in enumerate(val_loader):
+            ns = NeighborSampler(batch, 0.5, 9)
+            for data_flow in ns():
+                out, _ = model(batch.x.to(device), data_flow.to(device))
+                labels = batch.y.to(device)
+                weights = generate_weights(labels).to(device)
+                te_loss = F.binary_cross_entropy_with_logits(out, target=labels, weight=generate_weights(labels))
+                pred = out.detach().round().to(device)
+                cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
+                cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
+        roc_auc_te = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
+
+        cum_pred = torch.Tensor().to(device)
+        cum_labels = torch.Tensor().to(device)
+        for batch_n, batch in enumerate(masked_loader):
             ns = NeighborSampler(batch, 0.5, 9)
             for data_flow in ns():
                 batch = batch.to(device)
-                optimizer.zero_grad()
-                out, _ = SageNet(batch.x.to(device), data_flow.to(device))
+                out, _ = model(batch.x.to(device), data_flow.to(device))
                 labels = batch.y.to(device)
                 weights = generate_weights(labels).to(device)
-                tr_loss = F.binary_cross_entropy_with_logits(out, target=labels, weight=weights)
-                loss.append(tr_loss.detach().item())
-                tr_loss.backward()
-                optimizer.step()
+                te_loss = F.binary_cross_entropy_with_logits(out, target=labels, weight=generate_weights(labels))
+                pred = out.detach().round().to(device)
                 cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
-                cum_pred = torch.cat((cum_pred, out.clone().detach()), dim=0)
+                cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
+        roc_auc_masked = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
 
-        roc_auc = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
-        loss = mean(loss)
+        writer.add_scalars('Loss', {'train': tr_loss,
+                                    'test': te_loss}, epoch)
+        writer.add_scalars('ROC AUC', {'train': roc_auc,
+                                       'test': roc_auc_te,
+                                       'masked': roc_auc_masked}, epoch)
+        writer.add_scalar('learning rate', learn_rate, epoch)
 
-#  --------------  EVALUATION & REPORTING ------------------------------------
-        with torch.no_grad():
-            model.eval()
-            cum_pred = torch.Tensor().to(device)
-            cum_labels = torch.Tensor().to(device)
-            for batch_n, batch in enumerate(val_loader):
-                ns = NeighborSampler(batch, 0.5, 9)
-                for data_flow in ns():
-                    out, _ = model(batch.x.to(device), data_flow.to(device))
-                    labels = batch.y.to(device)
-                    weights = generate_weights(labels).to(device)
-                    te_loss = F.binary_cross_entropy_with_logits(out, target=labels, weight=generate_weights(labels))
-                    pred = out.detach().round().to(device)
-                    cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
-                    cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
-            roc_auc_te = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
+        print("---- Round {}: tr_loss={:.4f} te_roc_auc:{:.4f} lr:{:.6f}"
+              .format(epoch, loss, roc_auc_te, learn_rate))
 
-            cum_pred = torch.Tensor().to(device)
-            cum_labels = torch.Tensor().to(device)
-            for batch_n, batch in enumerate(masked_loader):
-                ns = NeighborSampler(batch, 0.5, 9)
-                for data_flow in ns():
-                    batch = batch.to(device)
-                    out, _ = model(batch.x.to(device), data_flow.to(device))
-                    labels = batch.y.to(device)
-                    weights = generate_weights(labels).to(device)
-                    te_loss = F.binary_cross_entropy_with_logits(out, target=labels, weight=generate_weights(labels))
-                    pred = out.detach().round().to(device)
-                    cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
-                    cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
-            roc_auc_masked = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
-
-            writer.add_scalars('Loss', {'train': tr_loss,
-                                        'test': te_loss}, epoch)
-            writer.add_scalars('ROC AUC', {'train': roc_auc,
-                                           'test': roc_auc_te,
-                                           'masked': roc_auc_masked}, epoch)
-            writer.add_scalar('learning rate', learn_rate, epoch)
-
-            print("---- Round {}: tr_loss={:.4f} te_roc_auc:{:.4f} lr:{:.6f}"
-                  .format(epoch, loss, roc_auc_te, learn_rate))
-
-    #   -------------- MODEL SAVING ------------------------
-            if roc_auc_te > max_roc_auc:
-                max_roc_auc = roc_auc_te
-                path = './{}/best.pt'.format(modelpath)
-                with open(path, 'w+'):
-                    torch.save(model.state_dict(), path)
+#   -------------- MODEL SAVING ------------------------
+        if roc_auc_te > max_roc_auc:
+            max_roc_auc = roc_auc_te
+            path = './{}/best.pt'.format(modelpath)
+            with open(path, 'w+'):
+                torch.save(model.state_dict(), path)
 
 writer.close()

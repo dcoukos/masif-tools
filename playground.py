@@ -526,7 +526,6 @@ test = StructuresDataset(root='./datasets/named_masif_test_ds/',
                          pre_transform=Compose((FaceToEdge(), TwoHop(), AddMasifDescriptor(True))),
                          prefilter=None)
 
-len(test)
-test
-converter =
-Compose((FaceToEdge(), TwoHop(), AddMasifDescriptor(True)))
+train = StructuresDataset(root='./datasets/named_masif_train_ds/',
+                         pre_transform=Compose((FaceToEdge(), TwoHop(), AddMasifDescriptor(True))),
+                         prefilter=None)
