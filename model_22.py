@@ -78,17 +78,17 @@ for epoch in range(1, epochs+1):
     cum_labels = torch.Tensor().to(device)
     for batch_n, batch in enumerate(train_loader):
         ns = NeighborSampler(batch, 0.5, 9)
-        for data_flow in ns():
+        for node, data_flow in enumerate(ns()):
             batch = batch.to(device)
             optimizer.zero_grad()
             out = model(batch.x.to(device), data_flow.to(device))
-            labels = batch.y.to(device)
-            weights = generate_weights(labels).to(device)
-            tr_loss = F.binary_cross_entropy_with_logits(out, target=labels, weight=weights)
+            label = batch.y[node].to(device)
+            weights = generate_weights(label).to(device)
+            tr_loss = F.binary_cross_entropy_with_logits(out, target=label, weight=weights)
             loss.append(tr_loss.detach().item())
             tr_loss.backward()
             optimizer.step()
-            cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
+            cum_labels = torch.cat((cum_labels, label.clone().detach()), dim=0)
             cum_pred = torch.cat((cum_pred, out.clone().detach()), dim=0)
 
     roc_auc = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
@@ -103,11 +103,11 @@ for epoch in range(1, epochs+1):
             ns = NeighborSampler(batch, 0.5, 9)
             for data_flow in ns():
                 out = model(batch.x.to(device), data_flow.to(device))
-                labels = batch.y.to(device)
-                weights = generate_weights(labels).to(device)
-                te_loss = F.binary_cross_entropy_with_logits(out, target=labels, weight=generate_weights(labels))
+                label = batch.y[node].to(device)
+                weights = generate_weights(label).to(device)
+                tr_loss = F.binary_cross_entropy_with_logits(out, target=label, weight=weights)
                 pred = out.detach().round().to(device)
-                cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
+                cum_labels = torch.cat((cum_labels, label.clone().detach()), dim=0)
                 cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
         roc_auc_te = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
 
