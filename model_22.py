@@ -11,6 +11,7 @@ import params as p
 from statistics import mean
 import torch.nn.functional as F
 from models import SageNet
+from tqdm import tqdm
 
 '''
 Implementing Model 16a: (Model 15b + Shape index data):
@@ -76,13 +77,13 @@ for epoch in range(1, epochs+1):
     loss = []
     cum_pred = torch.Tensor().to(device)
     cum_labels = torch.Tensor().to(device)
-    for batch_n, batch in enumerate(train_loader):
-        ns = NeighborSampler(batch, 0.5, 9)
+    for batch in tqdm(train_loader):
+        ns = NeighborSampler(batch, 0.1, 9)
         for node, data_flow in enumerate(ns()):
             batch = batch.to(device)
             optimizer.zero_grad()
             out = model(batch.x.to(device), data_flow.to(device))
-            label = batch.y[node].to(device)
+            label = batch.y[node].to(device).view(-1, 1)
             weights = generate_weights(label).to(device)
             tr_loss = F.binary_cross_entropy_with_logits(out, target=label, weight=weights)
             loss.append(tr_loss.detach().item())
@@ -99,13 +100,13 @@ for epoch in range(1, epochs+1):
         model.eval()
         cum_pred = torch.Tensor().to(device)
         cum_labels = torch.Tensor().to(device)
-        for batch_n, batch in enumerate(val_loader):
-            ns = NeighborSampler(batch, 0.5, 9)
+        for batch in tqdm(val_loader):
+            ns = NeighborSampler(batch, 0.1, 9)
             for data_flow in ns():
                 out = model(batch.x.to(device), data_flow.to(device))
-                label = batch.y[node].to(device)
+                label = batch.y[node].to(device).view(-1, 1)
                 weights = generate_weights(label).to(device)
-                tr_loss = F.binary_cross_entropy_with_logits(out, target=label, weight=weights)
+                te_loss = F.binary_cross_entropy_with_logits(out, target=label, weight=weights)
                 pred = out.detach().round().to(device)
                 cum_labels = torch.cat((cum_labels, label.clone().detach()), dim=0)
                 cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
