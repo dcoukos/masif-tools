@@ -302,6 +302,6 @@ class AddRandomFeature(object):
 
     def __call__(self, data):
         x = data.x
-        rand = torch.zeros((x.shape[0], 1), dtype=torch.short).random_()
+        rand = torch.zeros((x.shape[0], 1), dtype=torch.float).random_()
         data.x = torch.cat((x, rand), dim=1)
         return data
