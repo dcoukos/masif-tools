@@ -221,11 +221,6 @@ def save_ply(
     )
 
 
-#  ---- trying to recover model parameters for use in multi-block model -----
-import torch
-torch.load('./models/Feb16_14:09_20b/best_0.pt', map_location=torch.device('cpu'))
-
-
 # ------ Adding shape index features to full dataset ---------------------
 import torch
 from dataset import Structures, StructuresDataset
@@ -498,9 +493,6 @@ trainset = StructuresDataset(root='./datasets/full_train_ds/',
                                                     FaceToEdge(), TwoHop())))
 
 
-torch.load('./datasets/full_train_ds/processed/pre_filter.pt')
-
-
 validset = StructuresDataset(root='./datasets/full_test_ds',
                              pre_transform=Compose((FaceAttributes(), NodeCurvature(),
                                                     FaceToEdge(), TwoHop())))
@@ -529,3 +521,7 @@ test = StructuresDataset(root='./datasets/named_masif_test_ds/',
 train = StructuresDataset(root='./datasets/named_masif_train_ds/',
                          pre_transform=Compose((FaceToEdge(), TwoHop(), AddMasifDescriptor(True))),
                          prefilter=None)
+
+
+
+# ----------- Trying to initialize layers of deep networks with previously learned ones ----------
