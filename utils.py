@@ -64,10 +64,6 @@ def perf_measure(pred, labels):
     return (TP, FP, TN, FN)
 
 
-import glob
-glob.glob('./structures_copy/1BO6*')
-
-
 def stats(pred, labels):
     from sklearn.metrics import classification_report
     return classification_report(labels.cpu().detach().numpy(), pred.cpu().detach().numpy())
