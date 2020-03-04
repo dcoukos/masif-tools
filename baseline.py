@@ -37,24 +37,20 @@ print('Importing structures.')
 # Remember!!! Shape Index can only be computed on local. Add other transforms after
 # Pre_tranform step to not contaminate the data.
 trainset = Structures(root='./datasets/masif_site_train/',
-                             pre_transform=Compose((FaceAttributes(),
-                                             NodeCurvature(), FaceToEdge(),
-                                             TwoHop())),
-                             transform=AddShapeIndex())
+                      pre_transform=Compose((FaceAttributes(), NodeCurvature(),
+                                             FaceToEdge(), TwoHop())),
+                      transform=Compose((AddShapeIndex(), AddRandomFeature())))
 validset = Structures(root='./datasets/masif_site_test/',
-                             pre_transform=Compose((FaceAttributes(),
-                                                   NodeCurvature(), FaceToEdge(),
-                                                   TwoHop())),
-                             transform=AddShapeIndex())
+                      pre_transform=Compose((FaceAttributes(), NodeCurvature(),
+                                             FaceToEdge(), TwoHop())),
+                      transform=Compose((AddShapeIndex(), AddRandomFeature())))
+
 if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 print('Setting up model...')
 model = p.model_type(4, heads=p.heads).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
-# scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
-#                                                       factor=p.lr_decay,
-#                                                       patience=p.patience)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_shuffle:{}_seed:{}'.format(
                        p.version,
@@ -63,7 +59,6 @@ writer = SummaryWriter(comment='model:{}_lr:{}_shuffle:{}_seed:{}'.format(
                        p.random_seed))
 
 
-# axes = [0, 1, 2]
 max_roc_auc = 0
 
 # ---- Training ----

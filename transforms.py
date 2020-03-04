@@ -294,3 +294,14 @@ class AddMasifDescriptor(object):
             data.x = torch.cat((data.x, descriptor), dim=1)
 
         return data
+
+
+class AddRandomFeature(object):
+    def __init__(self):
+        super(AddRandomFeature, self).__init__()
+
+    def __call__(self, data):
+        x = data.x
+        rand = torch.zeros((x.shape[0], 1), dtype=torch.short).random_()
+        data.x = torch.cat((x, rand), dim=1)
+        return data
