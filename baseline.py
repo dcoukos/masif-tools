@@ -48,8 +48,21 @@ validset = Structures(root='./datasets/masif_site_test/',
 if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
+
+# ---- Import previous model to allow deep network to train -------------
 print('Setting up model...')
-model = p.model_type(4, heads=p.heads).to(device)
+prev_model = torch.load('./models/Feb27_11:07_exp1_10conv-elec+SI/best.pt', map_location=cpu)
+model = p.model_type(5, heads=p.heads).to(cpu)
+
+conv1_weights = prev_model['conv1.weight']
+extra_row = torch.ones(1, 64)*.000001
+conv1_weights = torch.cat((conv1_weights, extra_row), dim=0)
+prev_model['conv1.weight'] = conv1_weights
+
+conv1_u = prev_model['conv1.u']
+conv1_u = torch.cat((conv1_u, torch.tensor([0.05, 0.05, 0.05, 0.05]).view(1, 4)), dim=0)
+prev_model['conv1.u'] = conv1_u
+model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_shuffle:{}_seed:{}'.format(

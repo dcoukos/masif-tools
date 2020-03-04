@@ -525,3 +525,34 @@ train = StructuresDataset(root='./datasets/named_masif_train_ds/',
 
 
 # ----------- Trying to initialize layers of deep networks with previously learned ones ----------
+
+import torch
+import numpy as np
+from torch_geometric.data import DataLoader
+from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate, Compose, Center
+from torch_geometric.nn import DataParallel
+from dataset import Structures
+from transforms import *
+from torch.utils.tensorboard import SummaryWriter
+from sklearn.metrics import roc_auc_score
+from utils import generate_weights, generate_example_surfaces, make_model_directory
+import params as p
+from statistics import mean
+import torch.nn.functional as F
+from tqdm import tqdm
+
+device = torch.device('cpu')
+prev_model = torch.load('./models/Feb27_11:07_exp1_10conv-elec+SI/best.pt', map_location=cpu)
+model = p.model_type(5, heads=p.heads).to(cpu)
+
+conv1_weights = prev_model['conv1.weight']
+extra_row = torch.ones(1, 64)
+conv1_weights = torch.cat((conv1_weights, extra_row), dim=0)
+prev_model['conv1.weight'] = conv1_weights
+
+conv1_u = prev_model['conv1.u']
+conv1_u = torch.cat((conv1_u, torch.tensor([0.05, 0.05, 0.05, 0.05]).view(1,4)), dim=0)
+prev_model['conv1.u'] = conv1_u
+
+
+model.load_state_dict(prev_model)
