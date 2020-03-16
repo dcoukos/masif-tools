@@ -1,5 +1,5 @@
 # REMEMBER TO CHANGE VERSION NUMBER
-from models import SageNet, TwoConv, SixConv, TenConv, FourteenConv
+from models import  FourConv, TenConv, FourteenConv
 
 batch_size = 1
 test_batch_size = 1
@@ -9,7 +9,7 @@ random_seed = 37
 learn_rate = .00031
 weight_decay = 0
 epochs = 100
-version = 'exp2_2hops'
+version = 'exp2_4hops'
 suppress_warnings = True
 dataset = 'masif_site'
 model_type = FourConv
