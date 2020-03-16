@@ -54,7 +54,7 @@ if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 print('Setting up model...')
-model = TenConv(4, 4)
+model = p.model_type(4, 4)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
 #                                                       factor=p.lr_decay,
@@ -72,7 +72,6 @@ max_roc_auc = 0
 # ---- Training ----
 
 model.to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 for epoch in range(1, epochs+1):
     train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
     val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
@@ -85,16 +84,13 @@ for epoch in range(1, epochs+1):
     cum_labels = torch.Tensor().to(device)
     for batch in tqdm(train_loader):
         # What if you use just 5 neighbors?
-    batch = next(iter(train_loader))
         ns = NeighborSampler(batch, size=[1., 1., 0.5, 0.5, 0.5], num_hops=5, bipartite=False)
-        next(iter(ns()))
 
-
-        for node, data_flow in enumerate(ns()):
-            batch = batch.to(device)
+        for subdata in ns():
             optimizer.zero_grad()
-            out = model(batch.x.to(device), data_flow.to(device))
-            label = batch.y[node].to(device).view(-1, 1)
+            out = model(batch.x[subdata.n_id], subdata.edge_index)
+            out = out[subdata.sub_b_id]
+            label = batch.y[subdata.n_id].to(device).view(-1, 1)
             weights = generate_weights(label).to(device)
             tr_loss = F.binary_cross_entropy_with_logits(out, target=label, weight=weights)
             loss.append(tr_loss.detach().item())
@@ -112,10 +108,11 @@ for epoch in range(1, epochs+1):
         cum_pred = torch.Tensor().to(device)
         cum_labels = torch.Tensor().to(device)
         for batch in tqdm(val_loader):
-            ns = NeighborSampler(batch, 0.1, 9)
-            for data_flow in ns():
-                out = model(batch.x.to(device), data_flow.to(device))
-                label = batch.y[node].to(device).view(-1, 1)
+            ns = NeighborSampler(batch, 0.5, 5)
+            for subdata in ns():
+                out = model(batch.x[subdata.n_id], subdata.edge_index)
+                out = out[subdata.sub_b_id]
+                label = batch.y[subdata.n_id].to(device).view(-1, 1)
                 weights = generate_weights(label).to(device)
                 te_loss = F.binary_cross_entropy_with_logits(out, target=label, weight=weights)
                 pred = out.detach().round().to(device)
