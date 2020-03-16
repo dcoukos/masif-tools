@@ -68,8 +68,10 @@ max_roc_auc = 0
 # ---- Training ----
 print('Training...')
 for epoch in range(1, epochs+1):
-    trainset.transform = Compose((Center(), RandomRotate(90, epoch%3), AddPositionalData()))
-    validset.transform = Compose((Center(), RandomRotate(90, epoch%3), AddPositionalData()))
+    trainset.transform = Compose((Center(), RandomRotate(90, epoch%3), AddPositionalData(),
+                                  TwoHop(), TwoHop(), TwoHop()))
+    validset.transform = Compose((Center(), RandomRotate(90, epoch%3), AddPositionalData(),
+                                TwoHop(), TwoHop(), TwoHop()))
     train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
     val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
 
