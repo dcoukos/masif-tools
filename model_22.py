@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from torch_geometric.data import DataLoader, NeighborSampler
 from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate, Compose, Center
-from dataset import StructuresDataset
+from dataset import Structures
 from transforms import *
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_auc_score
@@ -10,7 +10,7 @@ from utils import generate_weights, make_model_directory
 import params as p
 from statistics import mean
 import torch.nn.functional as F
-from models import SageNet
+from models import TenConv
 from tqdm import tqdm
 
 '''
@@ -42,13 +42,19 @@ else:
 print('Importing structures.')
 # Remember!!! Shape Index can only be computed on local. Add other transforms after
 # Pre_tranform step to not contaminate the data.
-trainset = StructuresDataset(root='./datasets/named_masif_train_ds/')
-validset = StructuresDataset(root='./datasets/named_masif_test_ds/')
+trainset = Structures(root='./datasets/masif_site_train/',
+                      transform=AddShapeIndex())
+validset = Structures(root='./datasets/masif_site_test/',
+                      transform=AddShapeIndex())
+
+# What exactly is a structures Dataset again?
+trainset[0]
+
 if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 print('Setting up model...')
-model = SageNet(80).to(device)
+model = TenConv(4, 4)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
 #                                                       factor=p.lr_decay,
@@ -78,7 +84,12 @@ for epoch in range(1, epochs+1):
     cum_pred = torch.Tensor().to(device)
     cum_labels = torch.Tensor().to(device)
     for batch in tqdm(train_loader):
-        ns = NeighborSampler(batch, 0.1, 9)
+        # What if you use just 5 neighbors?
+    batch = next(iter(train_loader))
+        ns = NeighborSampler(batch, size=[1., 1., 0.5, 0.5, 0.5], num_hops=5, bipartite=False)
+        next(iter(ns()))
+
+
         for node, data_flow in enumerate(ns()):
             batch = batch.to(device)
             optimizer.zero_grad()

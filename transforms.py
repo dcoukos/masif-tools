@@ -5,6 +5,7 @@ import numpy as np
 import torch.sparse as tsp
 from models import ThreeConvBlock
 from glob import glob
+from torch_geometric.transforms import TwoHop
 
 
 class FaceAttributes(object):
@@ -305,3 +306,21 @@ class AddRandomFeature(object):
         rand = torch.zeros((x.shape[0], 1), dtype=torch.float).random_()
         data.x = torch.cat((x, rand), dim=1)
         return data
+
+
+class MultiHop(object):
+    def __init__(self, hops):
+        super(MultiHop, self).__init__()
+        self.nhops = hops
+        self.converter = TwoHop()
+        assert hops > 1
+
+    def __call__(self, data, n=None):
+        if n is None:
+            n = self.nhops
+        if n > 1:
+            data = self.__call__(data, n-1)
+            data = self.converter(data)
+            return data
+        if n == 1:
+            return data

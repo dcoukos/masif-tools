@@ -3,6 +3,7 @@ import numpy as np
 from torch_geometric.data import DataLoader
 from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate, Compose, Center
 from torch_geometric.nn import DataParallel
+from torch_geometric.utils import precision, recall, f1_score
 from dataset import Structures
 from transforms import *
 from torch.utils.tensorboard import SummaryWriter
@@ -38,32 +39,20 @@ print('Importing structures.')
 # Pre_tranform step to not contaminate the data.
 trainset = Structures(root='./datasets/masif_site_train/',
                       pre_transform=Compose((FaceAttributes(), NodeCurvature(),
-                                             FaceToEdge(), TwoHop())),
-                      transform=Compose((AddShapeIndex(), AddRandomFeature())))
+                                             FaceToEdge(), TwoHop())))
+# Define transform in epoch, so that rotation occurs around Δ axis every time.
 validset = Structures(root='./datasets/masif_site_test/',
                       pre_transform=Compose((FaceAttributes(), NodeCurvature(),
-                                             FaceToEdge(), TwoHop())),
-                      transform=Compose((AddShapeIndex(), AddRandomFeature())))
+                                             FaceToEdge(), TwoHop())))
 
 if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 
 # ---- Import previous model to allow deep network to train -------------
-print('Setting up model...')
-prev_model = torch.load('./models/Feb27_11:07_exp1_10conv-elec+SI/best.pt', map_location=cpu)
-model = p.model_type(5, heads=p.heads).to(cpu)
+model = p.model_type(9, heads=p.heads).to(cpu)
 
-conv1_weights = prev_model['conv1.weight']
-extra_row = torch.ones(1, 64)*.00000001
-conv1_weights = torch.cat((conv1_weights, extra_row), dim=0)
-prev_model['conv1.weight'] = conv1_weights
-
-conv1_u = prev_model['conv1.u']
-conv1_u = torch.cat((conv1_u, torch.tensor([-0.05, -0.05, 0.05, 0.05]).view(1, 4)), dim=0)
-prev_model['conv1.u'] = conv1_u
-model.load_state_dict(prev_model)
-model = model.to(device)
+model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_shuffle:{}_seed:{}'.format(
@@ -78,7 +67,8 @@ max_roc_auc = 0
 # ---- Training ----
 print('Training...')
 for epoch in range(1, epochs+1):
-
+    trainset.transform = Compose((Center(), RandomRotate(90, epoch%3), AddPositionalData()))
+    valset.transform = Compose((Center(), RandomRotate(90, epoch%3), AddPositionalData()))
     train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
     val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
 
@@ -103,6 +93,10 @@ for epoch in range(1, epochs+1):
         cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
         cum_pred = torch.cat((cum_pred, out.clone().detach()), dim=0)
 
+    train_precision = precision(pred, first_batch_labels, 2)[1].item()
+    train_recall = recall(pred, first_batch_labels, 2)[1].item()
+    train_f1 = f1_score(pred, first_batch_labels, 2)[1].item()
+
     roc_auc = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
     loss = mean(loss)
 
@@ -122,12 +116,22 @@ for epoch in range(1, epochs+1):
         cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
         te_weights = torch.cat((te_weights, weights.clone().detach()), dim=0)
 
+    test_precision = precision(cum_pred, cum_labels, 2)[1].item()
+    test_recall = recall(cum_pred, cum_labels, 2)[1].item()
+    test_f1 = f1_score(cum_pred, cum_labels, 2)[1].item()
+
     roc_auc_te = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
     writer.add_scalars('Loss', {'train': tr_loss,
                                 'test': te_loss}, epoch)
     writer.add_scalars('ROC AUC', {'train': roc_auc,
                                    'test': roc_auc_te}, epoch)
     writer.add_scalar('learning rate', learn_rate, epoch)
+    writer.add_scalars('Recall', {'train': train_recall,
+                                  'test': test_recall}, epoch)
+    writer.add_scalars('Precision', {'train': train_precision,
+                                     'test': test_precision}, epoch)
+    writer.add_scalars('F1_score', {'train': train_f1,
+                                    'test': test_f1}, epoch)
 
     print("---- Round {}: tr_loss={:.4f} te_roc_auc:{:.4f} lr:{:.6f}"
           .format(epoch, loss, roc_auc_te, learn_rate))
