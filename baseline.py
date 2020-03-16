@@ -93,9 +93,9 @@ for epoch in range(1, epochs+1):
         cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
         cum_pred = torch.cat((cum_pred, out.clone().detach()), dim=0)
 
-    train_precision = precision(pred, first_batch_labels, 2)[1].item()
-    train_recall = recall(pred, first_batch_labels, 2)[1].item()
-    train_f1 = f1_score(pred, first_batch_labels, 2)[1].item()
+    train_precision = precision(cum_pred, cum_labels, 2)[1].item()
+    train_recall = recall(cum_pred, cum_labels, 2)[1].item()
+    train_f1 = f1_score(cum_pred, cum_labels, 2)[1].item()
 
     roc_auc = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
     loss = mean(loss)
