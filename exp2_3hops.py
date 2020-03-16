@@ -50,6 +50,7 @@ if p.shuffle_dataset:
 n_features = trainset.get(0).x.shape[1]
 
 # ---- Import previous model to allow deep network to train -------------
+
 model = p.model_type(9, heads=p.heads).to(cpu)
 
 model.to(device)
@@ -67,8 +68,10 @@ max_roc_auc = 0
 # ---- Training ----
 print('Training...')
 for epoch in range(1, epochs+1):
-    trainset.transform = Compose((Center(), RandomRotate(90, epoch%3), AddPositionalData()))
-    validset.transform = Compose((Center(), RandomRotate(90, epoch%3), AddPositionalData()))
+    trainset.transform = Compose((Center(), RandomRotate(90, epoch%3), AddPositionalData(),
+                                  TwoHop()))
+    validset.transform = Compose((Center(), RandomRotate(90, epoch%3), AddPositionalData(),
+                                TwoHop()))
     train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
     val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
 
