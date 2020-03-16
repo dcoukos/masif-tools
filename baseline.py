@@ -50,8 +50,7 @@ if p.shuffle_dataset:
 n_features = trainset.get(0).x.shape[1]
 
 # ---- Import previous model to allow deep network to train -------------
-print('Setting up model...')
-prev_model = torch.load('./models/Feb27_11:07_exp1_10conv-elec+SI/best.pt', map_location=cpu)
+
 model = p.model_type(9, heads=p.heads).to(cpu)
 
 model.to(device)
