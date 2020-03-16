@@ -55,14 +55,15 @@ prev_model = torch.load('./models/Feb27_11:07_exp1_10conv-elec+SI/best.pt', map_
 model = p.model_type(5, heads=p.heads).to(cpu)
 
 conv1_weights = prev_model['conv1.weight']
-extra_row = torch.ones(1, 64)*.000001
+extra_row = torch.ones(1, 64)*.00000001
 conv1_weights = torch.cat((conv1_weights, extra_row), dim=0)
 prev_model['conv1.weight'] = conv1_weights
 
 conv1_u = prev_model['conv1.u']
-conv1_u = torch.cat((conv1_u, torch.tensor([0.05, 0.05, 0.05, 0.05]).view(1, 4)), dim=0)
+conv1_u = torch.cat((conv1_u, torch.tensor([-0.05, -0.05, 0.05, 0.05]).view(1, 4)), dim=0)
 prev_model['conv1.u'] = conv1_u
-model.to(device)
+model.load_state_dict(prev_model)
+model = model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_shuffle:{}_seed:{}'.format(
