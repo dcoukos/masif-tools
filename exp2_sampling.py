@@ -32,6 +32,9 @@ torch.manual_seed(p.random_seed)
 np.random.seed(p.random_seed)
 learn_rate = p.learn_rate
 modelpath = make_model_directory()
+coverage = p.coverage
+hops = p.hops
+
 
 if str(device) == 'cuda:0':
     epochs = p.epochs
@@ -54,7 +57,7 @@ if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 print('Setting up model...')
-model = TenConv(4, 4)
+model = p.model_type(4, 4)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
 #                                                       factor=p.lr_decay,
@@ -72,7 +75,6 @@ max_roc_auc = 0
 # ---- Training ----
 
 model.to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 for epoch in range(1, epochs+1):
     train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)  # redefine train_loader to use data out.
     val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
@@ -85,16 +87,12 @@ for epoch in range(1, epochs+1):
     cum_labels = torch.Tensor().to(device)
     for batch in tqdm(train_loader):
         # What if you use just 5 neighbors?
-    batch = next(iter(train_loader))
-        ns = NeighborSampler(batch, size=[1., 1., 0.5, 0.5, 0.5], num_hops=5, bipartite=False)
-        next(iter(ns()))
+        ns = NeighborSampler(batch, size=coverage, num_hops=hops, bipartite=False)
 
-
-        for node, data_flow in enumerate(ns()):
-            batch = batch.to(device)
+        for subdata in ns():
             optimizer.zero_grad()
-            out = model(batch.x.to(device), data_flow.to(device))
-            label = batch.y[node].to(device).view(-1, 1)
+            out = model(batch.x[subdata.n_id], subdata.edge_index)
+            label = batch.y[subdata.n_id].to(device).view(-1, 1)
             weights = generate_weights(label).to(device)
             tr_loss = F.binary_cross_entropy_with_logits(out, target=label, weight=weights)
             loss.append(tr_loss.detach().item())
@@ -103,6 +101,9 @@ for epoch in range(1, epochs+1):
             cum_labels = torch.cat((cum_labels, label.clone().detach()), dim=0)
             cum_pred = torch.cat((cum_pred, out.clone().detach()), dim=0)
 
+    train_precision = precision(cum_pred, cum_labels, 2)[1].item()
+    train_recall = recall(cum_pred, cum_labels, 2)[1].item()
+    train_f1 = f1_score(cum_pred, cum_labels, 2)[1].item()
     roc_auc = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
     loss = mean(loss)
 
@@ -112,15 +113,19 @@ for epoch in range(1, epochs+1):
         cum_pred = torch.Tensor().to(device)
         cum_labels = torch.Tensor().to(device)
         for batch in tqdm(val_loader):
-            ns = NeighborSampler(batch, 0.1, 9)
-            for data_flow in ns():
-                out = model(batch.x.to(device), data_flow.to(device))
-                label = batch.y[node].to(device).view(-1, 1)
+            ns = NeighborSampler(batch, coverage, hops)
+            for subdata in ns():
+                out = model(batch.x[subdata.n_id], subdata.edge_index)
+                label = batch.y[subdata.n_id].to(device).view(-1, 1)
                 weights = generate_weights(label).to(device)
                 te_loss = F.binary_cross_entropy_with_logits(out, target=label, weight=weights)
                 pred = out.detach().round().to(device)
                 cum_labels = torch.cat((cum_labels, label.clone().detach()), dim=0)
                 cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
+
+        test_precision = precision(cum_pred, cum_labels, 2)[1].item()
+        test_recall = recall(cum_pred, cum_labels, 2)[1].item()
+        test_f1 = f1_score(cum_pred, cum_labels, 2)[1].item()
         roc_auc_te = roc_auc_score(cum_labels.cpu(), cum_pred.cpu())
 
         writer.add_scalars('Loss', {'train': tr_loss,
@@ -128,6 +133,12 @@ for epoch in range(1, epochs+1):
         writer.add_scalars('ROC AUC', {'train': roc_auc,
                                        'test': roc_auc_te})
         writer.add_scalar('learning rate', learn_rate, epoch)
+        writer.add_scalars('Recall', {'train': train_recall,
+                                      'test': test_recall}, epoch)
+        writer.add_scalars('Precision', {'train': train_precision,
+                                         'test': test_precision}, epoch)
+        writer.add_scalars('F1_score', {'train': train_f1,
+                                        'test': test_f1}, epoch)
 
         print("---- Round {}: tr_loss={:.4f} te_roc_auc:{:.4f} lr:{:.6f}"
               .format(epoch, loss, roc_auc_te, learn_rate))

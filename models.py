@@ -122,8 +122,11 @@ class FourConv(torch.nn.Module):
         self.s5 = SELU()
         self.s6 = SELU()
 
-    def forward(self, data):
-        x, edge_index = data.x, data.edge_index
+    def forward(self, data, edge_index=None):
+        if edge_index is None:
+            x, edge_index = data.x, data.edge_index
+        else:
+            x = data
         x = self.conv1(x, edge_index)
         x = self.s1(x)
         x = self.conv2(x, edge_index)

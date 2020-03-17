@@ -1,5 +1,5 @@
 # REMEMBER TO CHANGE VERSION NUMBER
-from models import  FourConv, TenConv, FourteenConv
+from models import FourConv, TenConv, FourteenConv
 
 batch_size = 1
 test_batch_size = 1
@@ -16,3 +16,5 @@ model_type = FourConv
 interface_weight = .8
 twohop = True
 heads = 4
+coverage = 0.7
+hops = 5
