@@ -2,6 +2,7 @@ import torch
 import numpy as np
 from torch_geometric.data import DataLoader, NeighborSampler
 from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate, Compose, Center
+from torch_geometric.utils import precision, recall, f1_score
 from dataset import Structures
 from transforms import *
 from torch.utils.tensorboard import SummaryWriter
@@ -87,11 +88,11 @@ for epoch in range(1, epochs+1):
     cum_labels = torch.Tensor().to(device)
     for batch in tqdm(train_loader):
         # What if you use just 5 neighbors?
-        ns = NeighborSampler(batch, size=coverage, num_hops=hops, bipartite=False)
-
+        ns = NeighborSampler(batch, size=coverage, num_hops=hops, bipartite=False, batch_size=p.neighbor_batch)
         for subdata in ns():
+            subdata.to(device)
             optimizer.zero_grad()
-            out = model(batch.x[subdata.n_id], subdata.edge_index)
+            out = model(batch.x[subdata.n_id].to(device), subdata.edge_index)
             label = batch.y[subdata.n_id].to(device).view(-1, 1)
             weights = generate_weights(label).to(device)
             tr_loss = F.binary_cross_entropy_with_logits(out, target=label, weight=weights)
@@ -113,9 +114,10 @@ for epoch in range(1, epochs+1):
         cum_pred = torch.Tensor().to(device)
         cum_labels = torch.Tensor().to(device)
         for batch in tqdm(val_loader):
-            ns = NeighborSampler(batch, coverage, hops)
+            ns = NeighborSampler(batch, coverage, hops, bipartite=False, batch_size=p.neighbor_batch)
             for subdata in ns():
-                out = model(batch.x[subdata.n_id], subdata.edge_index)
+                subdata.to(device)
+                out = model(batch.x[subdata.n_id].to(device), subdata.edge_index)
                 label = batch.y[subdata.n_id].to(device).view(-1, 1)
                 weights = generate_weights(label).to(device)
                 te_loss = F.binary_cross_entropy_with_logits(out, target=label, weight=weights)
