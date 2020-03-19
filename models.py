@@ -16,6 +16,15 @@ peak around 0, and predictions are stabilized at 0.
 With model weights of 0.1 and 0.9, the model does not appear to train. Weight gradients are more
 widely distributed, but predictions are quickly stabilized to 1.
 '''
+class Lens(torch.nn.Module):
+    def __init__(self, n_features):
+        super(Lens, self).__init__()
+
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
+        self.conv1(x, edge_index)
+        cluster1 = graclus(edge_index, num_nodes=x.shape[0])
+
 
 
 class BasicNet(torch.nn.Module):

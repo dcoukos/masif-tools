@@ -11,7 +11,14 @@ from tqdm import tqdm
 import numpy as np
 
 
-def get_neighbors(path, device, label_encoder):
+def get_neighbors(path, device):
+    res_encoder =  {'LYS': 1, 'GLU': 2, 'ASP': 3, 'SER': 4, 'PHE': 5,
+                    'CYS': 6, 'VAL': 7, 'ILE': 8, 'MET': 9, 'HIS': 10,
+                    'GLY': 11, 'LEU': 12, 'TYR': 13, 'THR': 14, 'PRO': 15,
+                    'ARG': 16, 'TRP': 17, 'ALA': 18, 'GLN': 19, 'ASN': 20,
+                    'SEC': 21, 'UNK': 21, 'ASX': 21, 'GLX': 21, 'XLE': 21,
+                    'PYL': 21}
+
     ppdb = PandasPdb()
     ppdb.read_pdb(path=path)
     # Load through read_ply function.
@@ -62,23 +69,16 @@ paths = glob('../masif_site_masif_search_pdbs_and_ply_files/01-benchmark_pdbs/*'
 cpu = torch.device('cpu')
 gpu = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-res_encoder = {'LYS': 1, 'GLU': 2, 'ASP': 3, 'SER': 4, 'PHE': 5,
-                'CYS': 6, 'VAL': 7, 'ILE': 8, 'MET': 9, 'HIS': 10,
-                'GLY': 11, 'LEU': 12, 'TYR': 13, 'THR': 14, 'PRO': 15,
-                'ARG': 16, 'TRP': 17, 'ALA': 18, 'GLN': 19, 'ASN': 20,
-                'SEC': 21, 'UNK': 21, 'ASX': 21, 'GLX': 21, 'XLE': 21,
-                'PYL': 21}
-
 # load from file... map with sklearn. Save to file as pt. Save all structures.
 train_idx, test_idx = 0, 0
 
 for path in tqdm(paths):
     try:
-        train_bool, structure = get_neighbors(path, gpu, res_encoder)
+        train_bool, structure = get_neighbors(path, gpu)
     except RuntimeError as e:
         print(e)
         print("Rerunning on cpu")
-        train_bool, structure = get_neighbors(path, cpu, res_encoder)
+        train_bool, structure = get_neighbors(path, cpu)
 
     if train_bool is True:
         torch.save(structure, './datasets/res_train/raw/res_structures_{}.pt'.format(train_idx))

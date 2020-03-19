@@ -260,11 +260,11 @@ def save_ply(
     )
 
 
-def make_model_directory():
+def make_model_directory(model_folder='models'):
     ''' make directory to save models.
     '''
     now = datetime.datetime.now().strftime('%b%d_%H:%M')
-    modelpath = 'models/{}_{}'.format(now, str(p.version).split('(')[0])
+    modelpath = '{}/{}_{}'.format(model_folder, now, str(p.version).split('(')[0])
     surfacepath = 'surfaces/{}_{}'.format(now, str(p.version).split('(')[0])
     wd = pathlib.Path().absolute()
     os.mkdir('{}/{}'.format(wd, modelpath))
