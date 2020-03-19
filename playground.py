@@ -556,3 +556,14 @@ prev_model['conv1.u'] = conv1_u
 
 
 model.load_state_dict(prev_model)
+
+
+# Code for retraining model with random features
+conv1_weights = prev_model['conv1.weight']
+extra_row = torch.ones(1, 64)*10e-8
+conv1_weights = torch.cat((conv1_weights, extra_row), dim=0)
+prev_model['conv1.weight'] = conv1_weights
+
+conv1_u = prev_model['conv1.u']
+conv1_u = torch.cat((conv1_u, torch.tensor([0.05, 0.05, 0.05, 0.05]).view(1, 4)), dim=0)
+prev_model['conv1.u'] = conv1_u

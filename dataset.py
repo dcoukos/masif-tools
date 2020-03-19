@@ -253,17 +253,18 @@ class StructuresDataset(Dataset):
     Structures class for datasets that do not fit into memory.
     '''
     def __init__(self, root='./datasets/{}/'.format(p.dataset), pre_transform=None, transform=None,
-                prefilter=3):
+                 prefilter=3):
         self.device = torch.device('cpu')
         self.pref = prefilter
-        super(StructuresDataset, self).__init__(root, transform, pre_transform)
         self.has_nan = []
+        super(StructuresDataset, self).__init__(root, transform, pre_transform)
+
 
     @property
     def raw_file_names(self):
-        prefix = glob('{}/raw/*_structure_*'.format(self.root))[0].rsplit('/', 1)[1].rsplit('_', 2)[0]
-        n_files = len(glob('{}/raw/*_structure_*'.format(self.root)))
-        return ['{}_structure_{}.pt'.format(prefix, idx) for idx in range(0, n_files)]
+        structure_name = glob('{}/raw/*_structure*'.format(self.root))[0].rsplit('/', 1)[1].rsplit('_', 1)[0]
+        n_files = len(glob('{}/raw/*_structure*'.format(self.root)))
+        return ['{name}_{num}.pt'.format(name=structure_name, num=idx) for idx in range(0, n_files)]
 
     @property
     def processed_file_names(self):
@@ -298,7 +299,7 @@ class StructuresDataset(Dataset):
             i += 1
         torch.save(self.has_nan, osp.join(self.root, 'filtered_data_points.pt'))
 
-    def len(self):
+    def __len__(self):
         return len(self.processed_paths)
 
     def get(self, idx):
