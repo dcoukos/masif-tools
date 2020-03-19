@@ -38,12 +38,7 @@ modelpath = make_model_directory('c_beta_models')
 print('Importing structures.')
 # Remember!!! Shape Index can only be computed on local. Add other transforms after
 # Pre_tranform step to not contaminate the data.
-trainset = StructuresDataset(root='./datasets/res_train/', prefilter=None,
-                             pre_transform=Compose((FaceAttributes(), NodeCurvature(),
-                                                    FaceToEdge(), TwoHop())))
-
-# Define transform in epoch, so that rotation occurs around Δ axis every time.
-len(trainset)
+trainset = StructuresDataset(root='./datasets/res_train/', prefilter=None)
 
 if p.shuffle_dataset:
     trainset = trainset.shuffle()
