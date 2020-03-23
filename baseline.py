@@ -2,7 +2,6 @@ import torch
 import numpy as np
 from torch_geometric.data import DataLoader
 from torch_geometric.transforms import FaceToEdge, TwoHop, RandomRotate, Compose, Center
-from torch_geometric.nn import DataParallel
 from torch_geometric.utils import precision, recall, f1_score
 from dataset import Structures
 from transforms import *

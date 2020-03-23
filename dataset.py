@@ -284,16 +284,16 @@ class StructuresDataset(Dataset):
         for raw_path in tqdm(self.raw_paths):
             data = torch.load(raw_path, map_location=self.device)
 
-            # prefiltering
-            if self.pref is not None:
-                if max(torch.isnan(data.shape_index)):
-                    self.has_nan.append(i)
-                    continue
-
             if self.pre_transform is not None:
                 data = self.pre_transform(data)
             if data is None:
                 continue
+
+            # Filtering has to occur after pretransforming to evaluate if shape_index is nan
+            if self.pref is not None:
+                if max(torch.isnan(data.shape_index)):
+                    self.has_nan.append(i)
+                    continue
 
             torch.save(data, osp.join(self.processed_dir, 'data_{}.pt'.format(i)))
             i += 1
