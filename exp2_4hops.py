@@ -56,8 +56,7 @@ model = p.model_type(9, heads=p.heads).to(cpu)
 model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 
-writer = SummaryWriter(comment='model:{}_lr:{}_shuffle:{}_seed:{}'.format(
-                       p.version,
+writer = SummaryWriter(comment='model:exp2_4hops_lr:{}_shuffle:{}_seed:{}'.format(
                        learn_rate,
                        p.shuffle_dataset,
                        p.random_seed))

@@ -32,19 +32,14 @@ torch.manual_seed(p.random_seed)
 np.random.seed(p.random_seed)
 learn_rate = p.learn_rate
 modelpath = make_model_directory('c_beta_models')
-
+epochs = p.epochs
 
 # ---- Importing and structuring Datasets and Model ----
-print('Importing structures.')
 # Remember!!! Shape Index can only be computed on local. Add other transforms after
 # Pre_tranform step to not contaminate the data.
-trainset = StructuresDataset(root='./datasets/res_train/', prefilter=None,
-                             pre_transform=Compose((FaceAttributes(), NodeCurvature(),
-                                                    FaceToEdge(), TwoHop())))
-
-len(trainset)
-# Define transform in epoch, so that rotation occurs around Δ axis every time.
-len(trainset)
+trainset = StructuresDataset(root='/work/upcorreia/users/dcoukos/datasets/res_train/') #Pretranforms performed on local.
+validset = trainset[:150]
+trainset = trainset[150:]
 
 model = p.model_type(3, heads=p.heads).to(cpu)
 
