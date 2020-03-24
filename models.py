@@ -20,9 +20,9 @@ widely distributed, but predictions are quickly stabilized to 1.
 '''
 
 
-class Lens(torch.nn.Module):
+class Spectral(torch.nn.Module):
     def __init__(self, n_features):
-        super(Lens, self).__init__()
+        super(Spectral, self).__init__()
         self.spec1 = TAGConv(n_features, 16)
         self.spec2 = TAGConv(16, 16)
         self.spec3 = TAGConv(16, 16)
@@ -37,17 +37,17 @@ class Lens(torch.nn.Module):
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
+        x = self.spec1(x, edge_index)
+        x = self.s1(x)
+        x = self.spec1(x, edge_index)
+        x = self.s2(x)
+        x = self.spec1(x, edge_index)
+        x = self.s3(x)
+        x = self.lin1(x)
+        x = self.s4(x)
+        x = self.lin2(x)
+        x = self.s5(x)
 
-
-class Spectral(torch.nn.Module):
-    '''
-        Implements a multi-layer spectral graph cnn. Hope is that longer-distance interactions
-        are encoded in the lower frequency spectra.
-    '''
-    def __init__(self, n_features):
-        super(Spectral, self).__init__()
-
-    def forward(self, data):
 
 
 class BasicNet(torch.nn.Module):
