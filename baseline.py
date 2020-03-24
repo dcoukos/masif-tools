@@ -38,20 +38,20 @@ print('Importing structures.')
 # Pre_tranform step to not contaminate the data.
 trainset = Structures(root='./datasets/masif_site_train/',
                       pre_transform=Compose((FaceAttributes(), NodeCurvature(),
-                                             FaceToEdge(), TwoHop())))
+                                             FaceToEdge(), TwoHop())),
+                      translate=AddShapeIndex())
 # Define transform in epoch, so that rotation occurs around Δ axis every time.
 validset = Structures(root='./datasets/masif_site_test/',
                       pre_transform=Compose((FaceAttributes(), NodeCurvature(),
-                                             FaceToEdge(), TwoHop())))
+                                             FaceToEdge(), TwoHop())),
+                      transform=AddShapeIndex())
 
 if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 
 # ---- Import previous model to allow deep network to train -------------
-model = p.model_type(9, heads=p.heads).to(cpu)
-
-model.to(device)
+model = p.model_type(4).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_shuffle:{}_seed:{}'.format(

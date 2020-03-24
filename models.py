@@ -1,7 +1,9 @@
 import torch
 import torch.nn.functional as F
 from torch.nn import Linear, Dropout, Sequential, ReLU, SELU
-from torch_geometric.nn import GCNConv, FeaStConv, MessagePassing, knn_graph, BatchNorm, TopKPooling, graclus, max_pool, knn_interpolate, SAGEConv
+from torch_geometric.nn import (GCNConv, FeaStConv, MessagePassing, knn_graph, BatchNorm,
+                                TopKPooling, graclus, max_pool, knn_interpolate, SAGEConv,
+                                TAGConv)
 
 from torch_geometric.data import Data
 # graclus, avg_pool_x
@@ -16,15 +18,36 @@ peak around 0, and predictions are stabilized at 0.
 With model weights of 0.1 and 0.9, the model does not appear to train. Weight gradients are more
 widely distributed, but predictions are quickly stabilized to 1.
 '''
+
+
 class Lens(torch.nn.Module):
     def __init__(self, n_features):
         super(Lens, self).__init__()
+        self.spec1 = TAGConv(n_features, 16)
+        self.spec2 = TAGConv(16, 16)
+        self.spec3 = TAGConv(16, 16)
+        self.lin1 = Linear(16, 64)
+        self.lin2 = Linear(64, 8)
+        self.out = Linear(8, 1)
+        self.s1 = SELU()
+        self.s2 = SELU()
+        self.s3 = SELU()
+        self.s4 = SELU()
+        self.s5 = SELU()
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
-        self.conv1(x, edge_index)
-        cluster1 = graclus(edge_index, num_nodes=x.shape[0])
 
+
+class Spectral(torch.nn.Module):
+    '''
+        Implements a multi-layer spectral graph cnn. Hope is that longer-distance interactions
+        are encoded in the lower frequency spectra.
+    '''
+    def __init__(self, n_features):
+        super(Spectral, self).__init__()
+
+    def forward(self, data):
 
 
 class BasicNet(torch.nn.Module):

@@ -1,5 +1,5 @@
 # REMEMBER TO CHANGE VERSION NUMBER
-from models import SixConv, TenConv, FourteenConv
+from models import SixConv, TenConv, FourteenConv, Spectral
 
 batch_size = 1
 test_batch_size = 1
@@ -12,7 +12,7 @@ epochs = 100
 version = 'exp2_2hop'
 suppress_warnings = True
 dataset = 'masif_site'
-model_type = SixConv
+model_type = Spectral
 interface_weight = .8
 twohop = True
 heads = 4
