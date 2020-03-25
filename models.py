@@ -21,11 +21,11 @@ widely distributed, but predictions are quickly stabilized to 1.
 
 
 class Spectral(torch.nn.Module):
-    def __init__(self, n_features):
+    def __init__(self, n_features, K=3):
         super(Spectral, self).__init__()
-        self.spec1 = TAGConv(n_features, 16)
-        self.spec2 = TAGConv(16, 16)
-        self.spec3 = TAGConv(16, 16)
+        self.spec1 = TAGConv(n_features, 16, K=K)
+        self.spec2 = TAGConv(16, 16, K=K)
+        self.spec3 = TAGConv(16, 16, K=K)
         self.lin1 = Linear(16, 64)
         self.lin2 = Linear(64, 8)
         self.out = Linear(8, 1)
