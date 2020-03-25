@@ -20,6 +20,74 @@ widely distributed, but predictions are quickly stabilized to 1.
 '''
 
 
+class Encoder(torch.nn.Module):
+    def __init__(self, n_features):
+        super(Encoder, self).__init__()
+        # Will have to update these
+        self.conv1 = FeaStConv(n_features, 16, heads=4)
+        self.conv2 = FeaStConv(32, 16, heads=4)
+        self.conv3 = FeaStConv(32, 16, heads=4)
+        self.conv4 = FeaStConv(48, 16, heads=4)
+        self.conv5 = FeaStConv(16, 16, heads=4)
+        self.affine1 = Linear(n_features, 16)
+        self.affine2 = Linear(n_features, 16)
+        self.affine3 = Linear(16, 16)
+        self.affine4 = Linear(16, 16)
+        self.lin1 = Linear(16, 64)
+        self.lin2 = Linear(64, 8)
+        self.out = Linear(8, 1)
+        self.s1 = SELU()
+        self.s2 = SELU()
+        self.s3 = SELU()
+        self.s4 = SELU()
+        self.s5 = SELU()
+        self.s6 = SELU()
+        self.s7 = SELU()
+
+    def forward(self, data):
+        x, edge_index_1 = data.x, data.edge_index_1
+        # define downscaled samples.
+        cluster1 = graclus(edge_index_1, num_nodes=x.shape[0])
+        downsample_1 = avg_pool(cluster1, data)
+        edge_index_2 = downsample_1.edge_index
+        cluster2 = graclus(edge_index_2, num_nodes=downsample_1.shape[0])
+        downsample_2 = avg_pool(cluster2, data)
+        edge_index_3 = downsample_2.edge_index
+
+        x = self.conv1(x, edge_index_1)
+        x = self.s1(x)
+        inter1 = data
+        inter1.x = x
+        inter1 = max_pool(cluster1, inter1)
+        x2 = inter1.x
+        x2 = torch.cat((self.affine1(downsample_1.x), x2), dim=1)
+        x2 = self.conv2(x2, edge_index_2)
+        x2 = self.s2(x2)
+
+        inter2 = inter1
+        inter2.x = x2
+        inter2 = max_pool(cluster2, inter2)
+        x3 = inter2.x
+        x3 = torch.cat((self.affine2(downsample_2.x), x3), dim=1)
+        x3 = self.conv3(x3, edge_index_3)
+        x3 = self.s3(x3)
+
+        x3 = knn_interpolate(x3, downsample_2.pos, downsample_1.pos)
+        x2 = torch.cat((x2, x3), dim=1)
+        x2 = knn_interpolate(x2, downsample_1.pos, data.pos)
+        x = torch.cat((x, x2), dim=1)
+
+        x = self.conv4(x, edge_index_1)
+        x = self.s4(x)
+        x = self.conv5(x, edge_index_1)
+        x = self.s5(x)
+        x = self.s6(self.lin1(x))
+        x = self.s7(self.lin2(x))
+
+        return torch.sigmoid(self.out(x))
+
+
+
 class Spectral(torch.nn.Module):
     def __init__(self, n_features):
         super(Spectral, self).__init__()
