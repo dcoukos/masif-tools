@@ -39,7 +39,7 @@ print('Importing structures.')
 trainset = Structures(root='./datasets/masif_site_train/',
                       pre_transform=Compose((FaceAttributes(), NodeCurvature(),
                                              FaceToEdge(), TwoHop())),
-                      translate=AddShapeIndex())
+                      transform=AddShapeIndex())
 # Define transform in epoch, so that rotation occurs around Δ axis every time.
 validset = Structures(root='./datasets/masif_site_test/',
                       pre_transform=Compose((FaceAttributes(), NodeCurvature(),
