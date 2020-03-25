@@ -38,13 +38,11 @@ print('Importing structures.')
 # Pre_tranform step to not contaminate the data.
 trainset = Structures(root='./datasets/masif_site_train/',
                       pre_transform=Compose((FaceAttributes(), NodeCurvature(),
-                                             FaceToEdge(), TwoHop())),
-                      transform=AddShapeIndex())
+                                             FaceToEdge(), TwoHop())))
 # Define transform in epoch, so that rotation occurs around Δ axis every time.
 validset = Structures(root='./datasets/masif_site_test/',
                       pre_transform=Compose((FaceAttributes(), NodeCurvature(),
-                                             FaceToEdge(), TwoHop())),
-                      transform=AddShapeIndex())
+                                             FaceToEdge(), TwoHop())))
 
 if p.shuffle_dataset:
     trainset = trainset.shuffle()
@@ -66,8 +64,8 @@ max_roc_auc = 0
 # ---- Training ----
 print('Training...')
 for epoch in range(1, epochs+1):
-    trainset.transform = Compose((Center(), RandomRotate(90, epoch%3), AddPositionalData()))
-    validset.transform = Compose((Center(), RandomRotate(90, epoch%3), AddPositionalData()))
+    trainset.transform = AddShapeIndex()
+    validset.transform = AddShapeIndex()
     train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
     val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
 

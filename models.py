@@ -39,15 +39,16 @@ class Spectral(torch.nn.Module):
         x, edge_index = data.x, data.edge_index
         x = self.spec1(x, edge_index)
         x = self.s1(x)
-        x = self.spec1(x, edge_index)
+        x = self.spec2(x, edge_index)
         x = self.s2(x)
-        x = self.spec1(x, edge_index)
+        x = self.spec3(x, edge_index)
         x = self.s3(x)
         x = self.lin1(x)
         x = self.s4(x)
         x = self.lin2(x)
         x = self.s5(x)
-
+        
+        return torch.sigmoid(self.out(x))
 
 
 class BasicNet(torch.nn.Module):
