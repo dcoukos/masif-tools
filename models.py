@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from torch.nn import Linear, Dropout, Sequential, ReLU, SELU
 from torch_geometric.nn import (GCNConv, FeaStConv, MessagePassing, knn_graph, BatchNorm,
                                 TopKPooling, graclus, max_pool, knn_interpolate, SAGEConv,
-                                TAGConv)
+                                TAGConv, avg_pool)
 
 from torch_geometric.data import Data
 # graclus, avg_pool_x
@@ -20,9 +20,9 @@ widely distributed, but predictions are quickly stabilized to 1.
 '''
 
 
-class Encoder(torch.nn.Module):
+class MultiScaleEncoder(torch.nn.Module):
     def __init__(self, n_features):
-        super(Encoder, self).__init__()
+        super(MultiScaleEncoder, self).__init__()
         # Will have to update these
         self.conv1 = FeaStConv(n_features, 16, heads=4)
         self.conv2 = FeaStConv(32, 16, heads=4)
@@ -45,13 +45,13 @@ class Encoder(torch.nn.Module):
         self.s7 = SELU()
 
     def forward(self, data):
-        x, edge_index_1 = data.x, data.edge_index_1
+        x, edge_index_1 = data.x, data.edge_index
         # define downscaled samples.
         cluster1 = graclus(edge_index_1, num_nodes=x.shape[0])
         downsample_1 = avg_pool(cluster1, data)
         edge_index_2 = downsample_1.edge_index
-        cluster2 = graclus(edge_index_2, num_nodes=downsample_1.shape[0])
-        downsample_2 = avg_pool(cluster2, data)
+        cluster2 = graclus(edge_index_2, num_nodes=downsample_1.x.shape[0])
+        downsample_2 = avg_pool(cluster2, downsample_1)
         edge_index_3 = downsample_2.edge_index
 
         x = self.conv1(x, edge_index_1)
