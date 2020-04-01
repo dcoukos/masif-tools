@@ -28,6 +28,7 @@ learn_rate = p.learn_rate
 modelpath = make_model_directory()
 
 if str(device) == 'cuda:0':
+
     epochs = p.epochs
 else:
     epochs = 20
@@ -38,11 +39,11 @@ print('Importing structures.')
 # Pre_tranform step to not contaminate the data.
 trainset = Structures(root='./datasets/masif_site_train/',
                       pre_transform=Compose((FaceAttributes(), NodeCurvature(),
-                                             FaceToEdge(), TwoHop())))
+                                             FaceToEdge())))
 # Define transform in epoch, so that rotation occurs around Δ axis every time.
 validset = Structures(root='./datasets/masif_site_test/',
                       pre_transform=Compose((FaceAttributes(), NodeCurvature(),
-                                             FaceToEdge(), TwoHop())))
+                                             FaceToEdge())))
 
 if p.shuffle_dataset:
     trainset = trainset.shuffle()
@@ -64,7 +65,7 @@ max_roc_auc = 0
 # ---- Training ----
 print('Training...')
 for epoch in range(1, epochs+1):
-    trainset.transform = AddShapeIndex() 
+    trainset.transform = AddShapeIndex()
     validset.transform = AddShapeIndex()
     train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
     val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
