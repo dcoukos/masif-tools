@@ -558,7 +558,7 @@ class TenConvwAffine(torch.nn.Module):
 class TenConvwAffinePool(torch.nn.Module):
     def __init__(self, n_features, heads=4, masif_descr=False):
         # REMEMBER TO UPDATE MODEL NAME
-        super(TenConvwAffine, self).__init__()
+        super(TenConvwAffinePool, self).__init__()
         self.masif_descr = masif_descr
         if masif_descr is True:
             self.pre_lin = Linear(80, n_features)
@@ -611,7 +611,7 @@ class TenConvwAffinePool(torch.nn.Module):
         interx = self.inters1(self.interconv1(inter.x, inter.edge_index))
         inter = knn_interpolate(interx, inter.pos, data.pos)
         x1 = self.affine1(x)
-        x1 += inter.x
+        x1 += inter
 
         x = self.conv4(x, edge_index)
         x = self.s4(x)
@@ -626,7 +626,7 @@ class TenConvwAffinePool(torch.nn.Module):
         interx = self.inters2(self.interconv1(inter.x, inter.edge_index))
         inter = knn_interpolate(interx, inter.pos, data.pos)
         x2 = self.affine1(x)
-        x2 += inter.x
+        x2 += inter
 
         x = self.conv7(x, edge_index)
         x = self.s7(x)
