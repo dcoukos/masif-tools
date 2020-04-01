@@ -114,7 +114,7 @@ class Spectral(torch.nn.Module):
         x = self.s4(x)
         x = self.lin2(x)
         x = self.s5(x)
-        
+
         return torch.sigmoid(self.out(x))
 
 
@@ -483,6 +483,7 @@ class TenConvwRes(torch.nn.Module):
 
         return x
 
+
 class TenConvwAffine(torch.nn.Module):
     def __init__(self, n_features, heads=4, masif_descr=False):
         # REMEMBER TO UPDATE MODEL NAME
@@ -535,6 +536,98 @@ class TenConvwAffine(torch.nn.Module):
         x = self.conv6(x, edge_index)
         x = self.s6(x)
         x2 = self.affine2(x)
+        x = self.conv7(x, edge_index)
+        x = self.s7(x)
+        x = self.conv8(x, edge_index)
+        x = self.s8(x)
+        x = self.conv9(x, edge_index)
+        x = self.s9(x)
+        x = x + x1 + x2
+        x = self.conv10(x, edge_index)
+        x = self.s10(x)
+        x = self.lin1(x)
+        x = self.s11(x)
+        x = self.lin2(x)
+        x = self.s12(x)
+        x = self.out(x)
+        x = torch.sigmoid(x)
+
+        return x
+
+
+class TenConvwAffinePool(torch.nn.Module):
+    def __init__(self, n_features, heads=4, masif_descr=False):
+        # REMEMBER TO UPDATE MODEL NAME
+        super(TenConvwAffine, self).__init__()
+        self.masif_descr = masif_descr
+        if masif_descr is True:
+            self.pre_lin = Linear(80, n_features)
+        self.conv1 = FeaStConv(n_features, 16, heads=heads)
+        self.conv2 = FeaStConv(16, 16, heads=heads)
+        self.conv3 = FeaStConv(16, 16, heads=heads)
+        self.conv4 = FeaStConv(16, 16, heads=heads)
+        self.conv5 = FeaStConv(16, 16, heads=heads)
+        self.conv6 = FeaStConv(16, 16, heads=heads)
+        self.conv7 = FeaStConv(16, 16, heads=heads)
+        self.conv8 = FeaStConv(16, 16, heads=heads)
+        self.conv9 = FeaStConv(16, 16, heads=heads)
+        self.conv10 = FeaStConv(16, 16, heads=heads)
+        self.interconv1 = FeaStConv(16, 16, heads=heads)
+        self.interconv2 = FeaStConv(16, 16, heads=heads)
+        self.inters1 = SELU()
+        self.inters2 = SELU()
+        self.lin1 = Linear(16, 16)
+        self.lin2 = Linear(16, 4)
+        self.s1 = SELU()
+        self.s2 = SELU()
+        self.s3 = SELU()
+        self.s4 = SELU()
+        self.s5 = SELU()
+        self.s6 = SELU()
+        self.s7 = SELU()
+        self.s8 = SELU()
+        self.s9 = SELU()
+        self.s10 = SELU()
+        self.s11 = SELU()
+        self.s12 = SELU()
+        self.out = Linear(4, 1)
+        self.affine1 = Linear(16, 16)
+        self.affine2 = Linear(16, 16)
+
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
+        x = self.pre_lin(x) if self.masif_descr else x
+        x = self.conv1(x, edge_index)
+        x = self.s1(x)
+        x = self.conv2(x, edge_index)
+        x = self.s2(x)
+        x = self.conv3(x, edge_index)
+        x = self.s3(x)
+
+        cluster = graclus(edge_index, num_nodes=x.shape[0])
+        inter = data
+        inter.x = x
+        inter = max_pool(cluster, inter)
+        interx = self.inters1(self.interconv1(inter.x, inter.edge_index))
+        inter = knn_interpolate(interx, inter.pos, data.pos)
+        x1 = self.affine1(x)
+        x1 += inter.x
+
+        x = self.conv4(x, edge_index)
+        x = self.s4(x)
+        x = self.conv5(x, edge_index)
+        x = self.s5(x)
+        x = self.conv6(x, edge_index)
+        x = self.s6(x)
+
+        inter = data
+        inter.x = x
+        inter = max_pool(cluster, inter)
+        interx = self.inters2(self.interconv1(inter.x, inter.edge_index))
+        inter = knn_interpolate(interx, inter.pos, data.pos)
+        x2 = self.affine1(x)
+        x2 += inter.x
+
         x = self.conv7(x, edge_index)
         x = self.s7(x)
         x = self.conv8(x, edge_index)
