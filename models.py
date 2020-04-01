@@ -555,7 +555,7 @@ class TenConvwAffine(torch.nn.Module):
 
 
 class FourteenConv(torch.nn.Module):
-    def __init__(self, n_features, heads=4, masif_descr=False):
+    def __init__(self, n_features, heads=4, masif_descr=False, relu=False):
         # REMEMBER TO UPDATE MODEL NAME
         super(FourteenConv, self).__init__()
         self.masif_descr = masif_descr
@@ -594,46 +594,48 @@ class FourteenConv(torch.nn.Module):
         self.lin1 = Linear(16, 16)
         self.lin2 = Linear(16, 4)
         self.out = Linear(4, 1)
+        self.relu = relu
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
         x = self.pre_lin(x) if self.masif_descr else x
         x = self.conv1(x, edge_index)
-        x = self.s1(x)
+        x = self.s1(x) if self.relu else x.relu()
         x = self.conv2(x, edge_index)
-        x = self.s2(x)
+        x = self.s2(x) if self.relu else x.relu()
         x = self.conv3(x, edge_index)
-        x = self.s3(x)
+        x = self.s3(x) if self.relu else x.relu()
         x = self.conv4(x, edge_index)
-        x = self.s4(x)
+        x = self.s4(x) if self.relu else x.relu()
         x = self.conv5(x, edge_index)
-        x = self.s5(x)
+        x = self.s5(x) if self.relu else x.relu()
         x = self.conv6(x, edge_index)
-        x = self.s6(x)
+        x = self.s6(x) if self.relu else x.relu()
         x = self.conv7(x, edge_index)
-        x = self.s7(x)
+        x = self.s7(x) if self.relu else x.relu()
         x = self.conv8(x, edge_index)
-        x = self.s8(x)
+        x = self.s8(x) if self.relu else x.relu()
         x = self.conv9(x, edge_index)
-        x = self.s9(x)
+        x = self.s9(x) if self.relu else x.relu()
         x = self.conv10(x, edge_index)
-        x = self.s10(x)
+        x = self.s10(x) if self.relu else x.relu()
         x = self.conv11(x, edge_index)
-        x = self.s11(x)
+        x = self.s11(x) if self.relu else x.relu()
         x = self.conv12(x, edge_index)
-        x = self.s12(x)
+        x = self.s12(x) if self.relu else x.relu()
         x = self.conv13(x, edge_index)
-        x = self.s13(x)
+        x = self.s13(x) if self.relu else x.relu()
         x = self.conv14(x, edge_index)
-        x = self.s14(x)
+        x = self.s14(x) if self.relu else x.relu()
         x = self.lin1(x)
-        x = self.s15(x)
+        x = self.s15(x) if self.relu else x.relu()
         x = self.lin2(x)
-        x = self.s16(x)
+        x = self.s16(x) if self.relu else x.relu()
         x = self.out(x)
         x = torch.sigmoid(x)
 
         return x
+
 
 class ThreeConvBlock(torch.nn.Module):
     # Too many parameters?
