@@ -39,18 +39,18 @@ print('Importing structures.')
 # Pre_tranform step to not contaminate the data.
 trainset = Structures(root='./datasets/masif_site_train/',
                       pre_transform=Compose((FaceAttributes(), NodeCurvature(),
-                                             FaceToEdge())))
+                                             FaceToEdge(), TwoHop())))
 # Define transform in epoch, so that rotation occurs around Δ axis every time.
 validset = Structures(root='./datasets/masif_site_test/',
                       pre_transform=Compose((FaceAttributes(), NodeCurvature(),
-                                             FaceToEdge())))
+                                             FaceToEdge(), TwoHop())))
 
 if p.shuffle_dataset:
     trainset = trainset.shuffle()
 n_features = trainset.get(0).x.shape[1]
 
 # ---- Import previous model to allow deep network to train -------------
-model = p.model_type(4).to(device)
+model = p.model_type(9).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_shuffle:{}_seed:{}'.format(
@@ -65,8 +65,8 @@ max_roc_auc = 0
 # ---- Training ----
 print('Training...')
 for epoch in range(1, epochs+1):
-    trainset.transform = AddShapeIndex()
-    validset.transform = AddShapeIndex()
+    trainset.transform = Compose((Center(), RandomRotate(90, epoch%3), AddPositionalData()))
+    validset.transform = Compose((Center(), RandomRotate(90, epoch%3), AddPositionalData()))
     train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
     val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
 

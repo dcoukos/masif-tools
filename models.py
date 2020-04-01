@@ -469,11 +469,11 @@ class TenConvPool(torch.nn.Module):
         x = self.conv6(x, edge_index)
         x = self.s6(x)
         cluster2 = graclus(edge_index, num_nodes=x.shape[0])
-        inter2 = data
+        inter2 = inter1
         inter2.x = x
-        inter2 = max_pool(cluster1, inter1)
-        x = self.s7(self.conv7(inter1.x, inter2.edge_index))
-        x = knn_interpolate(interx, inter2.pos, inter1.pos)
+        inter2 = max_pool(cluster2, inter2)
+        x = self.s7(self.conv7(inter2.x, inter2.edge_index))
+        x = knn_interpolate(x, inter2.pos, inter1.pos)
         x = self.conv8(x, edge_index)
         x = self.s8(x)
         x = knn_interpolate(x, inter1.pos, data.pos)
