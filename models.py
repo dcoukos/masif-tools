@@ -212,9 +212,9 @@ class FourConv(torch.nn.Module):
         self.conv2 = FeaStConv(16, 16, heads=heads)
         self.conv3 = FeaStConv(16, 16, heads=heads)
         self.conv4 = FeaStConv(16, 16, heads=heads)
-        self.lin1 = Linear(16, 16)
-        self.lin2 = Linear(16, 4)
-        self.out = Linear(4, 1)
+        self.lin1 = Linear(16, 256)
+        self.lin2 = Linear(256, 16)
+        self.out = Linear(16, 1)
         self.s1 = SELU()
         self.s2 = SELU()
         self.s3 = SELU()
@@ -228,6 +228,7 @@ class FourConv(torch.nn.Module):
         else:
             x = data
         x = self.conv1(x, edge_index)
+
         x = self.s1(x)
         x = self.conv2(x, edge_index)
         x = self.s2(x)
