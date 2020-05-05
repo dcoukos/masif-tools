@@ -179,8 +179,8 @@ class TwoConv(torch.nn.Module):
             self.pre_lin = Linear(80, n_features)
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
         self.conv2 = FeaStConv(16, 16, heads=heads)
-        self.lin1 = Linear(16, 16)
-        self.lin2 = Linear(16, 4)
+        self.lin1 = Linear(16, 64)
+        self.lin2 = Linear(64, 4)
         self.s1 = SELU()
         self.s2 = SELU()
         self.s3 = SELU()
@@ -204,6 +204,43 @@ class TwoConv(torch.nn.Module):
         return x
 
 
+class ThreeConv(torch.nn.Module):
+    def __init__(self, n_features, heads=4, masif_descr=False):
+        # REMEMBER TO UPDATE MODEL NAME
+        super(ThreeConv, self).__init__()
+        self.masif_descr = masif_descr
+        if masif_descr is True:
+            self.pre_lin = Linear(80, n_features)
+        self.conv1 = FeaStConv(n_features, 16, heads=heads)
+        self.conv2 = FeaStConv(16, 16, heads=heads)
+        self.conv3 = FeaStConv(16, 16, heads=heads)
+        self.lin1 = Linear(16, 64)
+        self.lin2 = Linear(64, 4)
+        self.s1 = SELU()
+        self.s2 = SELU()
+        self.s3 = SELU()
+        self.s4 = SELU()
+        self.s5 = SELU()
+        self.out = Linear(4, 1)
+
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
+        x = self.pre_lin(x) if self.masif_descr else x
+        x = self.conv1(x, edge_index)
+        x = self.s1(x)
+        x = self.conv2(x, edge_index)
+        x = self.s2(x)
+        x = self.conv3(x, edge_index)
+        x = self.lin1(x)
+        x = self.s3(x)
+        x = self.lin2(x)
+        x = self.s4(x)
+        x = self.out(x)
+        x = torch.sigmoid(x)
+
+        return x
+
+
 class FourConv(torch.nn.Module):
     def __init__(self, n_features, heads=4):
         # REMEMBER TO UPDATE MODEL NAME
@@ -212,8 +249,8 @@ class FourConv(torch.nn.Module):
         self.conv2 = FeaStConv(16, 16, heads=heads)
         self.conv3 = FeaStConv(16, 16, heads=heads)
         self.conv4 = FeaStConv(16, 16, heads=heads)
-        self.lin1 = Linear(16, 256)
-        self.lin2 = Linear(256, 16)
+        self.lin1 = Linear(16, 64)
+        self.lin2 = Linear(64, 16)
         self.out = Linear(16, 1)
         self.s1 = SELU()
         self.s2 = SELU()
@@ -245,6 +282,46 @@ class FourConv(torch.nn.Module):
 
         return x
 
+class FiveConv(torch.nn.Module):
+    def __init__(self, n_features, heads=4):
+        # REMEMBER TO UPDATE MODEL NAME
+        super(FourConv, self).__init__()
+        self.conv1 = FeaStConv(n_features, 16, heads=heads)
+        self.conv2 = FeaStConv(16, 16, heads=heads)
+        self.conv3 = FeaStConv(16, 16, heads=heads)
+        self.conv4 = FeaStConv(16, 16, heads=heads)
+        self.lin1 = Linear(16, 64)
+        self.lin2 = Linear(64, 16)
+        self.out = Linear(16, 1)
+        self.s1 = SELU()
+        self.s2 = SELU()
+        self.s3 = SELU()
+        self.s4 = SELU()
+        self.s5 = SELU()
+        self.s6 = SELU()
+
+    def forward(self, data, edge_index=None):
+        if edge_index is None:
+            x, edge_index = data.x, data.edge_index
+        else:
+            x = data
+        x = self.conv1(x, edge_index)
+
+        x = self.s1(x)
+        x = self.conv2(x, edge_index)
+        x = self.s2(x)
+        x = self.conv3(x, edge_index)
+        x = self.s3(x)
+        x = self.conv4(x, edge_index)
+        x = self.s4(x)
+        x = self.lin1(x)
+        x = self.s5(x)
+        x = self.lin2(x)
+        x = self.s6(x)
+        x = self.out(x)
+        x = torch.sigmoid(x)
+
+        return x
 
 class SixConv(torch.nn.Module):
     def __init__(self, n_features, heads=4, masif_descr=False):
@@ -286,6 +363,61 @@ class SixConv(torch.nn.Module):
         x = self.s5(x)
         x = self.conv6(x, edge_index)
         x = self.s6(x)
+        x = self.lin1(x)
+        x = self.s7(x)
+        x = self.lin2(x)
+        x = self.s8(x)
+        x = self.out(x)
+        x = torch.sigmoid(x)
+
+        return x
+
+class SixConvAffine(torch.nn.Module):
+    def __init__(self, n_features, heads=4, masif_descr=False):
+        # REMEMBER TO UPDATE MODEL NAME
+        super(SixConv, self).__init__()
+        self.masif_descr = masif_descr
+        if masif_descr is True:
+            self.pre_lin = Linear(80, n_features)
+        self.conv1 = FeaStConv(n_features, 16, heads=heads)
+        self.conv2 = FeaStConv(16, 16, heads=heads)
+        self.conv3 = FeaStConv(16, 16, heads=heads)
+        self.conv4 = FeaStConv(16, 16, heads=heads)
+        self.conv5 = FeaStConv(16, 16, heads=heads)
+        self.conv6 = FeaStConv(16, 16, heads=heads)
+        self.affine1 = Linear(n_features)
+        self.affine2 = Linear(16)
+        self.affine3 = Linear(16)
+        self.affine4 = Linear(16)
+        self.affine5 = Linear(16)
+        self.affine6 = Linear(16)
+        self.lin1 = Linear(16, 16)
+        self.lin2 = Linear(16, 4)
+        self.s1 = SELU()
+        self.s2 = SELU()
+        self.s3 = SELU()
+        self.s4 = SELU()
+        self.s5 = SELU()
+        self.s6 = SELU()
+        self.s7 = SELU()
+        self.s8 = SELU()
+        self.out = Linear(4, 1)
+
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
+        x = self.pre_lin(x) if self.masif_descr else x
+        x1 = self.conv1(x, edge_index)
+        x = self.s1(x1) + self.affine1(x)
+        x1 = self.conv2(x, edge_index)
+        x = self.s2(x1) + self.affine2(x)
+        x1 = self.conv3(x, edge_index)
+        x = self.s3(x1) + self.affine3(x)
+        x1 = self.conv4(x, edge_index)
+        x = self.s4(x1) + self.affine4(x)
+        x1 = self.conv5(x, edge_index)
+        x = self.s5(x1) + self.affine5(x)
+        x1 = self.conv6(x, edge_index)
+        x = self.s6(x1) + self.affine6(x)
         x = self.lin1(x)
         x = self.s7(x)
         x = self.lin2(x)
