@@ -212,9 +212,9 @@ class FourConv(torch.nn.Module):
         self.conv2 = FeaStConv(16, 16, heads=heads)
         self.conv3 = FeaStConv(16, 16, heads=heads)
         self.conv4 = FeaStConv(16, 16, heads=heads)
-        self.lin1 = Linear(16, 256)
-        self.lin2 = Linear(256, 16)
-        self.out = Linear(16, 1)
+        self.lin1 = Linear(16, 16)
+        self.lin2 = Linear(16, 4)
+        self.out = Linear(4, 1)
         self.s1 = SELU()
         self.s2 = SELU()
         self.s3 = SELU()
@@ -245,6 +245,29 @@ class FourConv(torch.nn.Module):
 
         return x
 
+
+class FiveConv(torch.nn.Module):
+    def __init__(self, n_features, heads=4):
+        super(FiveConv, self).__init__()
+        self.conv1 = FeaStConv(n_features, 16, heads=heads)
+        self.conv2 = FeaStConv(16, 16, heads=heads)
+        self.conv3 = FeaStConv(16, 16, heads=heads)
+        self.conv4 = FeaStConv(16, 16, heads=heads)
+        self.conv5 = FeaStConv(16, 16, heads=heads)
+        self.lin1 = Linear(16, 16)
+        self.lin2 = Linear(16, 4)
+        self.s1 = SELU()
+        self.s2 = SELU()
+        self.s3 = SELU()
+        self.s4 = SELU()
+        self.s5 = SELU()
+        self.s6 = SELU()
+        self.s7 = SELU()
+        self.out = Linear(4, 1)
+
+    def forward(self, data):
+        x, edge_index, data.x, data.edge_index
+        
 
 class SixConv(torch.nn.Module):
     def __init__(self, n_features, heads=4, masif_descr=False):
@@ -292,7 +315,6 @@ class SixConv(torch.nn.Module):
         x = self.s8(x)
         x = self.out(x)
         x = torch.sigmoid(x)
-
         return x
 
 
@@ -810,31 +832,36 @@ class FourteenConv(torch.nn.Module):
 
 class ThreeConvBlock(torch.nn.Module):
     # Too many parameters?
-    def __init__(self, n_features, lin2=4, heads=4):
+    def __init__(self, n_features, heads=4):
         super(ThreeConvBlock, self).__init__()
         self.conv1 = FeaStConv(n_features, 16, heads=heads)
         self.conv2 = FeaStConv(16, 16, heads=heads)
         self.conv3 = FeaStConv(16, 16, heads=heads)
-        self.lin1 = Linear(16, 32)
-        self.lin2 = Linear(32, lin2)
-        self.out = Linear(lin2, 1)
+        self.lin1 = Linear(16, 16)
+        self.lin2 = Linear(16, 4)
+        self.s1 = SELU()
+        self.s2 = SELU()
+        self.s3 = SELU()
+        self.s4 = SELU()
+        self.s5 = SELU()
+        self.out = Linear(4, 1)
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
         x = self.conv1(x, edge_index)
-        x = x.relu()
+        x = self.s1(x)
         x = self.conv2(x, edge_index)
-        x = x.relu()
+        x = self.s2(x)
         x = self.conv3(x, edge_index)
-        x = x.relu()
+        x = self.s3(x)
         x = self.lin1(x)
-        x = x.relu()
-        inter = self.lin2(x)
-        x = inter.relu()
+        x = self.s4(x)
+        x = self.lin2(x)
+        x = self.s5(x)
         x = self.out(x)
         x = torch.sigmoid(x)
 
-        return x, torch.sigmoid(inter)
+        return x
 
 
 class ThreeConvBlock2(torch.nn.Module):
@@ -1070,33 +1097,6 @@ class TwentyConvPool(torch.nn.Module):
         x4 = self.block4(x3, edge_index)
         x5 = self.block5(x4, edge_index)
         z = self.lin1(x5)
-        z = z.relu()
-        z = self.lin2(z)
-        z = z.relu()
-        z = self.lin3(z)
-        z = z.relu()
-        z = self.out(z)
-        z = torch.sigmoid(z)
-
-        return z
-
-
-class EightConv(torch.nn.Module): # Model 19
-
-    def __init__(self, n_features, heads=4):
-        super(EightConv, self).__init__()
-        self.block1 = FourConvBlock(4, 4)
-        self.block2 = FourConvBlock(4, 4)
-        self.lin1 = Linear(4, 64)
-        self.lin2 = Linear(64, 64)
-        self.lin3 = Linear(64, 16)
-        self.out = Linear(16, 1)
-
-    def forward(self, data):
-        z, edge_index = data.x, data.edge_index
-        z = self.block1(z, edge_index)
-        z = self.block2(z, edge_index)
-        z = self.lin1(z)
         z = z.relu()
         z = self.lin2(z)
         z = z.relu()

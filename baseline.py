@@ -50,7 +50,7 @@ if p.shuffle_dataset:
 n_features = trainset.get(0).x.shape[1]
 
 # ---- Import previous model to allow deep network to train -------------
-model = p.model_type(4).to(device)
+model = p.model_type(3).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, weight_decay=p.weight_decay)
 
 writer = SummaryWriter(comment='model:{}_lr:{}_shuffle:{}_seed:{}'.format(
@@ -65,8 +65,6 @@ max_roc_auc = 0
 # ---- Training ----
 print('Training...')
 for epoch in range(1, epochs+1):
-    trainset.transform = Compose((TwoHop(), TwoHop(), AddShapeIndex()))
-    validset.transform = Compose((TwoHop(), TwoHop(), AddShapeIndex()))
     train_loader = DataLoader(trainset, shuffle=p.shuffle_dataset, batch_size=p.batch_size)
     val_loader = DataLoader(validset, shuffle=False, batch_size=p.test_batch_size)
 
@@ -79,17 +77,20 @@ for epoch in range(1, epochs+1):
     cum_pred = torch.Tensor().to(device)
     cum_labels = torch.Tensor().to(device)
     for batch in tqdm(train_loader, desc='Training.'):
-        batch = batch.to(device)
-        optimizer.zero_grad()
-        out = model(batch)
-        labels = batch.y.to(device)
-        weights = generate_weights(labels).to(device)
-        tr_loss = F.binary_cross_entropy(out, target=labels, weight=weights)
-        loss.append(tr_loss.detach().item())
-        tr_loss.backward()
-        optimizer.step()
-        cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
-        cum_pred = torch.cat((cum_pred, out.clone().detach()), dim=0)
+        try:
+            batch = batch.to(device)
+            optimizer.zero_grad()
+            out = model(batch)
+            labels = batch.y.to(device)
+            weights = generate_weights(labels).to(device)
+            tr_loss = F.binary_cross_entropy(out, target=labels, weight=weights)
+            loss.append(tr_loss.detach().item())
+            tr_loss.backward()
+            optimizer.step()
+            cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
+            cum_pred = torch.cat((cum_pred, out.clone().detach()), dim=0)
+        except RuntimeError:
+            pass
 
     train_precision = precision(cum_pred, cum_labels, 2)[1].item()
     train_recall = recall(cum_pred, cum_labels, 2)[1].item()
@@ -104,16 +105,18 @@ for epoch in range(1, epochs+1):
     cum_labels = torch.Tensor().to(device)
     te_weights = torch.Tensor().to(device)
     for batch in tqdm(val_loader, desc='Evaluating.'):
-        batch = batch.to(device)
-        out = model(batch)
-        labels = batch.y.to(device)
-        weights = generate_weights(labels).to(device)
-        te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
-        pred = out.detach().round().to(device)
-        cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
-        cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
-        te_weights = torch.cat((te_weights, weights.clone().detach()), dim=0)
-
+        try:
+            batch = batch.to(device)
+            out = model(batch)
+            labels = batch.y.to(device)
+            weights = generate_weights(labels).to(device)
+            te_loss = F.binary_cross_entropy(out, target=labels, weight=generate_weights(labels))
+            pred = out.detach().round().to(device)
+            cum_labels = torch.cat((cum_labels, labels.clone().detach()), dim=0)
+            cum_pred = torch.cat((cum_pred, pred.clone().detach()), dim=0)
+            te_weights = torch.cat((te_weights, weights.clone().detach()), dim=0)
+        except RuntimeError:
+            pass
     test_precision = precision(cum_pred, cum_labels, 2)[1].item()
     test_recall = recall(cum_pred, cum_labels, 2)[1].item()
     test_f1 = f1_score(cum_pred, cum_labels, 2)[1].item()
