@@ -10,6 +10,13 @@ from dataset import read_ply
 from tqdm import tqdm
 import numpy as np
 
+'''
+Funcitons in this file are used for performing nearest neighbor classifications.
+This was used to test feature engineering on the protein surface meshes, in the hope
+of speeding classification by including some of the relevant reasoning in the preprocessing,
+which was lightweight.
+'''
+
 
 def get_neighbors(path, device):
     res_encoder =  {'LYS': 1, 'GLU': 2, 'ASP': 3, 'SER': 4, 'PHE': 5,

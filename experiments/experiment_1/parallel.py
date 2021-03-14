@@ -12,7 +12,7 @@ import params as p
 from statistics import mean
 import torch.nn.functional as F
 '''
-!! Parallel.py requires GPU !!
+!! Parallel.py requires GPU to test!!
 
 Implementing Model 16a: (Model 15b + Shape index data):
     - Comment out rotations.
